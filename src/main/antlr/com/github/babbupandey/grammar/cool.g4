@@ -6,7 +6,7 @@ program
     ;
 
 class
-    : CLASS type (INHERITS TYPE)? LCURL feature* RCURL
+    : CLASS type (INHERITS TYPE)? LCURL feature* RCURL SEMI
     ;
 feature
     : id LAPREN formal (COMMA formal)* RPAREN COLON type LCURL expr RCURL
@@ -16,7 +16,7 @@ formal
     : id COLON type
     ;
 expr
-    : id LARROW expr
+    : ID LARROW expr
     | expr(AT type)? DOT id LPAREN expr (COMMA expr)* RPAREN
     | ID LPAREN expr (COMMA expr)* RPAREN
     | IF expr THEN expr ELSE expr FI
@@ -28,28 +28,20 @@ expr
     | NOT expr
     | ISVOID expr
     | TILDE expr
-    | expr PLUS expr
-    | expr MINUS expr
-    | expr STAR expr
-    | expr FSLASH expr
-    | expr LT expr
-    | expr LE expr
-    | expr EQ expr
     | LCURL expr RCURL
     | ID
     | integer
     | string
-    | TRUE
-    | FALSE
+    | BOOL
+    | expr (STAR|FSLASH) expr
+    | expr (PLUS|MINUS) expr
+    | expr (LE|LT|EQ) expr
     ;
 
+BOOL
+    : TRUE
+    | FALSE;
 
-BINOP
-    : PLUS
-    | MINUS
-    | STAR
-    | FSLASH
-    ;
 
 PLUS : '+' ;
 MINUS : '-' ;
@@ -66,34 +58,65 @@ LAPREN : '(';
 RPAREN : ')';
 COMMA : ',';
 COLON : ':';
+SEMI : ';';
 LARROW : '<-';
 AT : '@' ;
 DOT : '.' ;
+RDARROW : '=>';
 
-
-
-
-
-CLASS : C L A S  S ;
+CLASS : C L A S S ;
 INHERITS : I N H E R I T S;
-TYPE : T Y P  E ;
+TYPE : T Y P E ;
 ID : I D ;
 IF : I F ;
-THEN : T H E  N ;
-ELSE : E L S  E ;
-FI : F  I ;
-WHILE : W H I L  E;
-LOOP : L O O  P ;
-POOL : P O O  L ;
+THEN : T H E N ;
+ELSE : E L S E ;
+FI : F I ;
+WHILE : W H I L E;
+LOOP : L O O P ;
+POOL : P O O L ;
 LET : L E T ;
-IN : I  N ;
+IN : I N ;
 CASE : C A S E ;
-OF : O  F ;
+OF : O F ;
 ESAC : E S A C ;
-NEW : N E  W ;
+NEW : N E W ;
 ISVOID : I S V O I D;
 TRUE : T R U E ;
 FALSE : F A L S E;
-NOT : N O  T ;
+NOT : N O T ;
 
-RDARROW : R D A R RO W;
+
+STRING : '"' [^\r\t\n '"'
+
+COMMENT_MULTILINE: '(*' .*? '*)' -> channel(HIDDEN);
+
+WHITE_SPACE: [ \r\n\t] -> channel(HIDDEN);
+
+fragment DIGIT : [0-9];
+fragment A : [aA];
+fragment B : [bB];
+fragment C : [cC];
+fragment D : [dD];
+fragment E : [eE];
+fragment F : [fF];
+fragment G : [gG];
+fragment H : [hH];
+fragment I : [iI];
+fragment J : [jJ];
+fragment K : [kK];
+fragment L : [lL];
+fragment M : [mM];
+fragment N : [nN];
+fragment O : [oO];
+fragment P : [pP];
+fragment Q : [qQ];
+fragment R : [rR];
+fragment S : [sS];
+fragment T : [tT];
+fragment U : [uU];
+fragment V : [vV];
+fragment W : [wW];
+fragment X : [xX];
+fragment Y : [yY];
+fragment Z : [zZ];
