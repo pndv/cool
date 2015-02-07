@@ -6,42 +6,38 @@ program
     ;
 
 class
-    : CLASS type (INHERITS TYPE)? LCURL feature* RCURL SEMI
+    : Class TypeIdentifier (Inherits TypeIdentifier)? LCURL feature* RCURL SEMI
     ;
 feature
-    : id LAPREN formal (COMMA formal)* RPAREN COLON type LCURL expr RCURL
-    | id COLON type (LARROW expr)?
+    : Identifier LAPREN formal (COMMA formal)* RPAREN COLON TypeIdentifier LCURL expr RCURL
+    | Identifier COLON TypeIdentifier (LARROW expr)?
     ;
 formal
-    : id COLON type
+    : Identifier COLON TypeIdentifier
     ;
 expr
-    : ID LARROW expr
-    | expr(AT type)? DOT id LPAREN expr (COMMA expr)* RPAREN
-    | ID LPAREN expr (COMMA expr)* RPAREN
-    | IF expr THEN expr ELSE expr FI
-    | WHILE expr LOOP expr POOL
+    : Identifier LARROW expr
+    | expr(AT TypeIdentifier)? DOT Identifier LPAREN expr (COMMA expr)* RPAREN
+    | Identifier LPAREN expr (COMMA expr)* RPAREN
+    | If expr Then expr Else expr Fi
+    | While expr Loop expr Pool
     | LCURL (expr)+ RCURL
-    | LET ID COLON TYPE ( LARROW expr ) (COMMA ID COLON TYPE ( LARROW expr ))* IN expr
-    | CASE expr OF (ID COLON TYPE RDARROW expr)+ ESAC
-    | NEW TYPE
-    | NOT expr
-    | ISVOID expr
+    | Let Identifier COLON TYPE ( LARROW expr ) (COMMA Identifier COLON TYPE ( LARROW expr ))* In expr
+    | Case expr Of (Identifier COLON TYPE RDARROW expr)+ Esac
+    | New TypeIdentifier
+    | Not expr
+    | IsVoid expr
     | TILDE expr
     | LCURL expr RCURL
-    | ID
-    | integer
-    | string
-    | BOOL
+    | Identifier
+    | Integer
+    | StringLiteral
+    | True
+    | False
     | expr (STAR|FSLASH) expr
     | expr (PLUS|MINUS) expr
     | expr (LE|LT|EQ) expr
     ;
-
-BOOL
-    : TRUE
-    | FALSE;
-
 
 PLUS : '+' ;
 MINUS : '-' ;
@@ -64,36 +60,106 @@ AT : '@' ;
 DOT : '.' ;
 RDARROW : '=>';
 
-CLASS : C L A S S ;
-INHERITS : I N H E R I T S;
+Class : C L A S S ;
+Inherits : I N H E R I T S;
 TYPE : T Y P E ;
-ID : I D ;
-IF : I F ;
-THEN : T H E N ;
-ELSE : E L S E ;
-FI : F I ;
-WHILE : W H I L E;
-LOOP : L O O P ;
-POOL : P O O L ;
-LET : L E T ;
-IN : I N ;
-CASE : C A S E ;
-OF : O F ;
-ESAC : E S A C ;
-NEW : N E W ;
-ISVOID : I S V O I D;
-TRUE : T R U E ;
-FALSE : F A L S E;
-NOT : N O T ;
+If : I F ;
+Then : T H E N ;
+Else : E L S E ;
+Fi : F I ;
+While : W H I L E;
+Loop : L O O P ;
+Pool : P O O L ;
+Let : L E T ;
+In : I N ;
+Case : C A S E ;
+Of : O F ;
+Esac : E S A C ;
+New : N E W ;
+IsVoid : I S V O I D;
+True : T R U E ;
+False : F A L S E;
+Not : N O T ;
 
+Identifier
+    : TypeIdentifier
+    | ObjectIdentifier
+    ;
 
-STRING : '"' [^\r\t\n '"'
+TypeIdentifier
+    : [A-Z][a-zA-Z0-9_]*
+    ;
 
-COMMENT_MULTILINE: '(*' .*? '*)' -> channel(HIDDEN);
+ObjectIdentifier
+    : [a-z][a-zA-Z0-9_]*
+    ;
 
-WHITE_SPACE: [ \r\n\t] -> channel(HIDDEN);
+StringLiteral
+    : '"' StringCharacters? '"'
+    ;
 
-fragment DIGIT : [0-9];
+Integer
+    : OneToNine ZeroToNine*
+    | ZeroToNine
+    ;
+
+NestedComment
+    : '(*' .*? '*)' -> channel(HIDDEN)
+    ;
+
+SingleComment
+    : '--' .*? '--'  -> channel(HIDDEN)
+    ;
+
+WHITE_SPACE
+    : [ \r\n\t] -> channel(HIDDEN)
+    ;
+
+fragment StringCharacters
+    :   StringCharacter+
+    ;
+
+fragment StringCharacter
+    :   ~["\\]
+    |   EscapeSequence
+    ;
+
+fragment EscapeSequence
+    :   '\\' [btnfr"'\\]
+    |   OctalEscape
+    |   UnicodeEscape
+    ;
+
+fragment OctalEscape
+    :   '\\' OctalDigit
+    |   '\\' OctalDigit OctalDigit
+    |   '\\' ZeroToThree OctalDigit OctalDigit
+    ;
+
+fragment UnicodeEscape
+    :   '\\' 'u' HexDigit HexDigit HexDigit HexDigit
+    ;
+
+fragment OctalDigit
+    :   [0-7]
+    ;
+
+fragment HexDigit
+    :   [0-9a-fA-F]
+    ;
+
+fragment ZeroToThree
+    :   [0-3]
+    ;
+
+fragment ZeroToNine
+    : [0-9]
+    ;
+
+fragment OneToNine
+    : [0-9]
+    ;
+
 fragment A : [aA];
 fragment B : [bB];
 fragment C : [cC];
