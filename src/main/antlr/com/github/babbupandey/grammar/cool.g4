@@ -157,7 +157,7 @@ fragment ZeroToNine
     ;
 
 fragment OneToNine
-    : [0-9]
+    : [1-9]
     ;
 
 fragment A : [aA];
