@@ -13,9 +13,45 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <antlr4-runtime.version>4.5</antlr4-runtime.version>
+    <antlr4-maven.version>4.5</antlr4-maven.version>
     <junit.version>3.8.1</junit.version>
     <scala-library.version>2.11.5</scala-library.version>
+    <parser.directory>gen</parser.directory>
   </properties>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>${antlr4-maven.version}</version>
+                <executions>
+                    <execution>
+                        <id>antlr</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${parser.directory}
+                            </outputDirectory>
+                            <sourceDirectory>
+                                ${parser.directory}
+                            </sourceDirectory>
+                            <listener>
+                                false
+                            </listener>
+                            <visitor>
+                                true
+                            </visitor>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
   <dependencies>
 
