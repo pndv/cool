@@ -1,5 +1,5 @@
 grammar cool;
-
+@header{com.github.babbupandey.parser;}
 
 program
     : class+
