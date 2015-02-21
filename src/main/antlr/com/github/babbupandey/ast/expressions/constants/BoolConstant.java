@@ -1,13 +1,12 @@
-package com.github.babbupandey.expressions.constants;
-
-import com.github.babbupandey.expressions.Expression;
+package com.github.babbupandey.ast.expressions.constants;
 
 public class BoolConstant extends AbstractConstant<Boolean> {
 
     private Boolean value;
 
     public BoolConstant(Boolean value) {
-        super(value, ExpressionType.Arithmetic.BoolConstant);
+        super(ExpressionType.Arithmetic.BoolConstant);
+        this.value = value;
     }
 
     @Override

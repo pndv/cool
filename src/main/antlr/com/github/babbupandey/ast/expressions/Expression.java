@@ -1,4 +1,4 @@
-package com.github.babbupandey.expressions;
+package com.github.babbupandey.ast.expressions;
 
 
 public abstract class Expression<T> {
@@ -6,8 +6,12 @@ public abstract class Expression<T> {
     private ExpressionType type;
 
     public abstract T evaluate();
-    public abstract ExpressionType getType();
-    public Expression(T value, ExpressionType type) {
+
+    public ExpressionType getType() {
+        return type;
+    }
+
+    public Expression(ExpressionType type) {
         this.value = value;
         this.type = type;
     }

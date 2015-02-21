@@ -1,12 +1,11 @@
-package com.github.babbupandey.expressions.constants;
-
-import com.github.babbupandey.expressions.Expression;
+package com.github.babbupandey.ast.expressions.constants;
 
 public class IntConstant extends AbstractConstant<Integer> {
     private Integer value;
 
     public IntConstant(Integer value) {
-        super(value, ExpressionType.IntConstant);
+        super(ExpressionType.IntConstant);
+        this.value = value;
     }
 
     @Override
