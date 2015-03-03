@@ -2,16 +2,18 @@ grammar cool;
 @header{com.github.babbupandey.parser;}
 
 program
-    : class+
+    : cool_class+
     ;
 
-class
-    : Class TypeIdentifier (Inherits TypeIdentifier)? LCURL feature* RCURL SEMI
+cool_class
+    : ClassKeyword TypeIdentifier (Inherits TypeIdentifier)? LCURL feature* RCURL SEMI
     ;
+
 feature
-    : Identifier LAPREN formal (COMMA formal)* RPAREN COLON TypeIdentifier LCURL expr RCURL
+    : Identifier LPAREN formal (COMMA formal)* RPAREN COLON TypeIdentifier LCURL expr RCURL
     | Identifier COLON TypeIdentifier (LARROW expr)?
     ;
+
 formal
     : Identifier COLON TypeIdentifier
     ;
@@ -50,7 +52,7 @@ EQ : '=' ;
 LEQ : '<=';
 LCURL : '{';
 RCURL : '}';
-LAPREN : '(';
+LPAREN : '(';
 RPAREN : ')';
 COMMA : ',';
 COLON : ':';
@@ -61,33 +63,30 @@ DOT : '.' ;
 RDARROW : '=>';
 UNDERSCORE : '_';
 
-Class : c l a s s ;
-Inherits : i n h e r i t s;
-TYPE : t y p e;
-If : i f ;
-Then : t h e n;
-Else : e l s e;
-Fi : f i;
-While : w h i l e;
-Loop : l o o p;
-Pool : p o o l;
-Let : l e t;
-In : i n;
-Case : c a s e ;
-Of : o f;
-Esac : e s a c;
-New : n e w;
-IsVoid : i s v o i d;
-True : t r u e;
-False : f a l s e;
-Not : n o t;
-Self : s e l f;
+ClassKeyword : S_c S_l S_a S_s S_s ;
+Inherits : S_i S_n S_h S_e S_r S_i S_t S_s;
+TYPE : S_t S_y S_p S_e;
+If : S_i S_f ;
+Then : S_t S_h S_e S_n;
+Else : S_e S_l S_s S_e;
+Fi : S_f S_i;
+While : S_w S_h S_i S_l S_e;
+Loop : S_l S_o S_o S_p;
+Pool : S_p S_o S_o S_l;
+Let : S_l S_e S_t;
+In : S_i S_n;
+Case : S_c S_a S_s S_e ;
+Of : S_o S_f;
+Esac : S_e S_s S_a S_c;
+New : S_n S_e S_w;
+IsVoid : S_i S_s S_v S_o S_i S_d;
+True : S_t S_r S_u S_e;
+False : S_f S_a S_l S_s S_e;
+Not : S_n S_o S_t;
+Self : S_s S_e S_l S_f;
 Self_Type : S E L F UNDERSCORE T Y P E;
 
-Identifier
-    : TypeIdentifier
-    | ObjectIdentifier
-    ;
+
 
 TypeIdentifier
     : [A-Z][a-zA-Z0-9_]*
@@ -95,6 +94,11 @@ TypeIdentifier
 
 ObjectIdentifier
     : [a-z][a-zA-Z0-9_]*
+    ;
+
+Identifier
+    : TypeIdentifier
+    | ObjectIdentifier
     ;
 
 StringLiteral
@@ -163,32 +167,32 @@ fragment OneToNine
     : [1-9]
     ;
 
-fragment a : 'a';
-fragment b : 'b';
-fragment c : 'c';
-fragment d : 'd';
-fragment e : 'e';
-fragment f : 'f';
-fragment g : 'g';
-fragment h : 'h';
-fragment i : 'i';
-fragment j : 'j';
-fragment k : 'k';
-fragment l : 'l';
-fragment m : 'm';
-fragment n : 'n';
-fragment o : 'o';
-fragment p : 'p';
-fragment q : 'q';
-fragment r : 'r';
-fragment s : 's';
-fragment t : 't';
-fragment u : 'u';
-fragment v : 'v';
-fragment w : 'w';
-fragment x : 'x';
-fragment y : 'y';
-fragment z : 'z';
+fragment S_a : 'a';
+fragment S_b : 'b';
+fragment S_c : 'c';
+fragment S_d : 'd';
+fragment S_e : 'e';
+fragment S_f : 'f';
+fragment S_g : 'g';
+fragment S_h : 'h';
+fragment S_i : 'i';
+fragment S_j : 'j';
+fragment S_k : 'k';
+fragment S_l : 'l';
+fragment S_m : 'm';
+fragment S_n : 'n';
+fragment S_o : 'o';
+fragment S_p : 'p';
+fragment S_q : 'q';
+fragment S_r : 'r';
+fragment S_s : 's';
+fragment S_t : 't';
+fragment S_u : 'u';
+fragment S_v : 'v';
+fragment S_w : 'w';
+fragment S_x : 'x';
+fragment S_y : 'y';
+fragment S_z : 'z';
 
 fragment A : 'A';
 fragment B : 'B';
