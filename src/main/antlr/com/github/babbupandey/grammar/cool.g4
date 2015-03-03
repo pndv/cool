@@ -10,28 +10,28 @@ cool_class
     ;
 
 feature
-    : Identifier LPAREN formal (COMMA formal)* RPAREN COLON TypeIdentifier LCURL expr RCURL
-    | Identifier COLON TypeIdentifier (LARROW expr)?
+    : identifier LPAREN formal (COMMA formal)* RPAREN COLON TypeIdentifier LCURL expr RCURL
+    | identifier COLON TypeIdentifier (LARROW expr)? SEMI
     ;
 
 formal
-    : Identifier COLON TypeIdentifier
+    : identifier COLON TypeIdentifier
     ;
 expr
-    : Identifier LARROW expr
-    | expr(AT TypeIdentifier)? DOT Identifier LPAREN expr (COMMA expr)* RPAREN
-    | Identifier LPAREN expr (COMMA expr)* RPAREN
+    : identifier LARROW expr
+    | expr(AT TypeIdentifier)? DOT identifier LPAREN expr (COMMA expr)* RPAREN
+    | identifier LPAREN expr (COMMA expr)* RPAREN
     | If expr Then expr Else expr Fi
     | While expr Loop expr Pool
     | LCURL (expr)+ RCURL
-    | Let Identifier COLON TYPE ( LARROW expr ) (COMMA Identifier COLON TYPE ( LARROW expr ))* In expr
-    | Case expr Of (Identifier COLON TYPE RDARROW expr)+ Esac
+    | Let identifier COLON TYPE ( LARROW expr ) (COMMA identifier COLON TYPE ( LARROW expr ))* In expr
+    | Case expr Of (identifier COLON TYPE RDARROW expr)+ Esac
     | New TypeIdentifier
     | Not expr
     | IsVoid expr
     | TILDE expr
     | LCURL expr RCURL
-    | Identifier
+    | identifier
     | Integer
     | StringLiteral
     | True
@@ -39,6 +39,11 @@ expr
     | expr (STAR|FSLASH) expr
     | expr (PLUS|MINUS) expr
     | expr (LE|LT|EQ) expr
+    ;
+
+identifier
+    : TypeIdentifier
+    | ObjectIdentifier
     ;
 
 PLUS : '+' ;
@@ -96,10 +101,7 @@ ObjectIdentifier
     : [a-z][a-zA-Z0-9_]*
     ;
 
-Identifier
-    : TypeIdentifier
-    | ObjectIdentifier
-    ;
+
 
 StringLiteral
     : '"' StringCharacters? '"'
