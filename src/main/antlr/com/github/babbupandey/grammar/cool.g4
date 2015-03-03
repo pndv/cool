@@ -6,44 +6,50 @@ program
     ;
 
 cool_class
-    : ClassKeyword TypeIdentifier (Inherits TypeIdentifier)? LCURL feature* RCURL SEMI
+    : ClassKeyword type (Inherits type)? LCURL (feature SEMI)* RCURL SEMI
     ;
 
 feature
-    : identifier LPAREN formal (COMMA formal)* RPAREN COLON TypeIdentifier LCURL expr RCURL
-    | identifier COLON TypeIdentifier (LARROW expr)? SEMI
+    : identifier LPAREN formal? (COMMA formal)* RPAREN COLON type LCURL expr RCURL
+    | identifier COLON type (LARROW expr)?
     ;
 
 formal
-    : identifier COLON TypeIdentifier
+    : identifier COLON type
     ;
 expr
     : identifier LARROW expr
-    | expr(AT TypeIdentifier)? DOT identifier LPAREN expr (COMMA expr)* RPAREN
-    | identifier LPAREN expr (COMMA expr)* RPAREN
+    | expr(AT type)? DOT identifier LPAREN (expr (COMMA expr)*)? RPAREN
+    | identifier LPAREN (expr (COMMA expr)*)? RPAREN
     | If expr Then expr Else expr Fi
     | While expr Loop expr Pool
-    | LCURL (expr)+ RCURL
-    | Let identifier COLON TYPE ( LARROW expr ) (COMMA identifier COLON TYPE ( LARROW expr ))* In expr
-    | Case expr Of (identifier COLON TYPE RDARROW expr)+ Esac
-    | New TypeIdentifier
-    | Not expr
+    | LCURL (expr SEMI)+ RCURL
+    | Let identifier COLON type ( LARROW expr )? (COMMA identifier COLON type ( LARROW expr )?)* In expr
+    | Case expr Of (identifier COLON type RDARROW expr SEMI)+ Esac
+    | New type
     | IsVoid expr
+    | expr (STAR|FSLASH) expr
+    | expr (PLUS|MINUS) expr
     | TILDE expr
-    | LCURL expr RCURL
+    | expr (LEQ|LT|EQ) expr
+    | Not expr
+    | LPAREN expr RPAREN
     | identifier
     | Integer
     | StringLiteral
     | True
     | False
-    | expr (STAR|FSLASH) expr
-    | expr (PLUS|MINUS) expr
-    | expr (LE|LT|EQ) expr
     ;
 
 identifier
-    : TypeIdentifier
+    : type
+    | SelfIdentifier
     | ObjectIdentifier
+    ;
+
+type
+    : SelfTypeIdentifier
+    | TypeIdentifier
     ;
 
 PLUS : '+' ;
@@ -52,7 +58,8 @@ STAR : '*' ;
 FSLASH : '/' ;
 TILDE : '~';
 LT : '<' ;
-LE : '>' ;
+GT : '>' ;
+GTQ : '>=' ;
 EQ : '=' ;
 LEQ : '<=';
 LCURL : '{';
@@ -88,10 +95,8 @@ IsVoid : S_i S_s S_v S_o S_i S_d;
 True : S_t S_r S_u S_e;
 False : S_f S_a S_l S_s S_e;
 Not : S_n S_o S_t;
-Self : S_s S_e S_l S_f;
-Self_Type : S E L F UNDERSCORE T Y P E;
-
-
+SelfIdentifier : S_s S_e S_l S_f;
+SelfTypeIdentifier : S E L F UNDERSCORE T Y P E;
 
 TypeIdentifier
     : [A-Z][a-zA-Z0-9_]*
@@ -100,8 +105,6 @@ TypeIdentifier
 ObjectIdentifier
     : [a-z][a-zA-Z0-9_]*
     ;
-
-
 
 StringLiteral
     : '"' StringCharacters? '"'
@@ -113,11 +116,11 @@ Integer
     ;
 
 NestedComment
-    : '(*' .*? '*)' -> channel(HIDDEN)
+    : '(*' .*? ('*)' | EOF) -> channel(HIDDEN)
     ;
 
 SingleComment
-    : '--' .*? '--'  -> channel(HIDDEN)
+    : '--' ~[\r\n]* -> channel(HIDDEN)
     ;
 
 WHITE_SPACE
