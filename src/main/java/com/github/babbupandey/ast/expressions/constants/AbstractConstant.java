@@ -5,6 +5,6 @@ import com.github.babbupandey.ast.expressions.Expression;
 public abstract class AbstractConstant<T> extends Expression {
 
     public AbstractConstant(ExpressionType type) {
-        super(value, type);
+        super(type);
     }
 }

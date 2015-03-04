@@ -16,9 +16,7 @@
         <antlr4-maven.version>4.5</antlr4-maven.version>
         <junit.version>3.8.1</junit.version>
         <scala-library.version>2.11.5</scala-library.version>
-        <parser.directory>/src/main/antlr/com/github/babbupandey/grammar/generated</parser.directory>
-        <sourceDirectory>/src/main/antlr/com/github/babbupandey/grammar/</sourceDirectory>
-        <outputDirectory>/src/main/</outputDirectory>
+        <sourceDirectory>src/main/antlr/com/github/babbupandey/grammar</sourceDirectory>
     </properties>
 
 
@@ -36,11 +34,8 @@
                             <goal>antlr4</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>
-                                ${parser.directory}
-                            </outputDirectory>
                             <sourceDirectory>
-                                ${parser.directory}
+                                ${sourceDirectory}
                             </sourceDirectory>
                             <listener>
                                 false
