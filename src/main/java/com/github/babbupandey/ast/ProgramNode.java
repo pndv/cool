@@ -1,4 +1,4 @@
 package com.github.babbupandey.ast;
 
-public class ProgramNode {
+public abstract class ProgramNode {
 }
