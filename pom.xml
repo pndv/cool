@@ -11,18 +11,42 @@
     <url>http://maven.apache.org</url>
 
     <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <antlr4-runtime.version>4.5</antlr4-runtime.version>
         <antlr4-maven.version>4.5</antlr4-maven.version>
         <junit.version>3.8.1</junit.version>
         <scala-library.version>2.11.5</scala-library.version>
-        <sourceDirectory>src/main/antlr/com/github/babbupandey/grammar</sourceDirectory>
+        <sourceDirectory>src/main/java/com/github/babbupandey/grammar</sourceDirectory>
         <outputDirectory>src/main/java/com/github/babbupandey/visitor</outputDirectory>
     </properties>
 
 
     <build>
         <plugins>
+
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.6.1</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>src/main/java/com/github/babbupandey/visitor</directory>
+                            <includes>
+                                <include>Cool.tokens</include>
+                                <include>CoolLexer.tokens</include>
+                                <include>CoolVisitor.java</include>
+                                <include>CoolBaseVisitor.java</include>
+                                <include>CoolParser.java</include>
+                                <include>CoolLexer.java</include>
+                            </includes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>

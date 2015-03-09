@@ -1,4 +1,4 @@
 package com.github.babbupandey.ast;
 
-public class FeatureNode {
+public class TypeNode {
 }

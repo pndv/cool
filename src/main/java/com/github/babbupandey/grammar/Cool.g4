@@ -10,8 +10,16 @@ cool_class
     ;
 
 feature
+    : method
+    | attribute
+    ;
+
+method
     : identifier LPAREN formal? (COMMA formal)* RPAREN COLON type LCURL expr RCURL
-    | identifier COLON type (LARROW expr)?
+    ;
+
+attribute
+    : identifier COLON type (LARROW expr)?
     ;
 
 formal
@@ -32,7 +40,7 @@ expr
     | expr (STAR|FSLASH) expr #mathsExpr
     | expr (PLUS|MINUS) expr #mathsExpr
     | TILDE expr #tildeExpr
-    | expr (LEQ|LT|EQ) expr #conditionalExpr
+    | expr (LEQ|LT|EQ) expr #comparisonExpr
     | Not expr #notExpr
     | LPAREN expr RPAREN #parenthesisedExpr
     | identifier #identExpr
