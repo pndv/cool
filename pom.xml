@@ -17,6 +17,7 @@
         <junit.version>3.8.1</junit.version>
         <scala-library.version>2.11.5</scala-library.version>
         <sourceDirectory>src/main/antlr/com/github/babbupandey/grammar</sourceDirectory>
+        <outputDirectory>src/main/java/com/github/babbupandey/visitor</outputDirectory>
     </properties>
 
 
@@ -37,6 +38,9 @@
                             <sourceDirectory>
                                 ${sourceDirectory}
                             </sourceDirectory>
+                            <outputDirectory>
+                                ${outputDirectory}
+                            </outputDirectory>
                             <listener>
                                 false
                             </listener>

@@ -5,3 +5,9 @@ gen
 gen/*.idea
 Compilers
 Compilers/*
+src/main/java/com/github/babbupandey/visitor/CoolVisitor.java
+src/main/java/com/github/babbupandey/visitor/Cool.tokens
+src/main/java/com/github/babbupandey/visitor/CoolLexer.java
+src/main/java/com/github/babbupandey/visitor/CoolBaseVisitor.java
+src/main/java/com/github/babbupandey/visitor/CoolParser.java
+src/main/java/com/github/babbupandey/visitor/CoolLexer.tokens
