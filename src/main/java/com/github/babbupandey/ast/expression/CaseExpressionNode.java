@@ -4,7 +4,6 @@ import com.github.babbupandey.ast.feature.FormalNode;
 
 import java.util.AbstractMap;
 import java.util.List;
-import java.util.Map;
 
 public class CaseExpressionNode extends ExpressionNode {
     private ExpressionNode baseExpression;

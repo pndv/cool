@@ -11,7 +11,7 @@ public class ClassNode {
     private List<FeatureNode> featureList;
 
     public ClassNode(TypeNode classType, TypeNode parentType, List<FeatureNode> featureList) {
-        if(classType == null) {
+        if (classType == null) {
             throw new ClassTypeNotDefinedException();
         }
         this.classType = classType;

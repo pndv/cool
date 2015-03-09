@@ -1,8 +1,8 @@
 package com.github.babbupandey.visitor;
 
 import com.github.babbupandey.ast.ClassNode;
-import com.github.babbupandey.ast.feature.FeatureNode;
 import com.github.babbupandey.ast.TypeNode;
+import com.github.babbupandey.ast.feature.FeatureNode;
 import com.github.babbupandey.visitor.expression.TypeExpressionVisitor;
 
 import java.util.ArrayList;

@@ -5,7 +5,7 @@ public class ConditionalExpressionNode extends ExpressionNode {
     private ExpressionNode thenExpressionNode;
     private ExpressionNode elseExpressionNode;
 
-    public ConditionalExpressionNode(ExpressionNode ifExpressionNode,ExpressionNode thenExpressionNode, ExpressionNode elseExpressionNode) {
+    public ConditionalExpressionNode(ExpressionNode ifExpressionNode, ExpressionNode thenExpressionNode, ExpressionNode elseExpressionNode) {
         super(ExpressionNodeType.CONDITIONAL);
         this.ifExpressionNode = ifExpressionNode;
         this.thenExpressionNode = thenExpressionNode;

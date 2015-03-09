@@ -36,7 +36,7 @@ public class FeatureVisitor extends CoolBaseVisitor<FeatureNode> {
     }
 
     private List<FormalNode> getFormalParameters(List<CoolParser.FormalContext> ctx) {
-        if(ctx == null || ctx.isEmpty()) {
+        if (ctx == null || ctx.isEmpty()) {
             return null;
         }
         List<FormalNode> parameterList = new ArrayList<>();

@@ -1,6 +1,12 @@
 package com.github.babbupandey.ast.expression;
 
 public abstract class ExpressionNode {
+    public final ExpressionNodeType nodeType;
+
+    public ExpressionNode(ExpressionNodeType nodeType) {
+        this.nodeType = nodeType;
+    }
+
     public enum ExpressionNodeType {
         ARITHMETIC,
         ASSIGNMENT,
@@ -18,11 +24,5 @@ public abstract class ExpressionNode {
         NOT,
         LITERAL,
         TILDE
-    }
-
-    public final ExpressionNodeType nodeType;
-
-    public ExpressionNode(ExpressionNodeType nodeType) {
-        this.nodeType = nodeType;
     }
 }

@@ -4,8 +4,6 @@ import com.github.babbupandey.ast.IdentifierNode;
 import com.github.babbupandey.ast.TypeNode;
 import com.github.babbupandey.ast.expression.ExpressionNode;
 
-import java.text.Normalizer;
-import java.util.AbstractMap;
 import java.util.List;
 
 public class MethodNode extends FeatureNode {
