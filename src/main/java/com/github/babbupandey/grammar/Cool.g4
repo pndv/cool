@@ -33,8 +33,8 @@ expr
     | If expr Then expr Else expr Fi #conditionalExpr
     | While expr Loop expr Pool #loopExpr
     | LCURL (expr SEMI)+ RCURL #blockExpr
-    | Let identifier COLON type ( LARROW expr )? (COMMA identifier COLON type ( LARROW expr )?)* In expr #letExpr
-    | Case expr Of (identifier COLON type RDARROW expr SEMI)+ Esac #caseExpr
+    | Let formal ( LARROW expr )? (COMMA identifier COLON type ( LARROW expr )?)* In expr #letExpr
+    | Case expr Of (formal RDARROW expr SEMI)+ Esac #caseExpr
     | New type #newExpr
     | IsVoid expr #isVoidExpr
     | expr (STAR|FSLASH) expr #mathsExpr
