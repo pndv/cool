@@ -7,8 +7,8 @@ import com.github.babbupandey.visitor.CoolParser;
 public class ArithmeticExpressionVisitor extends ExpressionVisitor<ArithmeticExpressionNode> {
     @Override
     public ArithmeticExpressionNode visitMathsExpr(CoolParser.MathsExprContext ctx) {
-        ExpressionNode leftExpression = visitExpression(ctx.expr(0));
-        ExpressionNode rightExpression = visitExpression(ctx.expr(1));
+        ExpressionNode leftExpression = visitExpression(ctx.expr());
+        ExpressionNode rightExpression = visitExpression(ctx.rightExpr().expr());
         ArithmeticExpressionNode.ArithmeticOperator operator;
         if (ctx.FSLASH() != null) {
             operator = ArithmeticExpressionNode.ArithmeticOperator.DIVIDE;

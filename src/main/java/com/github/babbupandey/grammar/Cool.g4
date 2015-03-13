@@ -28,23 +28,55 @@ formal
 
 expr
     : identifier LARROW expr #assignExpr
-    | expr(AT type)? DOT identifier LPAREN (expr (COMMA expr)*)? RPAREN #dispatchExpr
+    | expr(AT type)? DOT identifier LPAREN (paramExpr (COMMA paramExpr)*)? RPAREN #dispatchExpr
     | identifier LPAREN (expr (COMMA expr)*)? RPAREN #dispatchExpr
-    | If expr Then expr Else expr Fi #conditionalExpr
-    | While expr Loop expr Pool #loopExpr
+    | If predicateExpr Then thenExpr Else elseExpr Fi #conditionalExpr
+    | While predicateExpr Loop expr Pool #loopExpr
     | LCURL (expr SEMI)+ RCURL #blockExpr
-    | Let formal ( LARROW expr )? (COMMA identifier COLON type ( LARROW expr )?)* In expr #letExpr
+    | Let letInitialisation (COMMA letInitialisation)* In inExpr #letExpr
     | Case expr Of (formal RDARROW expr SEMI)+ Esac #caseExpr
     | New type #newExpr
     | IsVoid expr #isVoidExpr
-    | expr (STAR|FSLASH) expr #mathsExpr
-    | expr (PLUS|MINUS) expr #mathsExpr
+    | expr (STAR|FSLASH) rightExpr #mathsExpr
+    | expr (PLUS|MINUS) rightExpr #mathsExpr
     | TILDE expr #tildeExpr
-    | expr (LEQ|LT|EQ) expr #comparisonExpr
+    | expr (LEQ|LT|EQ) rightExpr #comparisonExpr
     | Not expr #notExpr
     | LPAREN expr RPAREN #parenthesisedExpr
     | identifier #identExpr
     | (Integer | StringLiteral | True | False) #literalExpr
+    ;
+
+predicateExpr
+    : expr
+    ;
+
+thenExpr
+    : expr
+    ;
+
+elseExpr
+    : expr
+    ;
+
+leftExpr
+    : expr
+    ;
+
+rightExpr
+    : expr
+    ;
+
+inExpr
+    : expr
+    ;
+
+paramExpr
+    : expr
+    ;
+
+letInitialisation
+    : formal ( LARROW expr )?
     ;
 
 identifier

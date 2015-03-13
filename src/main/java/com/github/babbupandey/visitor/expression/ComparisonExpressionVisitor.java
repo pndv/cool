@@ -7,8 +7,8 @@ import com.github.babbupandey.visitor.CoolParser;
 public class ComparisonExpressionVisitor extends ExpressionVisitor<ComparisonExpressionNode> {
     @Override
     public ComparisonExpressionNode visitComparisonExpr(CoolParser.ComparisonExprContext ctx) {
-        ExpressionNode leftExpression = visitExpression(ctx.expr(0));
-        ExpressionNode rightExpression = visitExpression(ctx.expr(1));
+        ExpressionNode leftExpression = visitExpression(ctx.expr());
+        ExpressionNode rightExpression = visitExpression(ctx.rightExpr().expr());
         ComparisonExpressionNode.ComparisonType operator;
         if (ctx.EQ() != null) {
             operator = ComparisonExpressionNode.ComparisonType.EQ;
