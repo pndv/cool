@@ -20,7 +20,7 @@ public class LetExpressionVisitor extends ExpressionVisitor<LetExpressionNode> {
         for(CoolParser.LetInitialisationContext c : ctx.letInitialisation()) {
             IdentifierExpressionNode id =
                     new IdentifierExpressionNode(new IdentifierVisitor().visitIdentifier(c.formal().identifier()));
-            TypeNode type = new TypeNode();
+            TypeNode type = new TypeExpressionVisitor().visitType(c.formal().type());
             ExpressionNode expression = new ExpressionVisitor<>().visitExpression(c.expr());
             idInitialisation.put(id, new AbstractMap.SimpleEntry<>(type, expression));
         }

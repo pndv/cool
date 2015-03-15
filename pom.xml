@@ -16,7 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <antlr4-runtime.version>4.5</antlr4-runtime.version>
         <antlr4-maven.version>4.5</antlr4-maven.version>
-        <junit.version>3.8.1</junit.version>
+        <junit.version>4.12</junit.version>
         <scala-library.version>2.11.5</scala-library.version>
         <sourceDirectory>src/main/java/com/github/babbupandey/grammar</sourceDirectory>
         <outputDirectory>src/main/java/com/github/babbupandey/visitor</outputDirectory>

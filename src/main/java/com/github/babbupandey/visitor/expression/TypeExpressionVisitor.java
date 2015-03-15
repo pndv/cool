@@ -8,6 +8,6 @@ public class TypeExpressionVisitor extends CoolBaseVisitor<TypeNode> {
 
     @Override
     public TypeNode visitType(CoolParser.TypeContext ctx) {
-        return super.visitType(ctx);
+        return new TypeNode(ctx.getText());
     }
 }
