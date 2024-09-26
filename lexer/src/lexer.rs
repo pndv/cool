@@ -235,10 +235,11 @@ fn get_int_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<
   
   let mut int_val = initial_digit as i32 - '0' as i32;
   
-  while let Some(c) = char_iter.peek() {
+  while let Some(c) = char_iter.by_ref().peek() {
     match c { 
      '0'..='9' => {
-       let t = *c as i32 - '0' as i32;
+       let i = char_iter.next().unwrap();
+       let t = i as i32 - '0' as i32;
        int_val *= 10;
        int_val += t;
      }
