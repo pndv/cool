@@ -1,6 +1,4 @@
-﻿use crate::tokens;
-
-pub const END_OF_FILE: char = '\0';
+﻿pub const END_OF_FILE: char = '\0';
 pub const DOT: char = '.';
 pub const AT: char = '@';
 pub const TILDE: char = '~';
@@ -9,7 +7,7 @@ pub const FORWARD_SLASH: char = '/';
 pub const PLUS: char = '+';
 pub const MINUS: char = '-';
 pub const LESS: char = '<';
-pub const EQUAL: char = '>';
+pub const EQUAL: char = '=';
 pub const DOUBLE_QUOTE: char = '"';
 pub const SEMI_COLON: char = ';';
 pub const COLON: char = ':';
@@ -19,22 +17,14 @@ pub const RIGHT_PAREN: char = ')';
 pub const LEFT_CURL: char = '{';
 pub const RIGHT_CURL: char = '}';
 
-trait BaseToken {
-  fn get_type(&self) -> TokenType;
-
-  fn file_name(&self) -> &str;
-
-  fn line_num(&self) -> u32;
-
-  fn line_pos(&self) -> u32;
-}
 
 
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum Token {
   Empty,
-  Error { line_num: u32, line_pos: u32 },
+  Error { error_char: String, line_num: u32, line_pos: u32 },
+  Comment { comment_value: String, line_num: u32, line_pos: u32 },
     
   Str { value: String, line_num: u32, line_pos: u32 },
   Ident { value: String, line_num: u32, line_pos: u32 },
@@ -42,6 +32,8 @@ pub enum Token {
 
   Dot { line_num: u32, line_pos: u32 },
   Comma { line_num: u32, line_pos: u32 },
+  
+  Assign { line_num: u32, line_pos: u32 }, // `<-`
   
   At { line_num: u32, line_pos: u32 },
   Tilde { line_num: u32, line_pos: u32 },
@@ -157,6 +149,7 @@ pub enum Operators {
   Colon
 }
 
+#[derive(PartialEq)]
 pub enum WhiteSpace {
   Space,
   Tab,

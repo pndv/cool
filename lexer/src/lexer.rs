@@ -6,7 +6,7 @@ use std::iter::{Map, Peekable};
 use crate::tokens::WhiteSpace::{CarriageReturn, NewLine, Space, Tab};
 use crate::tokens::*;
 use WhiteSpace::{FormFeed, VerticalTab};
-use crate::tokens::Token::Else;
+use crate::tokens::Token::LParen;
 
 enum TokenReadState {
   Start,
@@ -19,6 +19,11 @@ enum TokenReadState {
 
 pub fn get_program(file_path: &str) {
   let (mut char_iter, mut line_num, mut line_pos) = get_buf_reader(file_path);
+
+  while let Some(t) = get_next_token(&mut char_iter, &mut line_num, &mut line_pos) {
+    
+  }
+  
 }
 
 fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
@@ -34,7 +39,9 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
       match ws {
         Space | Tab | FormFeed => *line_pos += 1,
         CarriageReturn | NewLine | VerticalTab => {
-          char_iter.next_if_eq(&'\n'); // consume CRLF as a single next line
+          if ws == CarriageReturn {
+            char_iter.next_if_eq(&'\n'); // consume CRLF as a single next line
+          }
           *line_num += 1;
           *line_pos = 0;
         }
@@ -43,27 +50,31 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
       continue;
     }
 
+    *line_pos += 1;
     match c {
       LESS => {
-        if let Some(_) = char_iter.next_if_eq(&EQUAL) {
+        if char_iter.next_if_eq(&EQUAL).is_some() {
+          *line_pos += 1;
           token = Token::LessOrEqual { line_num: *line_num, line_pos: *line_pos };
+        } else if char_iter.next_if_eq(&MINUS).is_some()  {
+          *line_pos += 1;
+          token = Token::Assign { line_num: *line_num, line_pos: *line_pos };
         } else {
           token = Token::Less { line_num: *line_num, line_pos: *line_pos };
         }
         break;
       }
-      DOT => { token = Token::Dot { line_num: *line_num, line_pos: *line_pos };break; }
-      COMMA => { token = Token::Comma { line_num: *line_num, line_pos: *line_pos };break; }
-      AT => { token = Token::At { line_num: *line_num, line_pos: *line_pos }; break; }
-      TILDE => { token = Token::Tilde { line_num: *line_num, line_pos: *line_pos }; break; }
-      STAR => { token = Token::Star { line_num: *line_num, line_pos: *line_pos }; break; }
-      FORWARD_SLASH => { token = Token::ForwardSlash { line_num: *line_num, line_pos: *line_pos }; break; }
+      DOT => { token = Token::Dot { line_num: *line_num, line_pos: *line_pos };  break; }
+      COMMA => { token = Token::Comma { line_num: *line_num, line_pos: *line_pos }; break; }
+      AT => { token = Token::At { line_num: *line_num, line_pos: *line_pos };  break; }
+      TILDE => { token = Token::Tilde { line_num: *line_num, line_pos: *line_pos };  break; }
+      STAR => { token = Token::Star { line_num: *line_num, line_pos: *line_pos };  break; }
+      FORWARD_SLASH => { token = Token::ForwardSlash { line_num: *line_num, line_pos: *line_pos };   break; }
       PLUS => { token = Token::Plus { line_num: *line_num, line_pos: *line_pos }; break; }
       MINUS => {
-        if let Some(_) = char_iter.next_if_eq(&MINUS){
-          // process single line comment
-          
-          
+        if char_iter.next_if_eq(&MINUS).is_some() {
+          *line_pos += 1;
+          token = process_single_line_comment(char_iter, line_num, line_pos);
         } else {
           token = Token::Minus { line_num: *line_num, line_pos: *line_pos };
         }
@@ -72,8 +83,16 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
       EQUAL => { token = Token::Equal { line_num: *line_num, line_pos: *line_pos }; break; }
       COLON => { token = Token::Colon { line_num: *line_num, line_pos: *line_pos }; break; }
       SEMI_COLON => { token = Token::SemiColon { line_num: *line_num, line_pos: *line_pos }; break; }
-      LEFT_PAREN => { token = Token::LParen { line_num: *line_num, line_pos: *line_pos }; break; }
       RIGHT_PAREN => { token = Token::RParen { line_num: *line_num, line_pos: *line_pos }; break; }
+      LEFT_PAREN => {
+        if char_iter.next_if_eq(&STAR).is_some() {
+          *line_pos += 1;
+          token = process_multi_line_comment(char_iter, line_num, line_pos);
+        } else {
+          token = Token::LParen { line_num: *line_num, line_pos: *line_pos };
+        }
+        break; 
+      }
       LEFT_CURL => { token = Token::LCurl { line_num: *line_num, line_pos: *line_pos }; break; }
       RIGHT_CURL => { token = Token::RCurl { line_num: *line_num, line_pos: *line_pos }; break; }
       DOUBLE_QUOTE => { token = get_string_token(char_iter, line_num, line_pos); break; }
@@ -93,7 +112,90 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
   output
 }
 
+fn process_single_line_comment(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+                               line_num: &mut u32,
+                               line_pos: &mut u32) -> Token {
+  let mut comment = String::new();
+  let mut token = Token::Comment { comment_value: String::new(), line_num: *line_num, line_pos: *line_pos };
+  // Comments are between `--` or `--` and till end of line
+  while let Some(c) = char_iter.next() {
+    *line_pos += 1;
+    
+    match c {
+      MINUS => {
+        if char_iter.next_if_eq(&MINUS).is_some() {
+          // comment ends
+          *line_pos +=1 ;
+          break;
+        }
+      }
+      '\r' | '\n' => {
+        if c == '\r' {
+          // consume \r\n together
+          let _ = char_iter.next_if_eq(&'\n');
+        }
+        
+        *line_pos = 0;
+        *line_num += 1;
+        
+        break;
+      }
+      _ => {
+        comment.push(c);
+        continue;
+      }
+    }
+  }
 
+  if let Token::Comment { ref mut comment_value, .. } = token {
+    *comment_value = comment;
+  }
+  
+  token
+}
+
+fn process_multi_line_comment(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+                               line_num: &mut u32,
+                               line_pos: &mut u32) -> Token {
+  let mut comment = String::new();
+  let mut token = Token::Comment { comment_value: String::new(), line_num: *line_num, line_pos: *line_pos };
+  // Comments are between `(*` and `*)` 
+  while let Some(c) = char_iter.next() {
+    *line_pos += 1;
+    
+    match c {
+      STAR => {
+        if char_iter.next_if_eq(&RIGHT_PAREN).is_some() {
+          // comment ends
+          *line_pos += 1;
+          break;
+        }
+      }
+      '\r' | '\n' => {
+        comment.push(c);
+        if c == '\r' {
+          // consume \r\n together
+          if let Some(d) = char_iter.next_if_eq(&'\n') {
+            comment.push(d)
+          }
+        }
+        
+        *line_pos = 0;
+        *line_num += 1;
+      }
+      _ => {
+        comment.push(c);
+        continue;
+      }
+    }
+  }
+
+  if let Token::Comment { ref mut comment_value, .. } = token {
+    *comment_value = comment;
+  }
+  
+  token
+}
 
 fn get_ident_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
                    line_num: &mut u32,
@@ -103,23 +205,21 @@ fn get_ident_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Resul
   let mut token: Token = Token::Empty;
 
   let mut ident_val = String::from(initial_ident);
-  
-  while let Some(c) = char_iter.next() {
-    match c { 
-     'a'..='z' | 'A'..='Z' | '_'  => {
-       ident_val.push(c);
-     }
-      
-      ' ' | '\t' => {
-        // end of token
-        break;
-      }
-      
+
+  for c in char_iter.by_ref() {
+    *line_pos += 1;
+    match c {
+      'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => ident_val.push(c),
       _ => {
-        token  = Token::Error {line_num: *line_num, line_pos: *line_pos};
-        return token;
+        if c == '\r' {
+          char_iter.next_if_eq(&'\n'); // consume \r\n
+          *line_pos = 0;
+          *line_num += 1;
+        } 
+        
+        break; 
       }
-    }  
+    }
   }
   
   token = Token::Ident {value: ident_val, line_num: *line_num, line_pos: *line_pos};
@@ -133,25 +233,16 @@ fn get_int_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<
 
   let mut token: Token = Token::Empty;
   
-  let mut int_val = initial_digit as i32;
+  let mut int_val = initial_digit as i32 - '0' as i32;
   
   while let Some(c) = char_iter.peek() {
     match c { 
      '0'..='9' => {
-       let t = *c as i32;
+       let t = *c as i32 - '0' as i32;
        int_val *= 10;
        int_val += t;
      }
-      
-      ' ' | '\t' => {
-        // end of token
-        break;
-      }
-      
-      _ => {
-        token  = Token::Error {line_num: *line_num, line_pos: *line_pos};
-        return token;
-      }
+      _ => break,
     }  
   }
   
@@ -167,7 +258,7 @@ fn get_string_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Resu
     *line_pos += 1;
     match c {
       '\0' => {
-        return Token::Error {line_num: *line_num, line_pos: *line_pos}
+        return Token::Error {error_char: String::from("Null Character"), line_num: *line_num, line_pos: *line_pos}
       }
       '\\' => { // cover escaped characters
         let p = char_iter.peek();
@@ -262,10 +353,20 @@ mod tests {
 
   #[test]
   fn test_tokeniser() {
-    let (mut buf_reader, mut line_num, mut line_pos) = get_buf_reader(TEST_COOL_FILE_PATH);
-
-    while let Some(t) = get_next_token(&mut buf_reader, &mut line_num, &mut line_pos) {
-      println!("{:?}", t);
+    // let files = ["test_resources/cool.cl", "test_resources/arith.cl"];
+    let files = ["test_resources/arith.cl"];
+    
+    for file in &files {
+      println!("\n\n=== Testing {file} ===\n\n");
+      
+      let (mut buf_reader, mut line_num, mut line_pos) = get_buf_reader(file);
+      
+      while let Some(t) = get_next_token(&mut buf_reader, &mut line_num, &mut line_pos) {
+        println!("{:?}", t);
+        let is_error_token = matches!(t, Token::Error { .. });
+        assert!(!is_error_token);
+      }
     }
+
   }
 }

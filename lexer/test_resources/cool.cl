@@ -1,4 +1,5 @@
-class Main inherits IO {
+class Main inherits IO { -- test comment with end of line
+    -- test comment between dashes --
     main() : SELF_TYPE {
 	{
 	    out_string((new Object).type_name().substr(4,1)).
