@@ -8,7 +8,7 @@ use crate::tokens::*;
 use WhiteSpace::{FormFeed, VerticalTab};
 
 
-pub fn get_program_syntax_tree(file_path: &str) -> Result<Vec<Token>> {
+pub fn get_program_token_stack(file_path: &str) -> Result<Vec<Token>> {
   let (mut char_iter, mut line_num, mut line_pos) = get_buf_reader(file_path);
 
   let mut tokens: Vec<Token> = Vec::new();
@@ -226,58 +226,12 @@ fn get_ident_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Resul
   }
   
   token = Token::Ident {value: ident_val, line_num: *line_num, line_pos: *line_pos};
-  let keyword_token = get_keyword_token(&token);
-  if keyword_token != None {
-    token = keyword_token.unwrap();
+  
+  if let Some(keyword_token)  = token.get_keyword() {
+    token = keyword_token;
   }
 
   token
-}
-
-fn get_keyword_token(token: &Token) -> Option<Token> {
-  /*
-  Except for the constants true and false, keywords are case-insensitive. To conform to the rules
-  for other objects, the first letter of true and false must be lowercase; the trailing letters may
-  be upper or lower case.
-   */
-  let mut output: Option<Token> = None;
-  match token {
-    Token::Ident {ref value, line_num, line_pos } => {
-      let lower_case = value.to_lowercase();
-      let v = lower_case.as_str();
-
-      match v {
-        "class" => output = Some(Token::Class { line_num: *line_num, line_pos: *line_pos }),
-        "inherits" => output = Some(Token::Inherits { line_num: *line_num, line_pos: *line_pos }),
-
-        "if" => output = Some(Token::If { line_num: *line_num, line_pos: *line_pos }),
-        "then" => output = Some(Token::Then { line_num: *line_num, line_pos: *line_pos }),
-        "else" => output = Some(Token::Else { line_num: *line_num, line_pos: *line_pos }),
-
-        "fi" => output = Some(Token::EndIf { line_num: *line_num, line_pos: *line_pos }),
-        "in" => output = Some(Token::In { line_num: *line_num, line_pos: *line_pos }),
-        "let" => output = Some(Token::Let { line_num: *line_num, line_pos: *line_pos }),
-
-        "isvoid" => output = Some(Token::IsVoid { line_num: *line_num, line_pos: *line_pos }),
-        "not" => output = Some(Token::Not { line_num: *line_num, line_pos: *line_pos }),
-
-        "loop" => output = Some(Token::Loop { line_num: *line_num, line_pos: *line_pos }),
-        "pool" => output = Some(Token::EndLoop { line_num: *line_num, line_pos: *line_pos }),
-        "while" => output = Some(Token::While { line_num: *line_num, line_pos: *line_pos }),
-
-        "case"=> output = Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
-        "esac" => output = Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
-        "new" => output = Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
-        "of" => output = Some(Token::Of { line_num: *line_num, line_pos: *line_pos }),
-        "false" if value.chars().next().unwrap() == 'f' => output = Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
-        "true" if value.chars().next().unwrap() == 't' => output = Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
-        &_ => output = None,
-      }
-    }
-    _ => output = None,
-  }
-
-  output
 }
 
 fn get_int_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
@@ -399,7 +353,7 @@ mod tests {
 
   #[test]
   fn test_buf_reader() {
-    let (buf_reader, line_num, line_pos) = get_buf_reader(TEST_TEXT_FILE_PATH);
+    let (buf_reader, _line_num, _line_pos) = get_buf_reader(TEST_TEXT_FILE_PATH);
 
     for c in buf_reader {
       print!("{c}");
@@ -408,10 +362,9 @@ mod tests {
 
   #[test]
   fn test_tokeniser() {
-    // let files = ["test_resources/cool.cl", "test_resources/arith.cl"];
-    let files = ["test_resources/arith.cl"];
+    let files = ["test_resources/cool.cl", "test_resources/arith.cl"];
     
-    for file in &files {
+    for file in files {
       println!("\n\n=== Testing {file} ===\n\n");
       
       let (mut buf_reader, mut line_num, mut line_pos) = get_buf_reader(file);
@@ -423,5 +376,16 @@ mod tests {
       }
     }
 
+  }
+
+  #[test]
+  fn test_token_stack() {
+    let file = "test_resources/arith.cl";
+    let result = get_program_token_stack(file);
+    assert!(result.is_ok());
+    let stack = result.unwrap();
+    for s in stack {
+      println!("{:?}", s);
+    }
   }
 }
