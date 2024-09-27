@@ -1,12 +1,12 @@
-﻿use std::cmp::PartialEq;
-use std::fs::File;
+﻿use std::fs::File;
 use std::io::{BufReader, Bytes, Error, ErrorKind, Read, Result, Seek, SeekFrom};
 use std::iter::{Map, Peekable};
 
 use crate::tokens::WhiteSpace::{CarriageReturn, NewLine, Space, Tab};
-use crate::tokens::*;
+use crate::tokens::{AT, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LEFT_CURL, LEFT_PAREN, LESS_THAN, MINUS, PLUS, RIGHT_CURL, RIGHT_PAREN, SEMI_COLON, STAR, TILDE, Token, WhiteSpace};
 use WhiteSpace::{FormFeed, VerticalTab};
 
+type BufferedCharReader = Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>;
 
 pub fn get_program_token_stack(file_path: &str) -> Result<Vec<Token>> {
   let (mut char_iter, mut line_num, mut line_pos) = get_buf_reader(file_path);
@@ -23,7 +23,7 @@ pub fn get_program_token_stack(file_path: &str) -> Result<Vec<Token>> {
   }
 }
 
-fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+fn get_next_token(char_iter: &mut BufferedCharReader,
                   line_num: &mut u32,
                   line_pos: &mut u32) -> Option<Token> {
   let mut output: Option<Token> = None;
@@ -116,7 +116,7 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
   output
 }
 
-fn process_single_line_comment(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+fn process_single_line_comment(char_iter: &mut BufferedCharReader,
                                line_num: &mut u32,
                                line_pos: &mut u32) -> Token {
   let mut comment = String::new();
@@ -158,7 +158,7 @@ fn process_single_line_comment(char_iter: &mut Peekable<Map<Bytes<BufReader<File
   token
 }
 
-fn process_multi_line_comment(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+fn process_multi_line_comment(char_iter: &mut BufferedCharReader,
                                line_num: &mut u32,
                                line_pos: &mut u32) -> Token {
   let mut comment = String::new();
@@ -180,7 +180,7 @@ fn process_multi_line_comment(char_iter: &mut Peekable<Map<Bytes<BufReader<File>
         if c == '\r' {
           // consume \r\n together
           if let Some(d) = char_iter.next_if_eq(&'\n') {
-            comment.push(d)
+            comment.push(d);
           }
         }
         
@@ -201,12 +201,10 @@ fn process_multi_line_comment(char_iter: &mut Peekable<Map<Bytes<BufReader<File>
   token
 }
 
-fn get_ident_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+fn get_ident_token(char_iter: &mut BufferedCharReader,
                    line_num: &mut u32,
                    line_pos: &mut u32,
                    initial_ident: char) -> Token {
-
-  let mut token: Token = Token::Empty;
 
   let mut ident_val = String::from(initial_ident);
 
@@ -225,7 +223,7 @@ fn get_ident_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Resul
     }
   }
   
-  token = Token::Ident {value: ident_val, line_num: *line_num, line_pos: *line_pos};
+  let mut token = Token::Ident {value: ident_val, line_num: *line_num, line_pos: *line_pos};
   
   if let Some(keyword_token)  = token.get_keyword() {
     token = keyword_token;
@@ -234,13 +232,11 @@ fn get_ident_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Resul
   token
 }
 
-fn get_int_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+fn get_int_token(char_iter: &mut BufferedCharReader,
                  line_num: &mut u32,
                  line_pos: &mut u32, 
                  initial_digit: char) -> Token {
 
-  let mut token: Token = Token::Empty;
-  
   let mut int_val = initial_digit as i32 - '0' as i32;
   
   while let Some(c) = char_iter.by_ref().peek() {
@@ -254,12 +250,11 @@ fn get_int_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<
       _ => break,
     }  
   }
-  
-  token = Token::Int {value: int_val, line_num: *line_num, line_pos: *line_pos};
-  token
+
+  Token::Int {value: int_val, line_num: *line_num, line_pos: *line_pos}
 }
 
-fn get_string_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
+fn get_string_token(char_iter: &mut BufferedCharReader,
                     line_num: &mut u32,
                     line_pos: &mut u32) -> Token {
   let mut token_str = String::new();
@@ -310,7 +305,7 @@ fn map_result_to_char(result: Result<u8>) -> char {
   }
 }
 
-fn get_buf_reader(file_path: &str) -> (Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>, u32, u32) {
+fn get_buf_reader(file_path: &str) -> (BufferedCharReader, u32, u32) {
   let file_open = File::open(file_path);
 
   if let Err(e) = file_open {
@@ -321,7 +316,7 @@ fn get_buf_reader(file_path: &str) -> (Peekable<Map<Bytes<BufReader<File>>, fn(R
 
   // Ignore byte order marker, if present. UTF-8 byte-order marker is first 3 bytes of file = [0xEF 0xBB 0xBF]
   let mut read_byte = [0; 3]; // Buffer to hold 3 bytes
-  let mut r = buf_reader.read(&mut read_byte);
+  let r = buf_reader.read(&mut read_byte);
 
   if let Err(e) = r {
     panic!("Failed to read file with error {}", e);
@@ -336,7 +331,7 @@ fn get_buf_reader(file_path: &str) -> (Peekable<Map<Bytes<BufReader<File>>, fn(R
 
   let map: Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char> = buf_reader.bytes()
                                                                            .map(map_result_to_char);
-  let peekable_buffer: Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>> = map.peekable();
+  let peekable_buffer: BufferedCharReader = map.peekable();
 
   let line_num = 1;
   let line_pos = 1;
@@ -348,11 +343,10 @@ fn get_buf_reader(file_path: &str) -> (Peekable<Map<Bytes<BufReader<File>>, fn(R
 mod tests {
   use super::*;
 
-  const TEST_TEXT_FILE_PATH: &str = "test_resources/test";
-  const TEST_COOL_FILE_PATH: &str = "test_resources/cool.cl";
-
   #[test]
   fn test_buf_reader() {
+    const TEST_TEXT_FILE_PATH: &str = "test_resources/test";
+    
     let (buf_reader, _line_num, _line_pos) = get_buf_reader(TEST_TEXT_FILE_PATH);
 
     for c in buf_reader {

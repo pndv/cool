@@ -1,5 +1,4 @@
-﻿pub const END_OF_FILE: char = '\0';
-pub const DOT: char = '.';
+﻿pub const DOT: char = '.';
 pub const AT: char = '@';
 pub const TILDE: char = '~';
 pub const STAR: char = '*';
@@ -18,22 +17,20 @@ pub const RIGHT_PAREN: char = ')';
 pub const LEFT_CURL: char = '{';
 pub const RIGHT_CURL: char = '}';
 
-
-
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum Token {
   Empty,
   Error { error_char: String, line_num: u32, line_pos: u32 },
   Comment { comment_value: String, line_num: u32, line_pos: u32 },
-    
+
   Str { value: String, line_num: u32, line_pos: u32 },
   Ident { value: String, line_num: u32, line_pos: u32 },
   Int { value: i32, line_num: u32, line_pos: u32 },
 
   Dot { line_num: u32, line_pos: u32 },
   Comma { line_num: u32, line_pos: u32 },
-  
+
   AssignValue { line_num: u32, line_pos: u32 }, // `<-`
   Lambda { line_num: u32, line_pos: u32 }, // `=>`
 
@@ -46,15 +43,15 @@ pub enum Token {
   LessOrEqual { line_num: u32, line_pos: u32 },
   Less { line_num: u32, line_pos: u32 },
   Equal { line_num: u32, line_pos: u32 },
-  
+
   Colon { line_num: u32, line_pos: u32 },
   SemiColon { line_num: u32, line_pos: u32 },
-  
+
   LParen { line_num: u32, line_pos: u32 },
   RParen { line_num: u32, line_pos: u32 },
   LCurl { line_num: u32, line_pos: u32 },
   RCurl { line_num: u32, line_pos: u32 },
-  
+
   Class { line_num: u32, line_pos: u32 },
   Inherits { line_num: u32, line_pos: u32 },
 
@@ -83,17 +80,9 @@ pub enum Token {
 }
 
 impl Token {
-  pub fn is_keyword(&self) -> bool {
-    matches!(self, Token::Ident {  .. } | Token::Inherits { .. } | Token::If { .. } | Token::Then { .. }
-          | Token::Else { .. } | Token::EndIf { .. } | Token::While { .. } | Token::Loop { .. }
-          | Token::EndLoop { .. } | Token::Let { .. } | Token::In { .. } | Token::Case { .. }
-          | Token::Of { .. } | Token::EndCase { .. } | Token::New { .. } | Token::IsVoid { .. }
-          | Token::Not { .. } | Token::True { .. } | Token::False { .. })
-  }
-
   pub fn get_keyword(&self) -> Option<Token> {
     match self {
-      Token::Ident {ref value, ref line_num, ref line_pos } => {
+      Token::Ident { ref value, ref line_num, ref line_pos } => {
         let lower_case = value.to_lowercase();
         let v = lower_case.as_str();
         match v {
@@ -115,45 +104,19 @@ impl Token {
           "pool" => Some(Token::EndLoop { line_num: *line_num, line_pos: *line_pos }),
           "while" => Some(Token::While { line_num: *line_num, line_pos: *line_pos }),
 
-          "case"=> Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
+          "case" => Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
           "esac" => Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
           "new" => Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
           "of" => Some(Token::Of { line_num: *line_num, line_pos: *line_pos }),
           "false" if value.starts_with('f') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
-          "true" if value.starts_with('t') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
+          "true" if value.starts_with('t') => Some(Token::True { line_num: *line_num, line_pos: *line_pos }),
           &_ => None,
         }
-
-      },
+      }
       _ => None,
     }
   }
 }
-
-#[derive(PartialEq)]
-pub enum Keywords {
-  Class,
-  Inherits,
-  If,
-  Then,
-  Else,
-  Fi,
-  While,
-  Loop,
-  Pool,
-  Let,
-  In,
-  Case,
-  Of,
-  Esac,
-  New,
-  IsVoid,
-  Not,
-  True,
-  False,
-}
-
-
 
 #[derive(PartialEq)]
 pub enum WhiteSpace {
@@ -166,17 +129,6 @@ pub enum WhiteSpace {
 }
 
 impl WhiteSpace {
-  pub fn value(&self) -> char {
-    match self {
-      WhiteSpace::Space => ' ',
-      WhiteSpace::Tab => '\t',
-      WhiteSpace::NewLine => '\n',
-      WhiteSpace::CarriageReturn => '\r',
-      WhiteSpace::FormFeed => '\u{c}', // \f
-      WhiteSpace::VerticalTab => '\u{b}', // \v
-    }
-  }
-
   pub fn get(value: char) -> WhiteSpace {
     match value {
       ' ' => WhiteSpace::Space,
