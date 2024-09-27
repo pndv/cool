@@ -84,14 +84,49 @@ pub enum Token {
 
 impl Token {
   pub fn is_keyword(&self) -> bool {
-    match self {
-          Token::Ident {ref value,  .. } | Token::Inherits { .. } | Token::If { .. } | Token::Then { .. }
+    matches!(self, Token::Ident {  .. } | Token::Inherits { .. } | Token::If { .. } | Token::Then { .. }
           | Token::Else { .. } | Token::EndIf { .. } | Token::While { .. } | Token::Loop { .. }
           | Token::EndLoop { .. } | Token::Let { .. } | Token::In { .. } | Token::Case { .. }
           | Token::Of { .. } | Token::EndCase { .. } | Token::New { .. } | Token::IsVoid { .. }
-          | Token::Not { .. } | Token::True { .. } | Token::False { .. } => true,
-          _ => false,
-      }
+          | Token::Not { .. } | Token::True { .. } | Token::False { .. })
+  }
+
+  pub fn get_keyword(&self) -> Option<Token> {
+    match self {
+      Token::Ident {ref value, ref line_num, ref line_pos } => {
+        let lower_case = value.to_lowercase();
+        let v = lower_case.as_str();
+        match v {
+          "class" => Some(Token::Class { line_num: *line_num, line_pos: *line_pos }),
+          "inherits" => Some(Token::Inherits { line_num: *line_num, line_pos: *line_pos }),
+
+          "if" => Some(Token::If { line_num: *line_num, line_pos: *line_pos }),
+          "then" => Some(Token::Then { line_num: *line_num, line_pos: *line_pos }),
+          "else" => Some(Token::Else { line_num: *line_num, line_pos: *line_pos }),
+
+          "fi" => Some(Token::EndIf { line_num: *line_num, line_pos: *line_pos }),
+          "in" => Some(Token::In { line_num: *line_num, line_pos: *line_pos }),
+          "let" => Some(Token::Let { line_num: *line_num, line_pos: *line_pos }),
+
+          "isvoid" => Some(Token::IsVoid { line_num: *line_num, line_pos: *line_pos }),
+          "not" => Some(Token::Not { line_num: *line_num, line_pos: *line_pos }),
+
+          "loop" => Some(Token::Loop { line_num: *line_num, line_pos: *line_pos }),
+          "pool" => Some(Token::EndLoop { line_num: *line_num, line_pos: *line_pos }),
+          "while" => Some(Token::While { line_num: *line_num, line_pos: *line_pos }),
+
+          "case"=> Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
+          "esac" => Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
+          "new" => Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
+          "of" => Some(Token::Of { line_num: *line_num, line_pos: *line_pos }),
+          "false" if value.starts_with('f') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
+          "true" if value.starts_with('t') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
+          &_ => None,
+        }
+
+      },
+      _ => None,
+    }
   }
 }
 
