@@ -1,29 +1,26 @@
 ﻿use std::cmp::PartialEq;
 use std::fs::File;
-use std::io::{BufReader, Bytes, Read, Result, Seek, SeekFrom};
+use std::io::{BufReader, Bytes, Error, ErrorKind, Read, Result, Seek, SeekFrom};
 use std::iter::{Map, Peekable};
 
 use crate::tokens::WhiteSpace::{CarriageReturn, NewLine, Space, Tab};
 use crate::tokens::*;
 use WhiteSpace::{FormFeed, VerticalTab};
-use crate::tokens::Token::LParen;
 
-enum TokenReadState {
-  Start,
-  SeenInt,
-  SeenString,
-  SeenSingleComment,
-  SeenNewlineInString,
-  End,
-}
 
-pub fn get_program(file_path: &str) {
+pub fn get_program_syntax_tree(file_path: &str) -> Result<Vec<Token>> {
   let (mut char_iter, mut line_num, mut line_pos) = get_buf_reader(file_path);
 
+  let mut tokens: Vec<Token> = Vec::new();
   while let Some(t) = get_next_token(&mut char_iter, &mut line_num, &mut line_pos) {
-    
+    tokens.push(t);
   }
-  
+
+  if tokens.is_empty() {
+    Err(Error::from(ErrorKind::InvalidInput))
+  } else {
+    Ok(tokens)
+  }
 }
 
 fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
@@ -31,8 +28,7 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
                   line_pos: &mut u32) -> Option<Token> {
   let mut output: Option<Token> = None;
   let mut token: Token = Token::Empty;
-  let mut token_state = TokenReadState::Start;
-  
+
   while let Some(c) = char_iter.next() {
     if WhiteSpace::is_whitespace(c) {
       let ws = WhiteSpace::get(c);
@@ -52,13 +48,13 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
 
     *line_pos += 1;
     match c {
-      LESS => {
+      LESS_THAN => {
         if char_iter.next_if_eq(&EQUAL).is_some() {
           *line_pos += 1;
           token = Token::LessOrEqual { line_num: *line_num, line_pos: *line_pos };
         } else if char_iter.next_if_eq(&MINUS).is_some()  {
           *line_pos += 1;
-          token = Token::Assign { line_num: *line_num, line_pos: *line_pos };
+          token = Token::AssignValue { line_num: *line_num, line_pos: *line_pos };
         } else {
           token = Token::Less { line_num: *line_num, line_pos: *line_pos };
         }
@@ -80,7 +76,15 @@ fn get_next_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result
         }
         break;
       }
-      EQUAL => { token = Token::Equal { line_num: *line_num, line_pos: *line_pos }; break; }
+      EQUAL => {
+        if char_iter.next_if_eq(&GREATER_THAN).is_some() {
+          *line_pos += 1;
+          token = Token::Lambda {line_num: *line_num, line_pos: *line_pos};
+        } else {
+          token = Token::Equal { line_num: *line_num, line_pos: *line_pos };
+        }
+        break;
+      }
       COLON => { token = Token::Colon { line_num: *line_num, line_pos: *line_pos }; break; }
       SEMI_COLON => { token = Token::SemiColon { line_num: *line_num, line_pos: *line_pos }; break; }
       RIGHT_PAREN => { token = Token::RParen { line_num: *line_num, line_pos: *line_pos }; break; }
@@ -210,20 +214,70 @@ fn get_ident_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Resul
     *line_pos += 1;
     match c {
       'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => ident_val.push(c),
-      _ => {
-        if c == '\r' {
-          char_iter.next_if_eq(&'\n'); // consume \r\n
-          *line_pos = 0;
-          *line_num += 1;
-        } 
-        
-        break; 
+
+      '\r' | '\n' => {
+        char_iter.next_if_eq(&'\n'); // consume \r\n
+        *line_pos = 0;
+        *line_num += 1;
+        break;
       }
+      _ => break,
     }
   }
   
   token = Token::Ident {value: ident_val, line_num: *line_num, line_pos: *line_pos};
+  let keyword_token = get_keyword_token(&token);
+  if keyword_token != None {
+    token = keyword_token.unwrap();
+  }
+
   token
+}
+
+fn get_keyword_token(token: &Token) -> Option<Token> {
+  /*
+  Except for the constants true and false, keywords are case-insensitive. To conform to the rules
+  for other objects, the first letter of true and false must be lowercase; the trailing letters may
+  be upper or lower case.
+   */
+  let mut output: Option<Token> = None;
+  match token {
+    Token::Ident {ref value, line_num, line_pos } => {
+      let lower_case = value.to_lowercase();
+      let v = lower_case.as_str();
+
+      match v {
+        "class" => output = Some(Token::Class { line_num: *line_num, line_pos: *line_pos }),
+        "inherits" => output = Some(Token::Inherits { line_num: *line_num, line_pos: *line_pos }),
+
+        "if" => output = Some(Token::If { line_num: *line_num, line_pos: *line_pos }),
+        "then" => output = Some(Token::Then { line_num: *line_num, line_pos: *line_pos }),
+        "else" => output = Some(Token::Else { line_num: *line_num, line_pos: *line_pos }),
+
+        "fi" => output = Some(Token::EndIf { line_num: *line_num, line_pos: *line_pos }),
+        "in" => output = Some(Token::In { line_num: *line_num, line_pos: *line_pos }),
+        "let" => output = Some(Token::Let { line_num: *line_num, line_pos: *line_pos }),
+
+        "isvoid" => output = Some(Token::IsVoid { line_num: *line_num, line_pos: *line_pos }),
+        "not" => output = Some(Token::Not { line_num: *line_num, line_pos: *line_pos }),
+
+        "loop" => output = Some(Token::Loop { line_num: *line_num, line_pos: *line_pos }),
+        "pool" => output = Some(Token::EndLoop { line_num: *line_num, line_pos: *line_pos }),
+        "while" => output = Some(Token::While { line_num: *line_num, line_pos: *line_pos }),
+
+        "case"=> output = Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
+        "esac" => output = Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
+        "new" => output = Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
+        "of" => output = Some(Token::Of { line_num: *line_num, line_pos: *line_pos }),
+        "false" if value.chars().next().unwrap() == 'f' => output = Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
+        "true" if value.chars().next().unwrap() == 't' => output = Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
+        &_ => output = None,
+      }
+    }
+    _ => output = None,
+  }
+
+  output
 }
 
 fn get_int_token(char_iter: &mut Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>,
