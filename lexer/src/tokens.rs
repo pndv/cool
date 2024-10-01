@@ -17,6 +17,26 @@ pub const RIGHT_PAREN: char = ')';
 pub const LEFT_CURL: char = '{';
 pub const RIGHT_CURL: char = '}';
 
+const KEYWORD_CLASS: &str = "class";
+const KEYWORD_INHERITS: &str = "inherits";
+const KEYWORD_COND_IF_START: &str = "if";
+const KEYWORD_COND_THEN: &str = "then";
+const KEYWORD_COND_ELSE: &str = "else";
+const KEYWORD_COND_IF_END: &str = "fi";
+const KEYWORD_IN: &str = "in";
+const KEYWORD_LET: &str = "let";
+const KEYWORD_IS_VOID: &str = "isvoid";
+const KEYWORD_NOT: &str = "not";
+const KEYWORD_LOOP: &str = "loop";
+const KEYWORD_LOOP_END: &str = "pool";
+const KEYWORD_WHILE: &str = "while";
+const KEYWORD_CASE_START: &str = "case";
+const KEYWORD_CASE_END: &str = "esac";
+const KEYWORD_NEW: &str = "new";
+const KEYWORD_OF: &str = "of";
+const KEYWORD_FALSE: &str = "false";
+const KEYWORD_TRUE: &str = "true";
+
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum Token {
@@ -85,31 +105,34 @@ impl Token {
       Token::Ident { ref value, ref line_num, ref line_pos } => {
         let lower_case = value.to_lowercase();
         let v = lower_case.as_str();
+
         match v {
-          "class" => Some(Token::Class { line_num: *line_num, line_pos: *line_pos }),
-          "inherits" => Some(Token::Inherits { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_CLASS => Some(Token::Class { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_INHERITS => Some(Token::Inherits { line_num: *line_num, line_pos: *line_pos }),
 
-          "if" => Some(Token::If { line_num: *line_num, line_pos: *line_pos }),
-          "then" => Some(Token::Then { line_num: *line_num, line_pos: *line_pos }),
-          "else" => Some(Token::Else { line_num: *line_num, line_pos: *line_pos }),
-
-          "fi" => Some(Token::EndIf { line_num: *line_num, line_pos: *line_pos }),
-          "in" => Some(Token::In { line_num: *line_num, line_pos: *line_pos }),
-          "let" => Some(Token::Let { line_num: *line_num, line_pos: *line_pos }),
-
-          "isvoid" => Some(Token::IsVoid { line_num: *line_num, line_pos: *line_pos }),
-          "not" => Some(Token::Not { line_num: *line_num, line_pos: *line_pos }),
-
-          "loop" => Some(Token::Loop { line_num: *line_num, line_pos: *line_pos }),
-          "pool" => Some(Token::EndLoop { line_num: *line_num, line_pos: *line_pos }),
-          "while" => Some(Token::While { line_num: *line_num, line_pos: *line_pos }),
-
-          "case" => Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
-          "esac" => Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
-          "new" => Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
-          "of" => Some(Token::Of { line_num: *line_num, line_pos: *line_pos }),
-          "false" if value.starts_with('f') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
-          "true" if value.starts_with('t') => Some(Token::True { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_COND_IF_START => Some(Token::If { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_COND_THEN => Some(Token::Then { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_COND_ELSE => Some(Token::Else { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_COND_IF_END => Some(Token::EndIf { line_num: *line_num, line_pos: *line_pos }),
+          
+          KEYWORD_IN => Some(Token::In { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_LET => Some(Token::Let { line_num: *line_num, line_pos: *line_pos }),
+          
+          KEYWORD_IS_VOID => Some(Token::IsVoid { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_NOT => Some(Token::Not { line_num: *line_num, line_pos: *line_pos }),
+          
+          KEYWORD_LOOP => Some(Token::Loop { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_LOOP_END => Some(Token::EndLoop { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_WHILE => Some(Token::While { line_num: *line_num, line_pos: *line_pos }),
+          
+          KEYWORD_CASE_START => Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_OF => Some(Token::Of { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_CASE_END => Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
+          
+          KEYWORD_NEW => Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_FALSE if value.starts_with('f') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_TRUE if value.starts_with('t') => Some(Token::True { line_num: *line_num, line_pos: *line_pos }),
+          
           &_ => None,
         }
       }
