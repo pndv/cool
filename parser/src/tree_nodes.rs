@@ -2,10 +2,75 @@
   // fn dump(&self);
   fn get_line_number(&self) -> u32;
   fn get_children(&self) -> Option<Vec<Box<dyn TreeNode>>>;
+  fn set_line_number(&mut self, line_number: u32);
 }
 
-type Ident = String;
+
+
+type Symbol = String;
 type Type = String;
+
+struct Program {
+  classes: Vec<Class>,
+}
+
+struct Class {
+  type_name: Type,
+  parent_type: Type, // if no parent is given, then 'Object' is the parent of all classes
+  features: Option<Vec<Feature>>,
+}
+
+
+struct Feature {
+  ident: Symbol,
+  formals: Option<Vec<Formal>>,
+  feature_type: Type,
+  expr: Box<dyn Expr<Type>>
+}
+
+struct Formal {
+  ident: Symbol,
+  formal_type: Type,
+}
+
+
+enum Expression {
+  Assign { name: Symbol, expr: Box<Expression>},
+  
+  StaticDispatch {expr: Box<Expression>, type_name: Symbol, name: Symbol, actual: Box<Expression>},
+  Dispatch {expr: Box<Expression>, name: Symbol, actual: Box<Expression>},
+  
+  Conditional {predicate: Box<Expression>, then_exp: Box<Expression>, else_exp: Box<Expression>},
+  
+  Loop {predicate: Box<Expression>, body: Symbol, actual: Box<Expression>},
+  
+  CaseBranch {name: Symbol, type_declaration: Symbol, expr: Box<Expression>},
+  Case {}
+}
+
+struct IdentNode {
+  ident_name: String,
+  line_number: u32,
+}
+
+struct TrueNode {
+  line_number: u32,
+}
+
+struct FalseNode {
+  line_number: u32,
+}
+
+struct IntNode {
+  value: i32,
+  line_number: u32,
+}
+
+struct StringNode {
+  value: String,
+  line_number: u32,
+}
+
 
 
 trait Expr<T> {
@@ -64,37 +129,62 @@ impl Expr<i32> for IntExpr {
 }
 
 struct IdentExpr {
-  id: Ident
+  id: Symbol
 }
 
-impl Expr<Ident> for IdentExpr {
-  fn eval(&self) -> Ident {
+impl Expr<Symbol> for IdentExpr {
+  fn eval(&self) -> Symbol {
     self.id.clone()
   }
 }
 
-struct NotExpr {
-  expr: dyn Expr<bool>
+struct NotExpr<T> {
+  expr: dyn Expr<T>
 }
+
+struct EqualsExpr<T, U> {
+  left_expr: Box<dyn Expr<T>>,
+  right_expr: Box<dyn Expr<U>>,
+}
+
 
 struct IsVoidExpr {
   expr: dyn Expr<bool>
 }
 
-struct Formal {
-  ident: Ident,
-  formal_type: Type,
-}
-
-struct Feature {
-  ident: Ident,
-  formals: Option<Vec<Formal>>,
-  feature_type: Type,
-  expr: dyn Expr<Type>
-}
-
-struct Class {
-  type_name: Type,
-  parent_type: Type, // if no parent is given, then 'Object' is the parent of all classes
-  features: Option<Vec<Feature>>,
+enum ExprType {
+  Assign, 
+  
+  Conditional,
+  Loop,
+  Block,
+  
+  Case,
+  CaseBranch,
+  
+  StaticDispatch,
+  Dispatch,
+  
+  Let,
+  
+  Plus,
+  Subtract,
+  Multiply,
+  Divide,
+  Negate,
+  
+  LessThan,
+  Equals,
+  LessThanEquals,
+  
+  Not,
+  
+  Int,
+  Bool,
+  String,
+  
+  IsVoid,
+  NoExpr,
+  
+  Object
 }
