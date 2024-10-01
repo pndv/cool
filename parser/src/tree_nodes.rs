@@ -24,17 +24,21 @@ struct Class {
 struct Feature {
   ident: Symbol,
   formals: Option<Vec<Formal>>,
-  feature_type: Type,
-  expr: Box<dyn Expr<Type>>
+  f_type: Type,
+  expr: Box<Expression>
 }
 
 struct Formal {
   ident: Symbol,
-  formal_type: Type,
+  f_type: Type,
 }
 
 
+type CaseBranch = (String, Symbol, Box<Expression>);
+
 enum Expression {
+  NoExpr,
+  
   Assign { name: Symbol, expr: Box<Expression>},
   
   StaticDispatch {expr: Box<Expression>, type_name: Symbol, name: Symbol, actual: Box<Expression>},
@@ -44,8 +48,33 @@ enum Expression {
   
   Loop {predicate: Box<Expression>, body: Symbol, actual: Box<Expression>},
   
-  CaseBranch {name: Symbol, type_declaration: Symbol, expr: Box<Expression>},
-  Case {}
+  Case {switch_expression: Box<Expression>, branches: Vec<CaseBranch>},
+  
+  Block {body: Box<Expression>},
+  
+  Let {identifier: Symbol, type_declaration: Symbol,  init: Box<Expression>, body: Box<Expression>},
+  
+  Plus {left: Box<Expression>, right: Box<Expression>},
+  Minus {left: Box<Expression>, right: Box<Expression>},
+  Multiply {left: Box<Expression>, right: Box<Expression>},
+  Divide {left: Box<Expression>, right: Box<Expression>},
+  
+  Negate {expr: Box<Expression>},
+  
+  LessThan {left: Box<Expression>, right: Box<Expression>},
+  Equal {left: Box<Expression>, right: Box<Expression>},
+  LessThanOrEqual {left: Box<Expression>, right: Box<Expression>},
+  
+  Comp {expr: Box<Expression>},
+  
+  Int {value: i32},
+  Bool {value: bool},
+  String {value: String},
+  
+  New {type_name: Symbol},
+  IsVoid{expr: Box<Expression>},
+  
+  Object {name: Symbol},
 }
 
 struct IdentNode {
