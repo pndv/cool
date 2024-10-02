@@ -25,12 +25,46 @@ fn analyse_lexical(file_path: &str) {
 }
 
 fn get_class(token_iter: &mut Peekable<IntoIter<Token>>) -> Class {
-  let class: Class;
+  // guaranteed to be non-empty at the start
+  let mut token_option = token_iter.next();
+  let mut token = match_required_token(token_option, Token::Class);
 
+  match token_iter.next() {
+    Some(Class) => {},
+    Some(token) => panic!("Unexpected {token:?}"),
+    None => panic!("Unexpected EOF"),
+  }
+
+  match token_iter.next() {
+    None => {}
+    Some(Token::Ident {}) => {}
+  }
 }
 
-fn gen_class(token_iter: &mut Peekable<IntoIter<Token>>) -> Class {
+fn match_required_token(token_option: Option<Token>, expected: Token) -> Token {
+  if token_option == None {
+    panic!("Unexpected EOF");
+  }
 
+  let Some(token) = token_option;
+  if token != expected {
+    panic!("Unexpected token: {:?}", token);
+  }
+
+  token
+}
+
+fn match_optional_token(token_option: Option<Token>, expected: Token) -> Token {
+  if token_option == None {
+    panic!("Unexpected EOF");
+  }
+
+  let Some(token) = token_option;
+  if token != expected {
+    panic!("Unexpected token: {:?}", token);
+  }
+
+  token
 }
 
 fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
