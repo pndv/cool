@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 
 pub type Type = (Cow<'static, str>, u32, u32);
 pub type Symbol = Type;
-pub type CaseBranch = (String, Symbol, Box<Expression>);
+pub type CaseBranch = (Symbol, Type, Box<Expression>); // ID:TYPE => Expression 
 
 impl From<Token> for Type {
   fn from(value: Token) -> Self {
@@ -145,7 +145,7 @@ pub enum Expression {
 
   Block { expr_list: Option<Vec<Box<Expression>>> },
 
-  Let { identifier: Symbol, type_declaration: Symbol, init: Box<Expression>, body: Box<Expression> },
+  Let { identifier: Symbol, type_declaration: Type, init: Box<Expression>, body: Box<Expression> },
 
   Plus { left: Box<Expression>, right: Box<Expression> },
   Minus { left: Box<Expression>, right: Box<Expression> },
