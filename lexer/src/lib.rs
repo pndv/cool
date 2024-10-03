@@ -43,23 +43,23 @@ fn is_not_comment(token: &Token) -> bool {
 fn get_class(token_iter: &mut FilteredTokensIterator) -> Class {
   // guaranteed to be non-empty at the start
   let mut token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_class());
+  let _ = match_required_token(token_option, Token::class_type());
 
   token_option = token_iter.next();
-  let mut token = match_required_token(token_option, Token::random_ident());
+  let mut token = match_required_token(token_option, Token::ident_type());
   let class_type: Type = Type::from(token);
   let mut parent_type: Option<Type> = None;
 
   token_option = token_iter.next();
-  if token_option.is_some() && token_option.unwrap().is_same_type(&Token::random_inherits()) {
+  if token_option.is_some() && token_option.unwrap().is_same_type(&Token::inherits_type()) {
     token_option = token_iter.next();
-    token = match_required_token(token_option, Token::random_ident());
+    token = match_required_token(token_option, Token::ident_type());
     let inherits_from: Type = Type::from(token);
     parent_type = Some(inherits_from);
   }
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_left_curl());
+  let _ = match_required_token(token_option, Token::left_curl_type());
 
   let features = get_features(token_iter);
 
@@ -67,14 +67,14 @@ fn get_class(token_iter: &mut FilteredTokensIterator) -> Class {
   let _ = match_required_token(token_option, Token::right_curl_type());
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_semi_colon());
+  let _ = match_required_token(token_option, Token::semi_colon_type());
 
   Class::new(class_type, parent_type, features)
 }
 
 fn get_features(token_iter: &mut FilteredTokensIterator) -> Option<Vec<Feature>> {
   let peek = token_iter.peek();
-  if peek.is_none() || peek.unwrap() != &Token::random_semi_colon() {
+  if peek.is_none() || peek.unwrap() != &Token::semi_colon_type() {
     return None;
   }
 
@@ -82,8 +82,8 @@ fn get_features(token_iter: &mut FilteredTokensIterator) -> Option<Vec<Feature>>
   let mut feature = get_feature(token_iter);
   features.push(feature);
 
-  while token_iter.peek() == Some(&Token::random_semi_colon()) {
-    match_required_token(token_iter.next(), Token::random_semi_colon()); // Consume ','
+  while token_iter.peek() == Some(&Token::semi_colon_type()) {
+    match_required_token(token_iter.next(), Token::semi_colon_type()); // Consume ','
 
     feature = get_feature(token_iter);
     features.push(feature);
@@ -94,18 +94,18 @@ fn get_features(token_iter: &mut FilteredTokensIterator) -> Option<Vec<Feature>>
 
 fn get_feature(token_iter: &mut FilteredTokensIterator) -> Feature {
   let mut token_option = token_iter.next();
-  let token = match_required_token(token_option, Token::random_ident());
+  let token = match_required_token(token_option, Token::ident_type());
 
   let ident_name: Symbol = Symbol::from(token);
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_semi_colon());
+  let _ = match_required_token(token_option, Token::semi_colon_type());
 
   match token_iter.peek() {
-    Some(peeked_token) if peeked_token.is_same_type(&Token::random_colon()) => 
+    Some(peeked_token) if peeked_token.is_same_type(&Token::colon_type()) => 
       get_attribute_feature(ident_name, token_iter),
     
-    Some(peeked_token) if peeked_token.is_same_type(&Token::random_left_paren()) => 
+    Some(peeked_token) if peeked_token.is_same_type(&Token::left_paren_type()) => 
       get_method_feature(ident_name, token_iter),
 
     Some(t) =>  panic!("Incorrect token {:?}", t),
@@ -117,7 +117,7 @@ fn get_feature(token_iter: &mut FilteredTokensIterator) -> Feature {
 
 fn get_method_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterator) -> Feature {
   let mut token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_left_paren());
+  let _ = match_required_token(token_option, Token::left_paren_type());
 
   let mut formals: Option<Vec<Formal>> = None;
 
@@ -130,14 +130,14 @@ fn get_method_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterato
   let _ = match_required_token(token_option, Token::right_paren_type());
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_colon());
+  let _ = match_required_token(token_option, Token::colon_type());
 
   token_option = token_iter.next();
-  let token = match_required_token(token_option, Token::random_ident());
+  let token = match_required_token(token_option, Token::ident_type());
   let method_return_type = Type::from(token);
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_left_curl());
+  let _ = match_required_token(token_option, Token::left_curl_type());
 
   let method_expr = get_expression(token_iter);
 
@@ -149,13 +149,13 @@ fn get_method_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterato
 
 fn get_attribute_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterator) -> Feature {
   let mut token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_colon());
+  let _ = match_required_token(token_option, Token::colon_type());
 
   token_option = token_iter.next();
-  let token = match_required_token(token_option, Token::random_ident());
+  let token = match_required_token(token_option, Token::ident_type());
   let method_return_type = Symbol::from(token);
 
-  if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::random_colon()) {
+  if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::colon_type()) {
     token_option = token_iter.next();
     let _ = match_required_token(token_option, Token::random_assign_value());
 
@@ -172,8 +172,8 @@ fn get_formals(token_iter: &mut FilteredTokensIterator) -> Vec<Formal> {
   let mut formal = get_formal(token_iter);
   formals.push(formal);
 
-  while token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::random_comma()) {
-    match_required_token(token_iter.next(), Token::random_comma()); // Consume ','
+  while token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::comma_type()) {
+    match_required_token(token_iter.next(), Token::comma_type()); // Consume ','
 
     formal = get_formal(token_iter);
     formals.push(formal);
@@ -184,15 +184,15 @@ fn get_formals(token_iter: &mut FilteredTokensIterator) -> Vec<Formal> {
 
 fn get_formal(token_iter: &mut FilteredTokensIterator) -> Formal {
   let mut token_option = token_iter.next();
-  let mut token = match_required_token(token_option, Token::random_ident());
+  let mut token = match_required_token(token_option, Token::ident_type());
 
   let formal_name: Symbol = Symbol::from(token);
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::random_colon()); // consume colon
+  let _ = match_required_token(token_option, Token::colon_type()); // consume colon
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_ident());
+  token = match_required_token(token_option, Token::ident_type());
   let formal_type: Type = Type::from(token);
 
   (formal_name, formal_type).into()

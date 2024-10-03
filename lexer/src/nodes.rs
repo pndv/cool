@@ -171,4 +171,29 @@ pub enum Expression {
   IsVoid { expr: Box<Expression> },
 
   Object { name: Symbol },
+  
+  Intermediate { expr: IntermediateExpression }
+}
+
+#[derive(PartialEq, Debug)]
+enum IntermediateExpression {
+  LetIn,
+  
+  CaseOf,
+  CaseEnd,
+  
+  WhileLoop,
+  WhileEnd,
+  
+  ConditionalThen,
+  ConditionalElse,
+  ConditionalEnd,
+  
+  BinaryPlus,
+  BinaryMinus,
+  BinaryMultiply,
+  BinaryDivide,
+  BinaryLessThan,
+  BinaryLessThanOrEqual,
+  BinaryEqual,
 }
