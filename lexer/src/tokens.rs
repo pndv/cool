@@ -161,7 +161,7 @@ impl Token {
   pub fn random_str() -> Token { Token::Str { value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Ident`]
-  pub fn random_ident() -> Token { Token::Ident { value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn ident_type() -> Token { Token::Ident { value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Int`]
   pub fn random_int() -> Token { Token::Int { value: i32::MAX, line_num: u32::MAX, line_pos: u32::MAX } }
@@ -170,7 +170,7 @@ impl Token {
   pub fn random_dot() -> Token { Token::Dot { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Comma`]
-  pub fn random_comma() -> Token { Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn comma_type() -> Token { Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::AssignValue`]
   pub fn random_assign_value() -> Token { Token::AssignValue { line_num: u32::MAX, line_pos: u32::MAX } }
@@ -200,37 +200,37 @@ impl Token {
   pub fn random_less_or_equal() -> Token { Token::LessOrEqual { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Less`]
-  pub fn random_less() -> Token { Token::Less { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn less_type() -> Token { Token::Less { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Equal`]
-  pub fn random_equal() -> Token { Token::Equal { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn equal_type() -> Token { Token::Equal { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Colon`]
-  pub fn random_colon() -> Token { Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn colon_type() -> Token { Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::SemiColon`]
-  pub fn random_semi_colon() -> Token { Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn semi_colon_type() -> Token { Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::LParen`]
-  pub fn random_left_paren() -> Token { Token::LParen { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn left_paren_type() -> Token { Token::LParen { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::RParen`]
   pub fn right_paren_type() -> Token { Token::RParen { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::LCurl`]
-  pub fn random_left_curl() -> Token { Token::LCurl { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn left_curl_type() -> Token { Token::LCurl { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::RCurl`]
   pub fn right_curl_type() -> Token { Token::RCurl { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Class`]
-  pub fn random_class() -> Token { Token::Class { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn class_type() -> Token { Token::Class { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Inherits`]
-  pub fn random_inherits() -> Token { Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn inherits_type() -> Token { Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::If`]
-  pub fn random_if() -> Token { Token::If { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn if_type() -> Token { Token::If { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Then`]
   pub fn random_then() -> Token { Token::Then { line_num: u32::MAX, line_pos: u32::MAX } }
