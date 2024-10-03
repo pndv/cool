@@ -2,11 +2,9 @@
 use std::io::{BufReader, Bytes, Error, ErrorKind, Read, Result, Seek, SeekFrom};
 use std::iter::{Map, Peekable};
 
-use crate::scanner::tokens::WhiteSpace::{CarriageReturn, NewLine, Space, Tab, FormFeed, VerticalTab};
-use crate::scanner::tokens::{Token, WhiteSpace};
-use crate::scanner::tokens::{AT, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LEFT_CURL, LEFT_PAREN, LESS_THAN, MINUS, PLUS, RIGHT_CURL, RIGHT_PAREN, SEMI_COLON, STAR, TILDE};
-
-pub mod tokens;
+use crate::tokens::WhiteSpace::{CarriageReturn, NewLine, Space, Tab, FormFeed, VerticalTab};
+use crate::tokens::{Token, WhiteSpace};
+use crate::tokens::{AT, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LEFT_CURL, LEFT_PAREN, LESS_THAN, MINUS, PLUS, RIGHT_CURL, RIGHT_PAREN, SEMI_COLON, STAR, TILDE};
 
 type BufferedCharReader = Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>;
 

@@ -1,11 +1,25 @@
-pub type Symbol = String;
-pub type Type = String;
+use crate::tokens::Token;
+use std::borrow::Cow;
+use std::fmt::{Display, Formatter};
+
+pub type Type = (Cow<'static, str>, u32, u32);
+pub type Symbol = Type;
 pub type CaseBranch = (String, Symbol, Box<Expression>);
 
-#[derive(PartialEq)]
+impl From<Token> for Type {
+  fn from(value: Token) -> Self {
+    match value {
+      Token::Ident { value, line_num, line_pos } => (Cow::Owned(value), line_num, line_pos),
+      _ => panic!("Unexpected token {:?}", value),
+    }
+  }
+}
+
+#[derive(PartialEq, Debug)]
 pub struct Program {
   classes: Vec<Class>,
 }
+
 
 impl Program {
   pub fn new() -> Self {
@@ -18,32 +32,30 @@ impl Program {
   }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub struct Class {
-  type_name: Type,
+  class_type: Type,
   parent_type: Option<Type>, // if no parent is given, then 'Object' is the parent of all classes
   features: Option<Vec<Feature>>,
 }
 
+const OBJECT: Class = Class {
+  class_type: (Cow::Borrowed("Object"), 0, 0),
+  parent_type: None,
+  features: None,
+};
+
 impl Class {
-  const STR_OBJECT: &'static str = "Object";
-
-  const OBJECT: Class = Class {
-    type_name: Class::STR_OBJECT.to_string(),
-    parent_type: None,
-    features: None,
-  };
-
-  pub fn new(type_name: String, parent_type: Option<Type>, features: Option<Vec<Feature>>) -> Self {
+  pub fn new(class_type: Type, parent_type: Option<Type>, features: Option<Vec<Feature>>) -> Self {
     let parent: Type;
     if parent_type.is_some() {
       parent = parent_type.unwrap();
     } else {
-      parent = Self::OBJECT.type_name.clone();
+      parent = OBJECT.class_type.clone();
     }
 
     Class {
-      type_name,
+      class_type,
       parent_type: Some(parent),
       features,
     }
@@ -60,36 +72,18 @@ impl Class {
   }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub struct Feature {
-  ident_name: Symbol,
+  feature_name: Symbol,
   formals: Option<Vec<Formal>>,
   return_type: Type,
   expr: Option<Box<Expression>>,
 }
 
-impl Feature {
-  pub fn expr_attribute(ident_name: Symbol, return_type: Type, expr: Box<Expression>) -> Self {
+impl From<(Symbol, Option<Vec<Formal>>, Type, Box<Expression>)> for Feature {
+  fn from((feature_name, formals, return_type, expr): (Symbol, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
     Feature {
-      ident_name,
-      formals: None,
-      return_type,
-      expr: Some(expr),
-    }
-  }
-
-  pub fn simple_attribute(ident_name: Symbol, return_type: Type) -> Self {
-    Feature {
-      ident_name,
-      formals: None,
-      return_type,
-      expr: None,
-    }
-  }
-
-  pub fn method(ident_name: Symbol, formals: Option<Vec<Formal>>, return_type: Type, expr: Box<Expression>) -> Self {
-    Feature {
-      ident_name,
+      feature_name,
       formals,
       return_type,
       expr: Some(expr),
@@ -97,22 +91,44 @@ impl Feature {
   }
 }
 
-#[derive(PartialEq)]
-pub struct Formal {
-  ident_name: Symbol,
-  ident_type: Type,
-}
-
-impl Formal {
-  pub fn new(ident_name: String, ident_type: Type) -> Self {
-    Self {
-      ident_name,
-      ident_type,
+impl From<(Symbol, Type, Box<Expression>)> for Feature {
+  fn from((feature_name, return_type, expr): (Symbol, Type, Box<Expression>)) -> Self {
+    Feature {
+      feature_name,
+      formals: None,
+      return_type,
+      expr: Some(expr),
     }
   }
 }
 
-#[derive(PartialEq)]
+impl From<(Symbol, Type)> for Feature {
+  fn from((feature_name, return_type): (Symbol, Type)) -> Self {
+    Feature {
+      feature_name,
+      formals: None,
+      return_type,
+      expr: None,
+    }
+  }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct Formal {
+  formal_name: Symbol,
+  formal_type: Type,
+}
+
+impl From<(Symbol, Type)> for Formal {
+  fn from((formal_name, formal_type): (Symbol, Type)) -> Self {
+    Self {
+      formal_name,
+      formal_type,
+    }
+  }
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Expression {
   NoExpr,
 
@@ -127,7 +143,7 @@ pub enum Expression {
 
   Case { switch_expression: Box<Expression>, branches: Vec<CaseBranch> },
 
-  Block { body: Box<Expression> },
+  Block { expr_list: Option<Vec<Box<Expression>>> },
 
   Let { identifier: Symbol, type_declaration: Symbol, init: Box<Expression>, body: Box<Expression> },
 
@@ -137,6 +153,7 @@ pub enum Expression {
   Divide { left: Box<Expression>, right: Box<Expression> },
 
   Negate { expr: Box<Expression> },
+  Not { expr: Box<Expression> },
 
   LessThan { left: Box<Expression>, right: Box<Expression> },
   Equal { left: Box<Expression>, right: Box<Expression> },
@@ -144,11 +161,13 @@ pub enum Expression {
 
   Comp { expr: Box<Expression> },
 
+  Ident { name: Symbol },
+
   Int { value: i32 },
   Bool { value: bool },
   String { value: String },
 
-  New { type_name: Symbol },
+  New { type_name: Type },
   IsVoid { expr: Box<Expression> },
 
   Object { name: Symbol },

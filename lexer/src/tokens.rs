@@ -101,7 +101,9 @@ pub enum Token {
   False { line_num: u32, line_pos: u32 },
 }
 
+
 impl Token {
+  
   pub fn get_keyword(&self) -> Option<Token> {
     match self {
       Token::Ident { ref value, ref line_num, ref line_pos } => {
@@ -147,10 +149,10 @@ impl Token {
   }
 
   /// Generates random [`Token::Empty`]
-  pub fn random_empty() -> Token { Token::Empty }
+  pub fn empty_type() -> Token { Token::Empty }
 
   /// Generates random [`Token::Error`]
-  pub fn random_err() -> Token { Token::Error { error_char: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn err_type() -> Token { Token::Error { error_char: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Comment`]
   pub fn random_comment() -> Token { Token::Comment { comment_value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
@@ -213,13 +215,13 @@ impl Token {
   pub fn random_left_paren() -> Token { Token::LParen { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::RParen`]
-  pub fn random_right_paren() -> Token { Token::RParen { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn right_paren_type() -> Token { Token::RParen { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::LCurl`]
   pub fn random_left_curl() -> Token { Token::LCurl { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::RCurl`]
-  pub fn random_right_curl() -> Token { Token::RCurl { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub fn right_curl_type() -> Token { Token::RCurl { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Class`]
   pub fn random_class() -> Token { Token::Class { line_num: u32::MAX, line_pos: u32::MAX } }

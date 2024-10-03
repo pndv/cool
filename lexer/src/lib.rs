@@ -1,12 +1,13 @@
-﻿use crate::nodes::{Class, Expression, Feature, Formal, Program, Type};
+﻿use crate::nodes::{Class, Expression, Feature, Formal, Program, Symbol, Type};
 use crate::scanner::get_program_token_list;
-use crate::scanner::tokens::Token;
+use crate::tokens::Token;
 use core::iter::Iterator;
 use std::iter::{Filter, Peekable};
 use std::vec::IntoIter;
 
 pub mod scanner;
 pub mod nodes;
+pub mod tokens;
 
 type CommentFilter = fn(&Token) -> bool;
 type FilteredTokensIterator = Peekable<Filter<IntoIter<Token>, CommentFilter>>;
@@ -42,35 +43,33 @@ fn is_not_comment(token: &Token) -> bool {
 fn get_class(token_iter: &mut FilteredTokensIterator) -> Class {
   // guaranteed to be non-empty at the start
   let mut token_option = token_iter.next();
-  let mut token = match_required_token(token_option, Token::random_class());
+  let _ = match_required_token(token_option, Token::random_class());
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_ident());
-  let Token::Ident { value, .. } = token else { panic!("Unexpected token {:?}", token); };
-  let type_name: Type = value;
+  let mut token = match_required_token(token_option, Token::random_ident());
+  let class_type: Type = Type::from(token);
   let mut parent_type: Option<Type> = None;
 
   token_option = token_iter.next();
   if token_option.is_some() && token_option.unwrap().is_same_type(&Token::random_inherits()) {
     token_option = token_iter.next();
     token = match_required_token(token_option, Token::random_ident());
-    let Token::Ident { value, .. } = token else { panic!("Unexpected token {:?}", token) };
-    let inherits_from: Type = value;
+    let inherits_from: Type = Type::from(token);
     parent_type = Some(inherits_from);
   }
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_left_curl());
+  let _ = match_required_token(token_option, Token::random_left_curl());
 
   let features = get_features(token_iter);
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_right_curl());
+  let _ = match_required_token(token_option, Token::right_curl_type());
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_semi_colon());
+  let _ = match_required_token(token_option, Token::random_semi_colon());
 
-  Class::new(type_name, parent_type, features)
+  Class::new(class_type, parent_type, features)
 }
 
 fn get_features(token_iter: &mut FilteredTokensIterator) -> Option<Vec<Feature>> {
@@ -95,13 +94,12 @@ fn get_features(token_iter: &mut FilteredTokensIterator) -> Option<Vec<Feature>>
 
 fn get_feature(token_iter: &mut FilteredTokensIterator) -> Feature {
   let mut token_option = token_iter.next();
-  let mut token = match_required_token(token_option, Token::random_ident());
+  let token = match_required_token(token_option, Token::random_ident());
 
-  let Token::Ident { value, .. } = token else { panic!("Unexpected token {:?}", token) };
-  let ident_name = value;
+  let ident_name: Symbol = Symbol::from(token);
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_semi_colon());
+  let _ = match_required_token(token_option, Token::random_semi_colon());
 
   match token_iter.peek() {
     Some(peeked_token) if peeked_token.is_same_type(&Token::random_colon()) => 
@@ -117,56 +115,55 @@ fn get_feature(token_iter: &mut FilteredTokensIterator) -> Feature {
   }
 }
 
-fn get_method_feature(ident_name: String, token_iter: &mut FilteredTokensIterator) -> Feature {
+fn get_method_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterator) -> Feature {
   let mut token_option = token_iter.next();
-  let mut token = match_required_token(token_option, Token::random_left_paren());
+  let _ = match_required_token(token_option, Token::random_left_paren());
 
   let mut formals: Option<Vec<Formal>> = None;
 
-  if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::random_right_paren()) {
+  if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::right_paren_type()) {
     let vec_formals = get_formals(token_iter);
     formals = Some(vec_formals);
   }
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_right_paren());
+  let _ = match_required_token(token_option, Token::right_paren_type());
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_colon());
+  let _ = match_required_token(token_option, Token::random_colon());
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_ident());
-  let Token::Ident { value, .. } = token else { panic!("Unexpected token {:?}", token) };
-  let method_return_type = value;
+  let token = match_required_token(token_option, Token::random_ident());
+  let method_return_type = Type::from(token);
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_left_curl());
+  let _ = match_required_token(token_option, Token::random_left_curl());
 
   let method_expr = get_expression(token_iter);
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_right_curl());
+  let _ = match_required_token(token_option, Token::right_curl_type());
 
-  Feature::method(ident_name, formals, method_return_type, Box::from(method_expr))
+  (ident_name, formals, method_return_type, Box::from(method_expr)).into()
 }
 
-fn get_attribute_feature(ident_name: String, token_iter: &mut FilteredTokensIterator) -> Feature {
+fn get_attribute_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterator) -> Feature {
   let mut token_option = token_iter.next();
-  let mut token = match_required_token(token_option, Token::random_colon());
+  let _ = match_required_token(token_option, Token::random_colon());
 
   token_option = token_iter.next();
-  token = match_required_token(token_option, Token::random_ident());
-  let Token::Ident { value, .. } = token else { panic!("Unexpected token {:?}", token) };
-  let method_return_type = value;
+  let token = match_required_token(token_option, Token::random_ident());
+  let method_return_type = Symbol::from(token);
 
   if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::random_colon()) {
     token_option = token_iter.next();
-    token = match_required_token(token_option, Token::random_assign_value());
+    let _ = match_required_token(token_option, Token::random_assign_value());
 
     let method_expr = get_expression(token_iter);
-    Feature::expr_attribute(ident_name, method_return_type, Box::from(method_expr))
+    let feature = (ident_name, method_return_type, Box::from(method_expr)).into();
+    feature
   } else {
-    Feature::simple_attribute(ident_name, method_return_type)
+    (ident_name, method_return_type).into()
   }
 }
 
@@ -189,22 +186,112 @@ fn get_formal(token_iter: &mut FilteredTokensIterator) -> Formal {
   let mut token_option = token_iter.next();
   let mut token = match_required_token(token_option, Token::random_ident());
 
-  let Token::Ident { value, .. } = token else { panic!("Unexpected token {:?}", token) };
-  let ident_name = value;
+  let formal_name: Symbol = Symbol::from(token);
 
   token_option = token_iter.next();
   let _ = match_required_token(token_option, Token::random_colon()); // consume colon
 
   token_option = token_iter.next();
   token = match_required_token(token_option, Token::random_ident());
-  let Token::Ident { value, .. } = token else { panic!("Unexpected token {:?}", token) };
-  let ident_type = value;
+  let formal_type: Type = Type::from(token);
 
-  Formal::new(ident_name, ident_type)
+  (formal_name, formal_type).into()
 }
 
 fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
+  let Some(token) = token_iter.next() else { panic!("Unexpected EOF") };
   
+  match token {
+    Token::Empty => panic!("Unexpected token {:?}", token),
+    Token::Error { .. } => panic!("Unexpected token {:?}", token),
+    Token::Comment { .. } => panic!("Unexpected token {:?}", token),
+    Token::Int { value,.. } => Expression::Int {value},
+    Token::Str { value,.. } => Expression::String {value},
+    Token::True { .. } => Expression::Bool { value: true},
+    Token::False { .. } => Expression::Bool { value: false},
+
+    Token::New { .. } => {
+      let Some(type_token) = token_iter.next() else { panic!("Unexpected EOF") };
+      let type_name: Type = Type::from(type_token);
+      
+      Expression::New {type_name }
+    }
+
+    Token::IsVoid { .. } => {
+      let expr = get_expression(token_iter);
+      Expression::IsVoid { expr: Box::new(expr) }
+          
+    }
+    Token::Tilde { .. } => {
+      let expr = get_expression(token_iter);
+      Expression::Negate { expr: Box::new(expr) }
+    }
+    Token::Not { .. } => {
+      let expr = get_expression(token_iter);
+      Expression::Not { expr: Box::new(expr) }
+    }
+
+    Token::LParen { .. } => { // case `(expr)`
+      let expr = get_expression(token_iter);
+      let _ = match_required_token(token_iter.next(), Token::right_paren_type());
+      
+      expr
+    }
+
+    Token::LCurl { .. } => { // block expression
+      let mut expr_list: Vec<Box<Expression>> = Vec::new();
+      
+      while token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&Token::right_curl_type()) {
+        let expr = get_expression(token_iter);
+        expr_list.push(Box::new(expr));
+      }
+      
+      let _ = match_required_token(token_iter.next(), Token::right_curl_type());
+
+      if expr_list.is_empty() {
+        Expression::Block { expr_list: None }
+      } else {
+        Expression::Block { expr_list: Some(expr_list) }
+      }
+      
+    }
+    
+    Token::Ident { .. } => { 
+      let symbol : Symbol = Symbol::from(token);
+      Expression::Ident { name: symbol } 
+    }
+    
+    Token::Dot { .. } => {}
+    Token::Comma { .. } => {}
+    Token::AssignValue { .. } => {}
+    Token::Lambda { .. } => {}
+    Token::At { .. } => {}
+    Token::Star { .. } => {}
+    Token::ForwardSlash { .. } => {}
+    Token::Plus { .. } => {}
+    Token::Minus { .. } => {}
+    Token::LessOrEqual { .. } => {}
+    Token::Less { .. } => {}
+    Token::Equal { .. } => {}
+    Token::Colon { .. } => {}
+    Token::SemiColon { .. } => {}
+    Token::RParen { .. } => {}
+    Token::RCurl { .. } => {}
+    Token::Class { .. } => {}
+    Token::Inherits { .. } => {}
+    Token::If { .. } => {}
+    Token::Then { .. } => {}
+    Token::Else { .. } => {}
+    Token::EndIf { .. } => {}
+    Token::While { .. } => {}
+    Token::Loop { .. } => {}
+    Token::EndLoop { .. } => {}
+    Token::Let { .. } => {}
+    Token::In { .. } => {}
+    Token::Case { .. } => {}
+    Token::Of { .. } => {}
+    Token::EndCase { .. } => {}
+  }
 }
 
 fn match_required_token(token_option: Option<Token>, expected: Token) -> Token {
@@ -240,4 +327,3 @@ fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
     Some(errors)
   }
 }
-
