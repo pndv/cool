@@ -1,4 +1,7 @@
-﻿pub const DOT: char = '.';
+﻿use mem::discriminant;
+use std::mem;
+
+pub const DOT: char = '.';
 pub const AT: char = '@';
 pub const TILDE: char = '~';
 pub const STAR: char = '*';
@@ -37,8 +40,7 @@ const KEYWORD_OF: &str = "of";
 const KEYWORD_FALSE: &str = "false";
 const KEYWORD_TRUE: &str = "true";
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum Token {
   Empty,
   Error { error_char: String, line_num: u32, line_pos: u32 },
@@ -114,34 +116,170 @@ impl Token {
           KEYWORD_COND_THEN => Some(Token::Then { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_COND_ELSE => Some(Token::Else { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_COND_IF_END => Some(Token::EndIf { line_num: *line_num, line_pos: *line_pos }),
-          
+
           KEYWORD_IN => Some(Token::In { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_LET => Some(Token::Let { line_num: *line_num, line_pos: *line_pos }),
-          
+
           KEYWORD_IS_VOID => Some(Token::IsVoid { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_NOT => Some(Token::Not { line_num: *line_num, line_pos: *line_pos }),
-          
+
           KEYWORD_LOOP => Some(Token::Loop { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_LOOP_END => Some(Token::EndLoop { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_WHILE => Some(Token::While { line_num: *line_num, line_pos: *line_pos }),
-          
+
           KEYWORD_CASE_START => Some(Token::Case { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_OF => Some(Token::Of { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_CASE_END => Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
-          
+
           KEYWORD_NEW => Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_FALSE if value.starts_with('f') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_TRUE if value.starts_with('t') => Some(Token::True { line_num: *line_num, line_pos: *line_pos }),
-          
+
           &_ => None,
         }
       }
       _ => None,
     }
   }
+
+  pub fn is_same_type(&self, other: &Token) -> bool {
+    discriminant(self) == discriminant(other)
+  }
+
+  /// Generates random [`Token::Empty`]
+  pub fn random_empty() -> Token { Token::Empty }
+
+  /// Generates random [`Token::Error`]
+  pub fn random_err() -> Token { Token::Error { error_char: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Comment`]
+  pub fn random_comment() -> Token { Token::Comment { comment_value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Str`]
+  pub fn random_str() -> Token { Token::Str { value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Ident`]
+  pub fn random_ident() -> Token { Token::Ident { value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Int`]
+  pub fn random_int() -> Token { Token::Int { value: i32::MAX, line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Dot`]
+  pub fn random_dot() -> Token { Token::Dot { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Comma`]
+  pub fn random_comma() -> Token { Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::AssignValue`]
+  pub fn random_assign_value() -> Token { Token::AssignValue { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Lambda`]
+  pub fn random_lambda() -> Token { Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::At`]
+  pub fn random_at() -> Token { Token::At { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Tilde`]
+  pub fn random_tilde() -> Token { Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Star`]
+  pub fn random_star() -> Token { Token::Star { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::ForwardSlash`]
+  pub fn random_forward_slash() -> Token { Token::ForwardSlash { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Plus`]
+  pub fn random_plus() -> Token { Token::Plus { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Minus`]
+  pub fn random_minus() -> Token { Token::Minus { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::LessOrEqual`]
+  pub fn random_less_or_equal() -> Token { Token::LessOrEqual { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Less`]
+  pub fn random_less() -> Token { Token::Less { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Equal`]
+  pub fn random_equal() -> Token { Token::Equal { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Colon`]
+  pub fn random_colon() -> Token { Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::SemiColon`]
+  pub fn random_semi_colon() -> Token { Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::LParen`]
+  pub fn random_left_paren() -> Token { Token::LParen { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::RParen`]
+  pub fn random_right_paren() -> Token { Token::RParen { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::LCurl`]
+  pub fn random_left_curl() -> Token { Token::LCurl { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::RCurl`]
+  pub fn random_right_curl() -> Token { Token::RCurl { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Class`]
+  pub fn random_class() -> Token { Token::Class { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Inherits`]
+  pub fn random_inherits() -> Token { Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::If`]
+  pub fn random_if() -> Token { Token::If { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Then`]
+  pub fn random_then() -> Token { Token::Then { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Else`]
+  pub fn random_else() -> Token { Token::Else { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::EndIf`]
+  pub fn random_end_if() -> Token { Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::While`]
+  pub fn random_while() -> Token { Token::While { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Loop`]
+  pub fn random_loop() -> Token { Token::Loop { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::EndLoop`]
+  pub fn random_end_loop() -> Token { Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Let`]
+  pub fn random_let() -> Token { Token::Let { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::In`]
+  pub fn random_in() -> Token { Token::In { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Case`]
+  pub fn random_case() -> Token { Token::Case { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Of`]
+  pub fn random_of() -> Token { Token::Of { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::EndCase`]
+  pub fn random_end_case() -> Token { Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::New`]
+  pub fn random_new() -> Token { Token::New { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::IsVoid`]
+  pub fn random_is_void() -> Token { Token::IsVoid { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::Not`]
+  pub fn random_not() -> Token { Token::Not { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::True`]
+  pub fn random_true() -> Token { Token::True { line_num: u32::MAX, line_pos: u32::MAX } }
+
+  /// Generates random [`Token::False`]
+  pub fn random_false() -> Token { Token::False { line_num: u32::MAX, line_pos: u32::MAX } }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum WhiteSpace {
   Space,
   Tab,
@@ -173,4 +311,11 @@ impl WhiteSpace {
         value == '\u{c}' ||
         value == '\u{b}'
   }
+}
+
+mod test {
+  use super::*;
+
+  #[test]
+  fn test_is_same_type() {}
 }

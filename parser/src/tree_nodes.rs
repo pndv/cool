@@ -5,8 +5,6 @@
   fn set_line_number(&mut self, line_number: u32);
 }
 
-
-
 type Symbol = String;
 type Type = String;
 
@@ -20,12 +18,11 @@ struct Class {
   features: Option<Vec<Feature>>,
 }
 
-
 struct Feature {
   ident: Symbol,
   formals: Option<Vec<Formal>>,
   f_type: Type,
-  expr: Box<Expression>
+  expr: Box<Expression>,
 }
 
 struct Formal {
@@ -33,48 +30,47 @@ struct Formal {
   f_type: Type,
 }
 
-
 type CaseBranch = (String, Symbol, Box<Expression>);
 
 enum Expression {
   NoExpr,
-  
-  Assign { name: Symbol, expr: Box<Expression>},
-  
-  StaticDispatch {expr: Box<Expression>, type_name: Symbol, name: Symbol, actual: Box<Expression>},
-  Dispatch {expr: Box<Expression>, name: Symbol, actual: Box<Expression>},
-  
-  Conditional {predicate: Box<Expression>, then_exp: Box<Expression>, else_exp: Box<Expression>},
-  
-  Loop {predicate: Box<Expression>, body: Symbol, actual: Box<Expression>},
-  
-  Case {switch_expression: Box<Expression>, branches: Vec<CaseBranch>},
-  
-  Block {body: Box<Expression>},
-  
-  Let {identifier: Symbol, type_declaration: Symbol,  init: Box<Expression>, body: Box<Expression>},
-  
-  Plus {left: Box<Expression>, right: Box<Expression>},
-  Minus {left: Box<Expression>, right: Box<Expression>},
-  Multiply {left: Box<Expression>, right: Box<Expression>},
-  Divide {left: Box<Expression>, right: Box<Expression>},
-  
-  Negate {expr: Box<Expression>},
-  
-  LessThan {left: Box<Expression>, right: Box<Expression>},
-  Equal {left: Box<Expression>, right: Box<Expression>},
-  LessThanOrEqual {left: Box<Expression>, right: Box<Expression>},
-  
-  Comp {expr: Box<Expression>},
-  
-  Int {value: i32},
-  Bool {value: bool},
-  String {value: String},
-  
-  New {type_name: Symbol},
-  IsVoid{expr: Box<Expression>},
-  
-  Object {name: Symbol},
+
+  Assign { name: Symbol, expr: Box<Expression> },
+
+  StaticDispatch { expr: Box<Expression>, type_name: Symbol, name: Symbol, actual: Box<Expression> },
+  Dispatch { expr: Box<Expression>, name: Symbol, actual: Box<Expression> },
+
+  Conditional { predicate: Box<Expression>, then_exp: Box<Expression>, else_exp: Box<Expression> },
+
+  Loop { predicate: Box<Expression>, body: Symbol, actual: Box<Expression> },
+
+  Case { switch_expression: Box<Expression>, branches: Vec<CaseBranch> },
+
+  Block { body: Box<Expression> },
+
+  Let { identifier: Symbol, type_declaration: Symbol, init: Box<Expression>, body: Box<Expression> },
+
+  Plus { left: Box<Expression>, right: Box<Expression> },
+  Minus { left: Box<Expression>, right: Box<Expression> },
+  Multiply { left: Box<Expression>, right: Box<Expression> },
+  Divide { left: Box<Expression>, right: Box<Expression> },
+
+  Negate { expr: Box<Expression> },
+
+  LessThan { left: Box<Expression>, right: Box<Expression> },
+  Equal { left: Box<Expression>, right: Box<Expression> },
+  LessThanOrEqual { left: Box<Expression>, right: Box<Expression> },
+
+  Comp { expr: Box<Expression> },
+
+  Int { value: i32 },
+  Bool { value: bool },
+  String { value: String },
+
+  New { type_name: Symbol },
+  IsVoid { expr: Box<Expression> },
+
+  Object { name: Symbol },
 }
 
 struct IdentNode {
@@ -100,8 +96,6 @@ struct StringNode {
   line_number: u32,
 }
 
-
-
 trait Expr<T> {
   fn eval(&self) -> T;
 }
@@ -113,7 +107,6 @@ impl Expr<bool> for TrueExpr {
   }
 }
 
-
 struct FalseExpr;
 impl Expr<bool> for FalseExpr {
   fn eval(&self) -> bool {
@@ -121,9 +114,8 @@ impl Expr<bool> for FalseExpr {
   }
 }
 
-
 struct StringExpr {
-  value: String
+  value: String,
 }
 
 impl StringExpr {
@@ -142,7 +134,7 @@ impl Expr<String> for StringExpr {
 }
 
 struct IntExpr {
-  value: i32
+  value: i32,
 }
 
 impl IntExpr {
@@ -158,7 +150,7 @@ impl Expr<i32> for IntExpr {
 }
 
 struct IdentExpr {
-  id: Symbol
+  id: Symbol,
 }
 
 impl Expr<Symbol> for IdentExpr {
@@ -168,7 +160,7 @@ impl Expr<Symbol> for IdentExpr {
 }
 
 struct NotExpr<T> {
-  expr: dyn Expr<T>
+  expr: dyn Expr<T>,
 }
 
 struct EqualsExpr<T, U> {
@@ -176,44 +168,43 @@ struct EqualsExpr<T, U> {
   right_expr: Box<dyn Expr<U>>,
 }
 
-
 struct IsVoidExpr {
-  expr: dyn Expr<bool>
+  expr: dyn Expr<bool>,
 }
 
 enum ExprType {
-  Assign, 
-  
+  Assign,
+
   Conditional,
   Loop,
   Block,
-  
+
   Case,
   CaseBranch,
-  
+
   StaticDispatch,
   Dispatch,
-  
+
   Let,
-  
+
   Plus,
   Subtract,
   Multiply,
   Divide,
   Negate,
-  
+
   LessThan,
   Equals,
   LessThanEquals,
-  
+
   Not,
-  
+
   Int,
   Bool,
   String,
-  
+
   IsVoid,
   NoExpr,
-  
-  Object
+
+  Object,
 }
