@@ -131,11 +131,13 @@ impl From<(Symbol, Type)> for Formal {
 #[derive(PartialEq, Debug)]
 pub enum Expression {
   NoExpr,
+  SelfExpr,
 
   Assign { name: Symbol, expr: Box<Expression> },
 
-  StaticDispatch { expr: Box<Expression>, type_name: Symbol, name: Symbol, actual: Box<Expression> },
-  Dispatch { expr: Box<Expression>, name: Symbol, actual: Box<Expression> },
+  // if no parameters, then it's a single list of [NoExpr]
+  StaticDispatch { expr: Box<Expression>, type_name: Symbol, name: Symbol, param_list: Vec<Box<Expression>> },
+  Dispatch { expr: Box<Expression>, name: Symbol, param_list : Vec<Box<Expression>> },
 
   Conditional { predicate: Box<Expression>, then_exp: Box<Expression>, else_exp: Box<Expression> },
 
@@ -163,20 +165,47 @@ pub enum Expression {
 
   Ident { name: Symbol },
 
-  Int { value: i32 },
-  Bool { value: bool },
-  String { value: String },
+  Int { value: i32, line_num: u32, line_pos: u32 },
+  Bool { value: bool, line_num: u32, line_pos: u32 },
+  String { value: String, line_num: u32, line_pos: u32 },
 
   New { type_name: Type },
   IsVoid { expr: Box<Expression> },
 
   Object { name: Symbol },
   
-  Intermediate { expr: IntermediateExpression }
+}
+
+impl From<Token> for Expression {
+
+  /// Only for 
+  /// - [Token::Str]
+  /// - [Token::Ident]
+  /// - [Token::Int]
+  /// - [Token::True]
+  /// - [Token::False]
+  fn from(token: Token) -> Self {
+    match token {
+      Token::Str { value, line_num, line_pos } => 
+        Expression::String {value, line_num, line_pos },
+      
+      Token::Ident { .. } => 
+        Expression::Ident {name: Symbol::from(token) },
+      
+      Token::Int { value, line_num, line_pos } => Expression::Int { value, line_num, line_pos },
+      Token::True {  line_num, line_pos } => Expression::Bool { value: true, line_num, line_pos },
+      Token::False {  line_num, line_pos } => Expression::Bool { value: false, line_num, line_pos },
+      
+      _ => panic!("Non-constant token {:?}", token)
+    }
+  }
 }
 
 #[derive(PartialEq, Debug)]
-enum IntermediateExpression {
+pub(crate) enum ReadState {
+  ExpressionStart,
+  
+  IdentStarting,
   LetIn,
   
   CaseOf,
