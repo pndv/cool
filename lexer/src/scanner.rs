@@ -4,7 +4,7 @@ use std::iter::{Map, Peekable};
 
 use crate::tokens::WhiteSpace::{CarriageReturn, NewLine, Space, Tab, FormFeed, VerticalTab};
 use crate::tokens::{Token, WhiteSpace};
-use crate::tokens::{AT, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LEFT_CURL, LEFT_PAREN, LESS_THAN, MINUS, PLUS, RIGHT_CURL, RIGHT_PAREN, SEMI_COLON, STAR, TILDE};
+use crate::tokens::{AT, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, OPEN_CURL, OPEN_PAREN, LESS_THAN, MINUS, PLUS, CLOSE_CURL, CLOSE_PAREN, SEMI_COLON, STAR, TILDE};
 
 type BufferedCharReader = Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>;
 
@@ -54,7 +54,7 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
           token = Token::LessOrEqual { line_num: *line_num, line_pos: *line_pos };
         } else if char_iter.next_if_eq(&MINUS).is_some() {
           *line_pos += 1;
-          token = Token::AssignValue { line_num: *line_num, line_pos: *line_pos };
+          token = Token::Assign { line_num: *line_num, line_pos: *line_pos };
         } else {
           token = Token::Less { line_num: *line_num, line_pos: *line_pos };
         }
@@ -114,25 +114,25 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
         token = Token::SemiColon { line_num: *line_num, line_pos: *line_pos };
         break;
       }
-      RIGHT_PAREN => {
-        token = Token::RParen { line_num: *line_num, line_pos: *line_pos };
+      CLOSE_PAREN => {
+        token = Token::CloseParen { line_num: *line_num, line_pos: *line_pos };
         break;
       }
-      LEFT_PAREN => {
+      OPEN_PAREN => {
         if char_iter.next_if_eq(&STAR).is_some() {
           *line_pos += 1;
           token = process_multi_line_comment(char_iter, line_num, line_pos);
         } else {
-          token = Token::LParen { line_num: *line_num, line_pos: *line_pos };
+          token = Token::OpenParen { line_num: *line_num, line_pos: *line_pos };
         }
         break;
       }
-      LEFT_CURL => {
-        token = Token::LCurl { line_num: *line_num, line_pos: *line_pos };
+      OPEN_CURL => {
+        token = Token::OpenCurl { line_num: *line_num, line_pos: *line_pos };
         break;
       }
-      RIGHT_CURL => {
-        token = Token::RCurl { line_num: *line_num, line_pos: *line_pos };
+      CLOSE_CURL => {
+        token = Token::CloseCurl { line_num: *line_num, line_pos: *line_pos };
         break;
       }
       DOUBLE_QUOTE => {
@@ -214,7 +214,7 @@ fn process_multi_line_comment(char_iter: &mut BufferedCharReader,
 
     match c {
       STAR => {
-        if char_iter.next_if_eq(&RIGHT_PAREN).is_some() {
+        if char_iter.next_if_eq(&CLOSE_PAREN).is_some() {
           // comment ends
           *line_pos += 1;
           break;

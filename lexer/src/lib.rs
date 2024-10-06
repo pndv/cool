@@ -1,9 +1,8 @@
-﻿use crate::nodes::{Class, Expression, Feature, Formal, ReadState, Program, Symbol, Type};
+﻿use crate::nodes::{CaseBranch, Class, Expression, Feature, Formal, LetInit, Program, Symbol, Type};
 use crate::scanner::get_program_token_list;
 use crate::tokens::Token;
 use core::iter::Iterator;
 use std::iter::{Filter, Peekable};
-use std::process::id;
 use std::vec::IntoIter;
 
 pub mod scanner;
@@ -60,12 +59,12 @@ fn get_class(token_iter: &mut FilteredTokensIterator) -> Class {
   }
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::left_curl_type());
+  let _ = match_required_token(token_option, Token::open_curl_type());
 
   let features = get_features(token_iter);
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::right_curl_type());
+  let _ = match_required_token(token_option, Token::close_curl_type());
 
   token_option = token_iter.next();
   let _ = match_required_token(token_option, Token::semi_colon_type());
@@ -103,32 +102,31 @@ fn get_feature(token_iter: &mut FilteredTokensIterator) -> Feature {
   let _ = match_required_token(token_option, Token::semi_colon_type());
 
   match token_iter.peek() {
-    Some(peeked_token) if peeked_token.is_same_type(&Token::colon_type()) => 
+    Some(peeked_token) if peeked_token.is_same_type(&Token::colon_type()) =>
       get_attribute_feature(ident_name, token_iter),
-    
-    Some(peeked_token) if peeked_token.is_same_type(&Token::left_paren_type()) => 
+
+    Some(peeked_token) if peeked_token.is_same_type(&Token::open_paren_type()) =>
       get_method_feature(ident_name, token_iter),
 
-    Some(t) =>  panic!("Incorrect token {:?}", t),
-    
+    Some(t) => panic!("Incorrect token {:?}", t),
+
     None => panic!("Unexpected EOF"),
-    
   }
 }
 
 fn get_method_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterator) -> Feature {
   let mut token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::left_paren_type());
+  let _ = match_required_token(token_option, Token::open_paren_type());
 
   let mut formals: Option<Vec<Formal>> = None;
 
-  if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::right_paren_type()) {
+  if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::close_paren_type()) {
     let vec_formals = get_formals(token_iter);
     formals = Some(vec_formals);
   }
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::right_paren_type());
+  let _ = match_required_token(token_option, Token::close_paren_type());
 
   token_option = token_iter.next();
   let _ = match_required_token(token_option, Token::colon_type());
@@ -138,12 +136,12 @@ fn get_method_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterato
   let method_return_type = Type::from(token);
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::left_curl_type());
+  let _ = match_required_token(token_option, Token::open_curl_type());
 
   let method_expr = get_expression(token_iter);
 
   token_option = token_iter.next();
-  let _ = match_required_token(token_option, Token::right_curl_type());
+  let _ = match_required_token(token_option, Token::close_curl_type());
 
   (ident_name, formals, method_return_type, Box::from(method_expr)).into()
 }
@@ -158,7 +156,7 @@ fn get_attribute_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIter
 
   if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::colon_type()) {
     token_option = token_iter.next();
-    let _ = match_required_token(token_option, Token::random_assign_value());
+    let _ = match_required_token(token_option, Token::assign_type());
 
     let method_expr = get_expression(token_iter);
     let feature = (ident_name, method_return_type, Box::from(method_expr)).into();
@@ -199,172 +197,330 @@ fn get_formal(token_iter: &mut FilteredTokensIterator) -> Formal {
   (formal_name, formal_type).into()
 }
 
-fn get_expression(token_iter: &mut FilteredTokensIterator, state: ReadState) -> Expression {
-  if token_iter.peek().is_some()  { panic!("Unexpected EOF") };
+fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
   
-  match state {
-    ReadState::ExpressionStart => {
-      get_tokens_from_start_state
-    }
-    ReadState::IdentStarting => {}
-    ReadState::LetIn => {}
-    ReadState::CaseOf => {}
-    ReadState::CaseEnd => {}
-    ReadState::WhileLoop => {}
-    ReadState::WhileEnd => {}
-    ReadState::ConditionalThen => {}
-    ReadState::ConditionalElse => {}
-    ReadState::ConditionalEnd => {}
-    ReadState::BinaryPlus => {}
-    ReadState::BinaryMinus => {}
-    ReadState::BinaryMultiply => {}
-    ReadState::BinaryDivide => {}
-    ReadState::BinaryLessThan => {}
-    ReadState::BinaryLessThanOrEqual => {}
-    ReadState::BinaryEqual => {}
+  if token_iter.peek().is_some() { panic!("Unexpected EOF") };
+  let mut stack: Vec<Box<Expression>> = Vec::new();
+  fill_expression_stack(token_iter, &mut stack);
+  
+  // The entire stack must reduce to a single `Expression`
+  if stack.is_empty() { return Expression::NoExpr; }
+  if stack.len() == 1 { return *stack[0]; }
+
+  for i in 0..stack.len() {
+    
   }
+    
   
+}
+
+
+
+fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) {
+  fn get_stack_top(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Box<Expression> {
+    let count = stack.len();
+    fill_expression_stack(token_iter, stack);
+    assert_eq!(stack.len(), count + 1); // should have only one more expression on the stack
+    stack.pop().unwrap()
+  }
+
+  fn get_block_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<Box<Expression>> {
+    let mut block_expr_list: Vec<Box<Expression>> = Vec::new();
+
+    let expr = get_stack_top(token_iter, stack);
+    match_required_token(token_iter.next(), Token::semi_colon_type());
+    block_expr_list.push(expr);
+
+    while token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&Token::close_curl_type()) {
+      let expr = get_stack_top(token_iter, stack);
+      match_required_token(token_iter.next(), Token::semi_colon_type());
+      block_expr_list.push(expr);
+    }
+
+    block_expr_list
+  }
+
+  fn get_let_init_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<LetInit> {
+    /// matches `Id:Type [[ <- Expression ]]`
+    fn get_let_init(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> LetInit {
+      let ident_token = match_required_token(token_iter.next(), Token::ident_type());
+      let ident_name: Symbol = Symbol::from(ident_token);
+
+      match_required_token(token_iter.next(), Token::colon_type());
+
+      let ident_type_token = match_required_token(token_iter.next(), Token::ident_type());
+      let ident_type: Type = Type::from(ident_type_token);
+
+      let mut expr: Option<Box<Expression>> = None;
+      let peek = token_iter.peek();
+      if peek.is_some() && peek.unwrap().is_same_type(&Token::assign_type()) {
+        match_required_token(token_iter.next(), Token::assign_type()); // consume `<-`
+        expr = Some(get_stack_top(token_iter, stack));
+      }
+
+      (ident_name, ident_type, expr).into()
+    }
+
+    let mut list: Vec<LetInit> = Vec::new();
+
+    let first_init = get_let_init(token_iter, stack);
+    list.push(first_init);
+
+    // get `LetInit` while there is `Comma`
+    while token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::comma_type()) {
+      let init = get_let_init(token_iter, stack);
+      list.push(init);
+    }
+
+    list
+  }
+
+  /// Get list of all branches of `case` statement
+  fn get_case_branch_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<CaseBranch> {
+    /// matches `Id:Type => Expression;`
+    fn get_case_branch(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> CaseBranch {
+      let ident_token = match_required_token(token_iter.next(), Token::ident_type());
+      let ident_name: Symbol = Symbol::from(ident_token);
+
+      match_required_token(token_iter.next(), Token::colon_type());
+
+      let type_token = match_required_token(token_iter.next(), Token::ident_type());
+      let ident_type: Type = Type::from(type_token);
+
+      match_required_token(token_iter.next(), Token::lambda_type());
+      let expr = get_stack_top(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::semi_colon_type());
+
+      (ident_name, ident_type, expr).into()
+    }
+
+    let mut case_branch_list: Vec<CaseBranch> = Vec::new();
+
+    while token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&Token::end_case_type()) {
+      case_branch_list.push(get_case_branch(token_iter, stack));
+    }
+
+    case_branch_list
+  }
+
+  /// Get list of parameters for function call (dynamic and static dispatch)
+  fn get_fn_param_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<Box<Expression>> {
+    let mut expr_list: Vec<Box<Expression>> = Vec::new();
+
+    while token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&Token::close_paren_type()) {
+      let expr = get_stack_top(token_iter, stack);
+      expr_list.push(expr);
+
+      if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::comma_type()) {
+        // consume `,` continue with the loop
+        match_required_token(token_iter.next(), Token::comma_type());
+      }
+    }
+
+    expr_list
+  }
+
+
+  let Some(token) = token_iter.peek() else { panic!("Unexpected EOF") };
+  let mut expr = Expression::NoExpr;
   match token {
-    Token::Empty => panic!("Unexpected token {:?}", token),
-    Token::Error { .. } => panic!("Unexpected token {:?}", token),
-    Token::Comment { .. } => panic!("Unexpected token {:?}", token),
-    Token::Int { value,.. } => Expression::Int {value},
-    Token::Str { value,.. } => Expression::String {value},
-    Token::True { .. } => Expression::Bool { value: true},
-    Token::False { .. } => Expression::Bool { value: false},
+    Token::Ident { .. } => {
+      /*
+      At top level 
+      - ID <- Type
+      - ID ( [[expr]]+ ) -- dispatch (static or dynamic)
+      - ID
+       */
+
+      let ident = match_required_token(token_iter.next(), Token::ident_type()); // consume the identifier
+
+      let peeked_token = token_iter.peek();
+
+      if let Some(next_token) = peeked_token {
+        match next_token {
+          Token::Assign { .. } => {
+            let _ = token_iter.next(); // consume `<-`
+            let symbol: Symbol = Symbol::from(ident);
+            let assign_expr = get_stack_top(token_iter, stack);
+            expr = Expression::Assign { name: symbol, expr: assign_expr }
+          }
+          Token::OpenParen { .. } => {
+            let _ = token_iter.next(); // consume `(`
+
+            let function_name: Symbol = Symbol::from(ident);
+            let param_list: Vec<Box<Expression>> = get_fn_param_expr_list(token_iter, stack);
+
+            match_required_token(token_iter.next(), Token::close_paren_type()); // consume `)`
+
+            // self.`fn(params`
+            expr = Expression::PartialDispatch {
+              fn_name: function_name,
+              param_list,
+            }
+          }
+          _ => expr = Expression::from(ident),
+        }
+      } else {
+        // Nothing after Identifier, return plain Ident expression
+        expr = Expression::from(ident);
+      }
+    }
+
+    Token::At { .. } => { // Dynamic dispatch
+      let _ = token_iter.next(); // consume `@`
+      let ident_type = match_required_token(token_iter.next(), Token::ident_type()); // consume `TYPE`
+      let cast_type = Type::from(ident_type);
+
+      // `.` must follow the cast_type
+      assert!(token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::dot_type()));
+
+      let dispatch_expr = get_stack_top(token_iter, stack);
+      if let Expression::PartialDispatch { .. } = *dispatch_expr {
+        expr = Expression::PartialCastDispatch { cast_type, partial_dispatch: dispatch_expr }
+      } else {
+        panic!("Invalid state for dynamic dispatch expression. Expected PartialDispatch type found {:?}", dispatch_expr);
+      }
+    }
+
+    Token::Dot { .. } => {
+      match_required_token(token_iter.next(), Token::dot_type()); // consume `.`
+
+      // `Ident` must follow the `.`
+      assert!(token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::ident_type()));
+
+      let dispatch_expr = get_stack_top(token_iter, stack);
+      if let Expression::PartialDispatch { .. } = *dispatch_expr {
+        expr = *dispatch_expr;
+      } else {
+        panic!("Invalid state for dynamic dispatch expression. Expected PartialDispatch type found {:?}", dispatch_expr);
+      }
+    }
+
+    Token::If { .. } => {
+      match_required_token(token_iter.next(), Token::if_type()); // consume `If`
+      let predicate = get_stack_top(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::then_type()); // consume `Then`
+      let then_expr = get_stack_top(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::else_type()); // consume `Else`
+      let else_expr = get_stack_top(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::end_if_type()); // consume `Fi`
+
+      expr = Expression::Conditional { predicate, then_expr, else_expr };
+    }
+
+    Token::While { .. } => {
+      let _ = token_iter.next(); // consume `while`
+
+      let predicate = get_stack_top(token_iter, stack);
+      match_required_token(token_iter.next(), Token::loop_type());
+
+      let body = get_stack_top(token_iter, stack);
+      match_required_token(token_iter.next(), Token::end_loop_type());
+
+      expr = Expression::Loop { predicate, body };
+    }
+
+    Token::OpenCurl { .. } => {
+      let _ = token_iter.next(); // consume `{`
+
+      let expressions = get_block_expr_list(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::close_curl_type()); // consume `}`
+
+      expr = Expression::Block { expr_list: expressions };
+    }
+
+    Token::Let { .. } => {
+      let _ = token_iter.next(); // consume `let`
+      let expr_list = get_let_init_list(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::in_type()); // consume `in`
+      let in_expr = get_stack_top(token_iter, stack);
+
+      expr = Expression::Let { let_init: expr_list, in_expr };
+    }
+
+    Token::Case { .. } => {
+      let _ = token_iter.next(); // consume `case`
+
+      let switch_expression = get_stack_top(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::of_type()); // consume `of`
+
+      let branches = get_case_branch_list(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::end_case_type()); // consume `esac` 
+
+      expr = Expression::Case { switch_expression, branches };
+    }
 
     Token::New { .. } => {
-      let Some(type_token) = token_iter.next() else { panic!("Unexpected EOF") };
+      let _ = token_iter.next(); // consume `new`
+      let Some(type_token) = token_iter.next() else { panic!("Unexpected EOF") }; // consume `type` i.e. Ident
       let type_name: Type = Type::from(type_token);
-      
-      Expression::New {type_name }
+
+      expr = Expression::New { type_name };
     }
 
     Token::IsVoid { .. } => {
-      let expr = get_expression(token_iter, state);
-      Expression::IsVoid { expr: Box::new(expr) }
-          
+      let _ = token_iter.next(); // consume `IsVoid`
+      let void_expr = get_stack_top(token_iter, stack);
+      expr = Expression::IsVoid { expr: void_expr };
     }
+
+    Token::Plus { .. } |
+    Token::Minus { .. } |
+    Token::Star { .. } |
+    Token::ForwardSlash { .. } |
+    Token::Less { .. } |
+    Token::LessOrEqual { .. } |
+    Token::Equal { .. } => {     //binary expression
+      let binary_token = token_iter.next().unwrap();
+      let right_expr = get_stack_top(token_iter, stack);
+      expr = Expression::PartialBinary { binary_token, right_expr };
+    }
+
     Token::Tilde { .. } => {
-      let expr = get_expression(token_iter, state);
-      Expression::Negate { expr: Box::new(expr) }
+      let _ = token_iter.next(); // consume `~`
+      let tilde_expr = get_stack_top(token_iter, stack);
+      expr = Expression::Negate { expr: tilde_expr };
     }
+
     Token::Not { .. } => {
-      let expr = get_expression(token_iter, state);
-      Expression::Not { expr: Box::new(expr) }
-    },
-    
-    _ => {
-      
+      let _ = token_iter.next(); // consume `Not`
+      let not_expr = get_stack_top(token_iter, stack);
+      expr = Expression::Not { expr: not_expr };
     }
 
+    Token::OpenParen { .. } => {
+      let _ = token_iter.next(); // consume `(`
+      let e = get_stack_top(token_iter, stack);
+
+      match_required_token(token_iter.next(), Token::close_paren_type());
+      expr = *e;
+    }
+
+    Token::Int { .. } | Token::Str { .. } | Token::True { .. } | Token::False { .. } => {
+      let t: Token = token_iter.next().unwrap();
+      expr = Expression::from(t);
+    }
+
+    // Intermediate expression, return as-is, handled by their respective branches 
+    Token::SemiColon { .. } | Token::Comma { .. } |
+    Token::Then { .. } | Token::Else { .. } | Token::EndIf { .. } |
+    Token::Loop { .. } | Token::EndLoop { .. } |
+    Token::In { .. } |
+    Token::Of { .. } | Token::EndCase { .. } |
+    Token::CloseParen { .. } | Token::CloseCurl { .. } => return,
+
+    _ => expr = Expression::NoExpr,
   }
-  
-  fn get_tokens_from_start_state(token_iter: &mut FilteredTokensIterator, state: ReadState) -> Expression {
-    let Some(token) = token_iter.peek() else { panic!("Unexpected EOF") };
 
-    match token {
-      
-      Token::Int {..} | Token::Str {..} | Token::True { .. } | Token::False { .. } => {
-        let t: Token = token_iter.next().unwrap();
-        Expression::from(t)
-      },
-
-      Token::New { .. } => {
-        let _ = token_iter.next(); // consume `new`
-        let Some(type_token) = token_iter.next() else { panic!("Unexpected EOF") }; // consume `type` i.e. Ident
-        let type_name: Type = Type::from(type_token);
-
-        Expression::New {type_name }
-      }
-
-      Token::IsVoid { .. } => {
-        let _ = token_iter.next(); // consume `IsVoid`
-        let expr = get_expression(token_iter, ReadState::ExpressionStart);
-        Expression::IsVoid { expr: Box::new(expr) }
-
-      }
-      Token::Tilde { .. } => {
-        let _ = token_iter.next(); // consume `~`
-        let expr = get_expression(token_iter, ReadState::ExpressionStart);
-        Expression::Negate { expr: Box::new(expr) }
-      }
-      
-      Token::Not { .. } => {
-        let _ = token_iter.next(); // consume `Not`
-        let expr = get_expression(token_iter, ReadState::ExpressionStart);
-        Expression::Not { expr: Box::new(expr) }
-      },
-      
-      Token::Ident { .. } => {
-        /*
-        At top level 
-        - ID <- Type
-        - ID ( [[expr]]+ ) -- dispatch (static or dynamic)
-        - ID
-         */
-        
-        let ident = token_iter.next().unwrap(); // consume the identifier
-        
-        let peeked_token = token_iter.peek();
-        if !peeked_token.is_some() {
-          // Nothing after Identifier, return plain Ident expression
-          return Expression::from(ident);
-        }
-        
-        let Some(next_token) = peeked_token else { panic!("Unexpected EOF") };
-        match next_token {
-          Token::AssignValue {..} => {
-            let _ = token_iter.next(); // consume `<-`
-            let symbol: Symbol = Symbol::from(ident);
-            let expr = get_expression(token_iter, ReadState::ExpressionStart);
-            Expression::Assign {name: symbol, expr: Box::new(expr) }
-          }
-          Token::LParen {..} => {
-            let function_name: Symbol = Symbol::from(ident);
-            let _ = token_iter.next(); // consume `(`
-            let param_list: Vec<Box<Expression>> = get_expr_list(token_iter);
-            let _ = token_iter.next(); // consume `)`
-            
-            // self.`fn(params`
-            Expression::Dispatch {
-              expr: Box::from(Expression::SelfExpr), 
-              name: function_name,
-              param_list
-            }
-          }
-          _ => Expression::from(ident),
-        }
-        
-      },
-
-      _ => Expression::NoExpr,
-
-    }
-
-    
-  }
-  
-  /// Get list of parameters for function call (dynamic and static dispatch)
-  fn get_expr_list(token_iter: &mut FilteredTokensIterator) -> Vec<Box<Expression>>{
-    let mut expr_list: Vec<Box<Expression>> = Vec::new();
-    let expr = get_expression(token_iter, ReadState::ExpressionStart);
-    expr_list.push(Box::from(expr));
-    
-    while let Some(Token::Comma {..}) = token_iter.peek() {
-      let _ = token_iter.next(); // consume the ','
-      let expr = get_expression(token_iter, ReadState::ExpressionStart);
-      expr_list.push(Box::from(expr));
-    }
-    
-    // check for calls like `fn(,,,,)` or `fn(,1)` or `fn(1,2,) and throw error 
-    if expr_list.len() > 1 && expr_list.contains(&Box::from(Expression::NoExpr)) {
-      panic!("Incorrect expression list {:?}", expr_list);
-    }
-    
-    expr_list
-  }
-  
+  stack.push(Box::from(expr))
 }
 
 fn match_required_token(token_option: Option<Token>, expected: Token) -> Token {
