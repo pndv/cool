@@ -1,10 +1,12 @@
+use crate::nodes::Expression::{PartialBinary, PartialDispatch};
 use crate::tokens::Token;
 use std::borrow::Cow;
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
 
 pub type Type = (Cow<'static, str>, u32, u32);
 pub type Symbol = Type;
 pub type CaseBranch = (Symbol, Type, Box<Expression>); // ID:TYPE => Expression 
+pub type LetInit = (Symbol, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
 
 impl From<Token> for Type {
   fn from(value: Token) -> Self {
@@ -19,7 +21,6 @@ impl From<Token> for Type {
 pub struct Program {
   classes: Vec<Class>,
 }
-
 
 impl Program {
   pub fn new() -> Self {
@@ -135,33 +136,38 @@ pub enum Expression {
 
   Assign { name: Symbol, expr: Box<Expression> },
 
-  // if no parameters, then it's a single list of [NoExpr]
-  StaticDispatch { expr: Box<Expression>, type_name: Symbol, name: Symbol, param_list: Vec<Box<Expression>> },
-  Dispatch { expr: Box<Expression>, name: Symbol, param_list : Vec<Box<Expression>> },
+  PartialDispatch { fn_name: Symbol, param_list: Vec<Box<Expression>> },
+  PartialCastDispatch { cast_type: Type, partial_dispatch: Box<Expression> },
+  Dispatch {
+    calling_expr: Box<Expression>,
+    cast_type_name: Option<Type>,
+    fn_name: Symbol,
+    param_list: Vec<Box<Expression>>, // if no parameters, then it's a single list of [NoExpr] 
+  },
 
-  Conditional { predicate: Box<Expression>, then_exp: Box<Expression>, else_exp: Box<Expression> },
+  Conditional { predicate: Box<Expression>, then_expr: Box<Expression>, else_expr: Box<Expression> },
 
-  Loop { predicate: Box<Expression>, body: Symbol, actual: Box<Expression> },
+  Loop { predicate: Box<Expression>, body: Box<Expression> },
 
   Case { switch_expression: Box<Expression>, branches: Vec<CaseBranch> },
 
-  Block { expr_list: Option<Vec<Box<Expression>>> },
+  Block { expr_list: Vec<Box<Expression>> }, // must have at least one `Expression` in the list
 
-  Let { identifier: Symbol, type_declaration: Type, init: Box<Expression>, body: Box<Expression> },
+  Let { let_init: Vec<LetInit>, in_expr: Box<Expression> },
 
+  PartialBinary { binary_token: Token, right_expr: Box<Expression> }, // for constructing binary expressions
   Plus { left: Box<Expression>, right: Box<Expression> },
   Minus { left: Box<Expression>, right: Box<Expression> },
   Multiply { left: Box<Expression>, right: Box<Expression> },
   Divide { left: Box<Expression>, right: Box<Expression> },
-
-  Negate { expr: Box<Expression> },
-  Not { expr: Box<Expression> },
-
   LessThan { left: Box<Expression>, right: Box<Expression> },
   Equal { left: Box<Expression>, right: Box<Expression> },
   LessThanOrEqual { left: Box<Expression>, right: Box<Expression> },
 
   Comp { expr: Box<Expression> },
+  Negate { expr: Box<Expression> },
+
+  Not { expr: Box<Expression> },
 
   Ident { name: Symbol },
 
@@ -173,11 +179,19 @@ pub enum Expression {
   IsVoid { expr: Box<Expression> },
 
   Object { name: Symbol },
-  
+
+}
+
+impl Expression {
+  fn is_partial(&self) -> bool {
+    match self {
+      PartialDispatch { .. } | Expression::PartialCastDispatch { .. } | PartialBinary { .. } => true,
+      _ => false,
+    }
+  }
 }
 
 impl From<Token> for Expression {
-
   /// Only for 
   /// - [Token::Str]
   /// - [Token::Ident]
@@ -186,16 +200,16 @@ impl From<Token> for Expression {
   /// - [Token::False]
   fn from(token: Token) -> Self {
     match token {
-      Token::Str { value, line_num, line_pos } => 
-        Expression::String {value, line_num, line_pos },
-      
-      Token::Ident { .. } => 
-        Expression::Ident {name: Symbol::from(token) },
-      
+      Token::Str { value, line_num, line_pos } =>
+        Expression::String { value, line_num, line_pos },
+
+      Token::Ident { .. } =>
+        Expression::Ident { name: Symbol::from(token) },
+
       Token::Int { value, line_num, line_pos } => Expression::Int { value, line_num, line_pos },
-      Token::True {  line_num, line_pos } => Expression::Bool { value: true, line_num, line_pos },
-      Token::False {  line_num, line_pos } => Expression::Bool { value: false, line_num, line_pos },
-      
+      Token::True { line_num, line_pos } => Expression::Bool { value: true, line_num, line_pos },
+      Token::False { line_num, line_pos } => Expression::Bool { value: false, line_num, line_pos },
+
       _ => panic!("Non-constant token {:?}", token)
     }
   }
@@ -204,20 +218,20 @@ impl From<Token> for Expression {
 #[derive(PartialEq, Debug)]
 pub(crate) enum ReadState {
   ExpressionStart,
-  
+
   IdentStarting,
   LetIn,
-  
+
   CaseOf,
   CaseEnd,
-  
+
   WhileLoop,
   WhileEnd,
-  
+
   ConditionalThen,
   ConditionalElse,
   ConditionalEnd,
-  
+
   BinaryPlus,
   BinaryMinus,
   BinaryMultiply,
