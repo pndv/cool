@@ -36,14 +36,14 @@ impl Program {
   pub fn add_class(&mut self, class: Class) {
     self.classes.push(class);
   }
-  
+
   pub fn classes(&self) -> &Vec<Class> {
     &self.classes
   }
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Class {
+pub(crate) struct Class {
   class_type: Type,
   parent_type: Option<Type>, // if no parent is given, then 'Object' is the parent of all classes
   features: Option<Vec<Feature>>,
@@ -56,13 +56,12 @@ const OBJECT: Class = Class {
 };
 
 impl Class {
-  pub fn new(class_type: Type, parent_type: Option<Type>, features: Option<Vec<Feature>>) -> Self {
-    let parent: Type;
-    if parent_type.is_some() {
-      parent = parent_type.unwrap();
+  pub(crate) fn new(class_type: Type, parent_type: Option<Type>, features: Option<Vec<Feature>>) -> Self {
+    let parent: Type = if parent_type.is_some() {
+      parent_type.unwrap()
     } else {
-      parent = OBJECT.class_type.clone();
-    }
+      OBJECT.class_type.clone()
+    };
 
     Class {
       class_type,
@@ -83,7 +82,7 @@ impl Class {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Feature {
+pub(crate) struct Feature {
   feature_name: Symbol,
   formals: Option<Vec<Formal>>,
   return_type: Type,
@@ -124,7 +123,7 @@ impl From<(Symbol, Type)> for Feature {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Formal {
+pub(crate) struct Formal {
   formal_name: Symbol,
   formal_type: Type,
 }
@@ -143,6 +142,7 @@ pub(crate) enum Expression {
   NoExpr,
   SelfExpr,
 
+  PartialAssign { expr: Box<Expression> },
   Assign { name: Symbol, expr: Box<Expression> },
 
   PartialDispatch { fn_name: Symbol, param_list: Vec<Expression> },
@@ -200,6 +200,7 @@ impl Expression {
     match self {
       Expression::NoExpr => String::from("NoExpr"),
       Expression::SelfExpr => String::from("SelfExpr"),
+      Expression::PartialAssign { .. } => String::from("PartialAssign"),
       Expression::Assign { .. } => String::from("Assign"),
       Expression::PartialDispatch { .. } => String::from("PartialDispatch"),
       Expression::PartialCastDispatch { .. } => String::from("PartialCastDispatch"),

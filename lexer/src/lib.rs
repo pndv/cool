@@ -648,7 +648,10 @@ mod test {
     let file_path = "test_resources/feature.test";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
     let features = get_features(&mut token_iter);
-    println!("{:#?}", features);
+    assert!(features.is_some());
+    let feature_list = features.unwrap();
+    assert_eq!(feature_list.len(), 1);
+    println!("{:#?}", feature_list);
   }
   
   #[test]
