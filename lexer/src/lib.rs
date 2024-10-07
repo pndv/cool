@@ -29,8 +29,8 @@ fn get_filtered_token_iter(file_path: &str) -> FilteredTokensIterator {
   let is_not_comment: CommentFilter = is_not_comment;
 
   let token_iter: FilteredTokensIterator = tokens.into_iter()
-                                                     .filter(is_not_comment)
-                                                     .peekable();
+                                                 .filter(is_not_comment)
+                                                 .peekable();
 
   token_iter
 }
@@ -67,12 +67,12 @@ fn get_class(token_iter: &mut FilteredTokensIterator) -> Class {
   }
 
   match_required_token(token_iter.next(), Token::open_curl_type());
-  
+
   let mut features: Option<Vec<Feature>> = None;
   if token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&Token::close_curl_type()) {
     features = get_features(token_iter);
   }
-  
+
   match_required_token(token_iter.next(), Token::close_curl_type());
   match_required_token(token_iter.next(), Token::semi_colon_type());
 
@@ -81,12 +81,11 @@ fn get_class(token_iter: &mut FilteredTokensIterator) -> Class {
 
 /// Features :-> feature; {{ features }}
 fn get_features(token_iter: &mut FilteredTokensIterator) -> Option<Vec<Feature>> {
-
   let mut features = Vec::new();
   let mut feature = get_feature(token_iter);
   features.push(feature);
 
-  // read till closing `}` encountered for `class` 
+  // `{` seen in calling method => read till closing `}` encountered for `class` 
   while token_iter.peek().is_some() && !token_iter.peek()?.is_same_type(&Token::close_curl_type()) {
     feature = get_feature(token_iter);
     features.push(feature);
@@ -123,7 +122,7 @@ fn get_method_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIterato
 
   let mut formals: Option<Vec<Formal>> = None;
 
-  // If the next token is not `)`, read formals list
+  // `(` seen in calling method => If the next token is not `)`, read formals list
   if token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&Token::close_paren_type()) {
     let vec_formals = get_formals(token_iter);
     formals = Some(vec_formals);
@@ -163,7 +162,6 @@ fn get_attribute_feature(ident_name: Symbol, token_iter: &mut FilteredTokensIter
 
 /// Formals |-> formal {{, formals}}
 fn get_formals(token_iter: &mut FilteredTokensIterator) -> Vec<Formal> {
-
   let mut formals: Vec<Formal> = Vec::new();
   let mut formal = get_formal(token_iter);
   formals.push(formal);
@@ -180,7 +178,6 @@ fn get_formals(token_iter: &mut FilteredTokensIterator) -> Vec<Formal> {
 
 /// Formal |-> ID : TYPE
 fn get_formal(token_iter: &mut FilteredTokensIterator) -> Formal {
-  
   let mut token = match_required_token(token_iter.next(), Token::ident_type());
   let formal_name: Symbol = Symbol::from(token);
 
@@ -195,7 +192,7 @@ fn get_formal(token_iter: &mut FilteredTokensIterator) -> Formal {
 fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
   assert!(token_iter.peek().is_some(), "Unexpected EOF"); // assert that there are some tokens remaining
 
-  let mut stack: Vec<Box<Expression>> = Vec::new();
+  let mut stack: Vec<Expression> = Vec::new();
   fill_expression_stack(token_iter, &mut stack);
 
   // The entire stack must reduce to a single `Expression`
@@ -204,7 +201,7 @@ fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
   let mut expr = Expression::NoExpr;
 
   if stack.len() == 1 {
-    expr = (*stack[0]).clone();
+    expr = stack[0].clone();
 
     // If first expression is a PartialDispatch convert it to Dispatch by adding `self`
     if let Expression::PartialDispatch { fn_name, param_list } = expr {
@@ -220,44 +217,44 @@ fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
   }
 
   for i in 1..stack.len() {
-    let next_expr = *stack[i].clone();
+    let next_expr = stack[i].clone();
     assert!(next_expr.is_partial());
 
     match next_expr {
       Expression::PartialBinary { binary_token, right_expr } => {
         match binary_token {
-          Token::Star { .. } => expr = Expression::Multiply { left: stack[0].clone(), right: right_expr },
-          Token::ForwardSlash { .. } => expr = Expression::Divide { left: stack[0].clone(), right: right_expr },
-          Token::Plus { .. } => expr = Expression::Plus { left: stack[0].clone(), right: right_expr },
-          Token::Minus { .. } => expr = Expression::Minus { left: stack[0].clone(), right: right_expr },
-          Token::LessOrEqual { .. } => expr = Expression::LessThanOrEqual { left: stack[0].clone(), right: right_expr },
-          Token::Less { .. } => expr = Expression::LessThan { left: stack[0].clone(), right: right_expr },
-          Token::Equal { .. } => expr = Expression::Equal { left: stack[0].clone(), right: right_expr },
+          Token::Star { .. } => expr = Expression::Multiply { left: Box::from(stack[0].clone()), right: right_expr },
+          Token::ForwardSlash { .. } => expr = Expression::Divide { left: Box::from(stack[0].clone()), right: right_expr },
+          Token::Plus { .. } => expr = Expression::Plus { left: Box::from(stack[0].clone()), right: right_expr },
+          Token::Minus { .. } => expr = Expression::Minus { left: Box::from(stack[0].clone()), right: right_expr },
+          Token::LessOrEqual { .. } => expr = Expression::LessThanOrEqual { left: Box::from(stack[0].clone()), right: right_expr },
+          Token::Less { .. } => expr = Expression::LessThan { left: Box::from(stack[0].clone()), right: right_expr },
+          Token::Equal { .. } => expr = Expression::Equal { left: Box::from(stack[0].clone()), right: right_expr },
           _ => panic!("Not a binary token {:?}", binary_token),
         }
       }
 
       Expression::PartialDispatch { fn_name, param_list } => {
         let first = stack[0].clone();
-        expr = Expression::Dispatch { calling_expr: first, cast_type_name: None, fn_name, param_list }
+        expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type_name: None, fn_name, param_list }
       }
       Expression::PartialCastDispatch { cast_type, partial_dispatch } => {
         let first = stack[0].clone();
         if let Expression::PartialDispatch { fn_name, param_list } = *partial_dispatch {
-          expr = Expression::Dispatch { calling_expr: first, cast_type_name: Some(cast_type), fn_name, param_list }
+          expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type_name: Some(cast_type), fn_name, param_list }
         } else {
           panic!("PartialCast does not have correct dispatch expression {:?}", partial_dispatch);
         }
       }
 
-      _ => panic!("Should be partial expression {:?}", next_expr)
+      _ => panic!("Should be partial expression, received {:?}", next_expr.get_type())
     }
   }
 
   expr
 }
 
-fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) {
+fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) {
   let Some(token) = token_iter.peek() else { panic!("Unexpected EOF") };
   let expr: Expression;
   match token {
@@ -282,10 +279,11 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
       assert!(token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::dot_type()));
 
       let dispatch_expr = get_stack_top(token_iter, stack);
-      if let Expression::PartialDispatch { .. } = *dispatch_expr {
-        expr = Expression::PartialCastDispatch { cast_type, partial_dispatch: dispatch_expr }
+      if let Expression::PartialDispatch { .. } = dispatch_expr {
+        expr = Expression::PartialCastDispatch { cast_type, partial_dispatch: Box::from(dispatch_expr) }
       } else {
-        panic!("Invalid state for dynamic dispatch expression. Expected PartialDispatch type found {:?}", dispatch_expr);
+        dbg!(&dispatch_expr);
+        panic!("Invalid state for dynamic dispatch expression. Expected PartialDispatch type found {:?}", dispatch_expr.get_type());
       }
     }
 
@@ -296,10 +294,10 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
       assert!(token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&Token::ident_type()));
 
       let dispatch_expr = get_stack_top(token_iter, stack);
-      if let Expression::PartialDispatch { .. } = *dispatch_expr {
-        expr = *dispatch_expr;
+      if let Expression::PartialDispatch { .. } = dispatch_expr {
+        expr = dispatch_expr;
       } else {
-        panic!("Invalid state for dynamic dispatch expression. Expected PartialDispatch type found {:?}", dispatch_expr);
+        panic!("Invalid state for dynamic dispatch expression. Expected PartialDispatch type found {:?}", dispatch_expr.get_type());
       }
     }
 
@@ -314,7 +312,7 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
     Token::IsVoid { .. } => {
       let _ = token_iter.next(); // consume `IsVoid`
       let void_expr = get_stack_top(token_iter, stack);
-      expr = Expression::IsVoid { expr: void_expr };
+      expr = Expression::IsVoid { expr: Box::from(void_expr) };
     }
 
     Token::Plus { .. } |
@@ -326,27 +324,26 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
     Token::Equal { .. } => {     //binary expression
       let binary_token = token_iter.next().unwrap();
       let right_expr = get_stack_top(token_iter, stack);
-      expr = Expression::PartialBinary { binary_token, right_expr };
+      expr = Expression::PartialBinary { binary_token, right_expr: Box::from(right_expr) };
     }
 
     Token::Tilde { .. } => {
       let _ = token_iter.next(); // consume `~`
       let tilde_expr = get_stack_top(token_iter, stack);
-      expr = Expression::Negate { expr: tilde_expr };
+      expr = Expression::Negate { expr: Box::from(tilde_expr) };
     }
 
     Token::Not { .. } => {
       let _ = token_iter.next(); // consume `Not`
       let not_expr = get_stack_top(token_iter, stack);
-      expr = Expression::Not { expr: not_expr };
+      expr = Expression::Not { expr: Box::from(not_expr) };
     }
 
     Token::OpenParen { .. } => {
       let _ = token_iter.next(); // consume `(`
-      let e = get_stack_top(token_iter, stack);
+      expr = get_stack_top(token_iter, stack);
 
       match_required_token(token_iter.next(), Token::close_paren_type());
-      expr = *e;
     }
 
     Token::Int { .. } | Token::Str { .. } | Token::True { .. } | Token::False { .. } => {
@@ -365,10 +362,10 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
     _ => expr = Expression::NoExpr,
   }
 
-  stack.push(Box::from(expr));
+  stack.push(expr);
 }
 
-fn get_case_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Expression {
+fn get_case_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
   let _ = token_iter.next(); // consume `case`
 
   let switch_expression = get_stack_top(token_iter, stack);
@@ -379,20 +376,20 @@ fn get_case_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Ex
 
   match_required_token(token_iter.next(), Token::end_case_type()); // consume `esac` 
 
-  Expression::Case { switch_expression, branches }
+  Expression::Case { switch_expression: Box::from(switch_expression), branches }
 }
 
-fn get_let_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Expression {
+fn get_let_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
   let _ = token_iter.next(); // consume `let`
   let expr_list = get_let_init_list(token_iter, stack);
 
   match_required_token(token_iter.next(), Token::in_type()); // consume `in`
   let in_expr = get_stack_top(token_iter, stack);
 
-  Expression::Let { let_init: expr_list, in_expr }
+  Expression::Let { let_init: expr_list, in_expr: Box::from(in_expr) }
 }
 
-fn get_block_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Expression {
+fn get_block_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
   let _ = token_iter.next(); // consume `{`
 
   let expressions = get_block_expr_list(token_iter, stack);
@@ -402,7 +399,7 @@ fn get_block_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<E
   Expression::Block { expr_list: expressions }
 }
 
-fn get_loop_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Expression {
+fn get_loop_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
   match_required_token(token_iter.next(), Token::while_type()); // consume `while`
 
   let predicate = get_stack_top(token_iter, stack);
@@ -411,10 +408,10 @@ fn get_loop_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Ex
   let body = get_stack_top(token_iter, stack);
   match_required_token(token_iter.next(), Token::end_loop_type());
 
-  Expression::Loop { predicate, body }
+  Expression::Loop { predicate: Box::from(predicate), body: Box::from(body) }
 }
 
-fn get_conditional_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Expression {
+fn get_conditional_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
   match_required_token(token_iter.next(), Token::if_type()); // consume `If`
   let predicate = get_stack_top(token_iter, stack);
 
@@ -426,14 +423,18 @@ fn get_conditional_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec
 
   match_required_token(token_iter.next(), Token::end_if_type()); // consume `Fi`
 
-  Expression::Conditional { predicate, then_expr, else_expr }
+  Expression::Conditional {
+    predicate: Box::from(predicate),
+    then_expr: Box::from(then_expr),
+    else_expr: Box::from(else_expr),
+  }
 }
 
 /// The expression from ID could be:
 /// 1. ID <- Type
 /// 2. ID ( {{expr}}+ ) -- dispatch (static or dynamic)
 /// 3. ID
-fn get_expr_from_ident(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Expression {
+fn get_expr_from_ident(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
   let ident = match_required_token(token_iter.next(), Token::ident_type()); // consume the identifier
   let expr: Expression;
 
@@ -445,13 +446,13 @@ fn get_expr_from_ident(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<
         let _ = token_iter.next(); // consume `<-`
         let symbol: Symbol = Symbol::from(ident);
         let assign_expr = get_stack_top(token_iter, stack);
-        expr = Expression::Assign { name: symbol, expr: assign_expr }
+        expr = Expression::Assign { name: symbol, expr: Box::from(assign_expr) }
       }
       Token::OpenParen { .. } => {
         let _ = token_iter.next(); // consume `(`
 
         let function_name: Symbol = Symbol::from(ident);
-        let param_list: Vec<Box<Expression>> = get_fn_param_expr_list(token_iter, stack);
+        let param_list: Vec<Expression> = get_fn_param_expr_list(token_iter, stack);
 
         match_required_token(token_iter.next(), Token::close_paren_type()); // consume `)`
 
@@ -471,15 +472,15 @@ fn get_expr_from_ident(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<
   expr
 }
 
-fn get_stack_top(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Box<Expression> {
+fn get_stack_top(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
   let count = stack.len();
   fill_expression_stack(token_iter, stack);
   assert_eq!(stack.len(), count + 1); // should have only one more expression on the stack
   stack.pop().unwrap()
 }
 
-fn get_block_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<Box<Expression>> {
-  let mut block_expr_list: Vec<Box<Expression>> = Vec::new();
+fn get_block_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Vec<Expression> {
+  let mut block_expr_list: Vec<Expression> = Vec::new();
 
   let expr = get_stack_top(token_iter, stack);
   match_required_token(token_iter.next(), Token::semi_colon_type());
@@ -494,9 +495,9 @@ fn get_block_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<
   block_expr_list
 }
 
-fn get_let_init_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<LetInit> {
+fn get_let_init_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Vec<LetInit> {
   /// matches `Id:Type [[ <- Expression ]]`
-  fn get_let_init(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> LetInit {
+  fn get_let_init(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> LetInit {
     let ident_token = match_required_token(token_iter.next(), Token::ident_type());
     let ident_name: Symbol = Symbol::from(ident_token);
 
@@ -509,7 +510,8 @@ fn get_let_init_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Bo
     let peek = token_iter.peek();
     if peek.is_some() && peek.unwrap().is_same_type(&Token::assign_type()) {
       match_required_token(token_iter.next(), Token::assign_type()); // consume `<-`
-      expr = Some(get_stack_top(token_iter, stack));
+      let expression = get_stack_top(token_iter, stack);
+      expr = Some(Box::from(expression));
     }
 
     (ident_name, ident_type, expr)
@@ -530,9 +532,9 @@ fn get_let_init_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Bo
 }
 
 /// Get list of all branches of `case` statement
-fn get_case_branch_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<CaseBranch> {
+fn get_case_branch_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Vec<CaseBranch> {
   /// matches `Id:Type => Expression;`
-  fn get_case_branch(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> CaseBranch {
+  fn get_case_branch(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> CaseBranch {
     let ident_token = match_required_token(token_iter.next(), Token::ident_type());
     let ident_name: Symbol = Symbol::from(ident_token);
 
@@ -546,7 +548,7 @@ fn get_case_branch_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec
 
     match_required_token(token_iter.next(), Token::semi_colon_type());
 
-    (ident_name, ident_type, expr)
+    (ident_name, ident_type, Box::from(expr))
   }
 
   let mut case_branch_list: Vec<CaseBranch> = Vec::new();
@@ -559,8 +561,8 @@ fn get_case_branch_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec
 }
 
 /// Get list of parameters for function call (dynamic and static dispatch)
-fn get_fn_param_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Box<Expression>>) -> Vec<Box<Expression>> {
-  let mut expr_list: Vec<Box<Expression>> = Vec::new();
+fn get_fn_param_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Vec<Expression> {
+  let mut expr_list: Vec<Expression> = Vec::new();
 
   while token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&Token::close_paren_type()) {
     let expr = get_stack_top(token_iter, stack);
@@ -626,6 +628,15 @@ mod test {
     let file = "test_resources/cool.cl";
     let program = parse_program_from_file(file);
     println!("{:#?}", program);
+  }
+
+  #[test]
+  fn test_large_program() {
+    let file = "test_resources/arith.cl";
+    let program = parse_program_from_file(file);
+    assert!(program.classes().len() > 1);
+    assert_eq!(program.classes().len(), 7);
+    println!("{:#?}", program.classes().len());
   }
 
   #[test]
