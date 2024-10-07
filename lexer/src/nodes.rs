@@ -1,12 +1,12 @@
 use crate::nodes::Expression::{PartialBinary, PartialDispatch};
 use crate::tokens::Token;
 use std::borrow::Cow;
-use std::fmt::Display;
 
 pub type Type = (Cow<'static, str>, u32, u32);
+
 pub type Symbol = Type;
-pub type CaseBranch = (Symbol, Type, Box<Expression>); // ID:TYPE => Expression 
-pub type LetInit = (Symbol, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
+pub(crate) type CaseBranch = (Symbol, Type, Box<Expression>); // ID:TYPE => Expression 
+pub(crate) type LetInit = (Symbol, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
 
 impl From<Token> for Type {
   fn from(value: Token) -> Self {
@@ -17,12 +17,19 @@ impl From<Token> for Type {
   }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Program {
   classes: Vec<Class>,
 }
 
+impl Default for Program {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Program {
+  #[must_use] 
   pub fn new() -> Self {
     let classes: Vec<Class> = Vec::new();
     Program { classes }
@@ -33,7 +40,7 @@ impl Program {
   }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Class {
   class_type: Type,
   parent_type: Option<Type>, // if no parent is given, then 'Object' is the parent of all classes
@@ -73,7 +80,7 @@ impl Class {
   }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Feature {
   feature_name: Symbol,
   formals: Option<Vec<Formal>>,
@@ -114,7 +121,7 @@ impl From<(Symbol, Type)> for Feature {
   }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Formal {
   formal_name: Symbol,
   formal_type: Type,
@@ -129,8 +136,8 @@ impl From<(Symbol, Type)> for Formal {
   }
 }
 
-#[derive(PartialEq, Debug)]
-pub enum Expression {
+#[derive(PartialEq, Debug, Clone)]
+pub(crate) enum Expression {
   NoExpr,
   SelfExpr,
 
@@ -164,7 +171,6 @@ pub enum Expression {
   Equal { left: Box<Expression>, right: Box<Expression> },
   LessThanOrEqual { left: Box<Expression>, right: Box<Expression> },
 
-  Comp { expr: Box<Expression> },
   Negate { expr: Box<Expression> },
 
   Not { expr: Box<Expression> },
@@ -178,16 +184,12 @@ pub enum Expression {
   New { type_name: Type },
   IsVoid { expr: Box<Expression> },
 
-  Object { name: Symbol },
-
+  // Object { name: Symbol },
 }
 
 impl Expression {
-  fn is_partial(&self) -> bool {
-    match self {
-      PartialDispatch { .. } | Expression::PartialCastDispatch { .. } | PartialBinary { .. } => true,
-      _ => false,
-    }
+  pub fn is_partial(&self) -> bool {
+    matches!(self, PartialDispatch { .. } | Expression::PartialCastDispatch { .. } | PartialBinary { .. })
   }
 }
 
@@ -213,30 +215,4 @@ impl From<Token> for Expression {
       _ => panic!("Non-constant token {:?}", token)
     }
   }
-}
-
-#[derive(PartialEq, Debug)]
-pub(crate) enum ReadState {
-  ExpressionStart,
-
-  IdentStarting,
-  LetIn,
-
-  CaseOf,
-  CaseEnd,
-
-  WhileLoop,
-  WhileEnd,
-
-  ConditionalThen,
-  ConditionalElse,
-  ConditionalEnd,
-
-  BinaryPlus,
-  BinaryMinus,
-  BinaryMultiply,
-  BinaryDivide,
-  BinaryLessThan,
-  BinaryLessThanOrEqual,
-  BinaryEqual,
 }
