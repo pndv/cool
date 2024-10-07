@@ -1,9 +1,7 @@
-use crate::nodes::Expression::{PartialBinary, PartialDispatch};
 use crate::tokens::Token;
 use std::borrow::Cow;
 
 pub type Type = (Cow<'static, str>, u32, u32);
-
 pub type Symbol = Type;
 pub(crate) type CaseBranch = (Symbol, Type, Box<Expression>); // ID:TYPE => Expression 
 pub(crate) type LetInit = (Symbol, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
@@ -23,13 +21,13 @@ pub struct Program {
 }
 
 impl Default for Program {
-    fn default() -> Self {
-        Self::new()
-    }
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl Program {
-  #[must_use] 
+  #[must_use]
   pub fn new() -> Self {
     let classes: Vec<Class> = Vec::new();
     Program { classes }
@@ -37,6 +35,10 @@ impl Program {
 
   pub fn add_class(&mut self, class: Class) {
     self.classes.push(class);
+  }
+  
+  pub fn classes(&self) -> &Vec<Class> {
+    &self.classes
   }
 }
 
@@ -70,7 +72,7 @@ impl Class {
   }
 
   pub fn add_feature(&mut self, feature: Feature) {
-    if self.features == None {
+    if self.features.is_none() {
       self.features = Some(Vec::new());
     }
 
@@ -143,13 +145,13 @@ pub(crate) enum Expression {
 
   Assign { name: Symbol, expr: Box<Expression> },
 
-  PartialDispatch { fn_name: Symbol, param_list: Vec<Box<Expression>> },
+  PartialDispatch { fn_name: Symbol, param_list: Vec<Expression> },
   PartialCastDispatch { cast_type: Type, partial_dispatch: Box<Expression> },
   Dispatch {
     calling_expr: Box<Expression>,
     cast_type_name: Option<Type>,
     fn_name: Symbol,
-    param_list: Vec<Box<Expression>>, // if no parameters, then it's a single list of [NoExpr] 
+    param_list: Vec<Expression>, // if no parameters, then it's a single list of [NoExpr] 
   },
 
   Conditional { predicate: Box<Expression>, then_expr: Box<Expression>, else_expr: Box<Expression> },
@@ -158,7 +160,7 @@ pub(crate) enum Expression {
 
   Case { switch_expression: Box<Expression>, branches: Vec<CaseBranch> },
 
-  Block { expr_list: Vec<Box<Expression>> }, // must have at least one `Expression` in the list
+  Block { expr_list: Vec<Expression> }, // must have at least one `Expression` in the list
 
   Let { let_init: Vec<LetInit>, in_expr: Box<Expression> },
 
@@ -189,7 +191,41 @@ pub(crate) enum Expression {
 
 impl Expression {
   pub fn is_partial(&self) -> bool {
-    matches!(self, PartialDispatch { .. } | Expression::PartialCastDispatch { .. } | PartialBinary { .. })
+    matches!(self, Expression::PartialDispatch { .. } | 
+      Expression::PartialCastDispatch { .. } | 
+      Expression::PartialBinary { .. })
+  }
+
+  pub(crate) fn get_type(&self) -> String {
+    match self {
+      Expression::NoExpr => String::from("NoExpr"),
+      Expression::SelfExpr => String::from("SelfExpr"),
+      Expression::Assign { .. } => String::from("Assign"),
+      Expression::PartialDispatch { .. } => String::from("PartialDispatch"),
+      Expression::PartialCastDispatch { .. } => String::from("PartialCastDispatch"),
+      Expression::Dispatch { .. } => String::from("Dispatch"),
+      Expression::Conditional { .. } => String::from("Conditional"),
+      Expression::Loop { .. } => String::from("Loop"),
+      Expression::Case { .. } => String::from("Case"),
+      Expression::Block { .. } => String::from("Block"),
+      Expression::Let { .. } => String::from("Let"),
+      Expression::PartialBinary { .. } => String::from("PartialBinary"),
+      Expression::Plus { .. } => String::from("Plus"),
+      Expression::Minus { .. } => String::from("Minus"),
+      Expression::Multiply { .. } => String::from("Multiply"),
+      Expression::Divide { .. } => String::from("Divide"),
+      Expression::LessThan { .. } => String::from("LessThan"),
+      Expression::Equal { .. } => String::from("Equal"),
+      Expression::LessThanOrEqual { .. } => String::from("LessThanOrEqual"),
+      Expression::Negate { .. } => String::from("Negate"),
+      Expression::Not { .. } => String::from("Not"),
+      Expression::Ident { .. } => String::from("Ident"),
+      Expression::Int { .. } => String::from("Int"),
+      Expression::Bool { .. } => String::from("Bool"),
+      Expression::String { .. } => String::from("String"),
+      Expression::New { .. } => String::from("New"),
+      Expression::IsVoid { .. } => String::from("IsVoid"),
+    }
   }
 }
 
@@ -214,5 +250,14 @@ impl From<Token> for Expression {
 
       _ => panic!("Non-constant token {:?}", token)
     }
+  }
+}
+
+mod test {
+  use crate::nodes::Expression;
+
+  #[test]
+  fn test_get_type() {
+    assert_eq!(Expression::Int { value: 10, line_num: 5, line_pos: 10 }.get_type(), "Int");
   }
 }
