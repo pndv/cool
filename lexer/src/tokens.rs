@@ -145,194 +145,34 @@ impl Token {
   pub(crate) fn is_same_type(&self, other: &Token) -> bool {
     discriminant(self) == discriminant(other)
   }
-  
-  
-  /*
-    /// Generates random [`Token::Empty`]
-    pub(crate) fn empty_type() -> Token { Token::Empty }
-  
-    /// Generates random [`Token::Error`]
-    pub(crate) fn err_type() -> Token { Token::Error { error_char: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Comment`]
-    pub(crate) fn comment_type() -> Token { Token::Comment { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Str`]
-    pub(crate) fn str_type() -> Token { Token::Str { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Int`]
-    pub(crate) fn int_type() -> Token { Token::Int { value: i32::MAX, line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::At`]
-    pub(crate) fn at_type() -> Token { Token::At { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-  
-    /// Generates random [`Token::Tilde`]
-    pub(crate) fn tilde_type() -> Token { Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Star`]
-    pub(crate) fn star_type() -> Token { Token::Star { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-  
-    /// Generates random [`Token::ForwardSlash`]
-    pub(crate) fn random_forward_slash() -> Token { Token::ForwardSlash { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Plus`]
-    pub(crate) fn random_plus() -> Token { Token::Plus { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Minus`]
-    pub(crate) fn random_minus() -> Token { Token::Minus { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::LessOrEqual`]
-    pub(crate) fn less_or_equal_type() -> Token { Token::LessOrEqual { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Less`]
-    pub(crate) fn less_type() -> Token { Token::Less { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Equal`]
-    pub(crate) fn equal_type() -> Token { Token::Equal { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::New`]
-    pub(crate) fn new_type() -> Token { Token::New { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::IsVoid`]
-    pub(crate) fn is_void_type() -> Token { Token::IsVoid { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::Not`]
-    pub(crate) fn not_type() -> Token { Token::Not { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::True`]
-    pub(crate) fn true_type() -> Token { Token::True { line_num: u32::MAX, line_pos: u32::MAX } }
-  
-    /// Generates random [`Token::False`]
-    pub(crate) fn false_type() -> Token { Token::False { line_num: u32::MAX, line_pos: u32::MAX } }
-  */
-  /// Generates random [`Token::Ident`]
-  pub(crate) fn ident_type() -> Token { Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Lambda`]
-  pub(crate) fn lambda_type() -> Token { Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Dot`]
-  pub(crate) fn dot_type() -> Token { Token::Dot { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Comma`]
-  pub(crate) fn comma_type() -> Token { Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Assign`]
-  pub(crate) fn assign_type() -> Token { Token::Assign { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Colon`]
-  pub(crate) fn colon_type() -> Token { Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::SemiColon`]
-  pub(crate) fn semi_colon_type() -> Token { Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::OpenParen`]
-  pub(crate) fn open_paren_type() -> Token { Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::CloseParen`]
-  pub(crate) fn close_paren_type() -> Token { Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::OpenCurl`]
-  pub(crate) fn open_curl_type() -> Token { Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::CloseCurl`]
-  pub(crate) fn close_curl_type() -> Token { Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Class`]
-  pub(crate) fn class_type() -> Token { Token::Class { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Inherits`]
-  pub(crate) fn inherits_type() -> Token { Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::If`]
-  pub(crate) fn if_type() -> Token { Token::If { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Then`]
-  pub(crate) fn then_type() -> Token { Token::Then { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Else`]
-  pub(crate) fn else_type() -> Token { Token::Else { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::EndIf`]
-  pub(crate) fn end_if_type() -> Token { Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Loop`]
-  pub(crate) fn loop_type() -> Token { Token::Loop { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::EndLoop`]
-  pub(crate) fn end_loop_type() -> Token { Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::In`]
-  pub(crate) fn in_type() -> Token { Token::In { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Of`]
-  pub(crate) fn of_type() -> Token { Token::Of { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::EndCase`]
-  pub(crate) fn end_case_type() -> Token { Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::While`]
-  pub(crate) fn while_type() -> Token { Token::While { line_num: u32::MAX, line_pos: u32::MAX } }
-/*
-  /// Generates random [`Token::Let`]
-  pub(crate) fn let_type() -> Token { Token::Let { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Case`]
-  pub(crate) fn case_type() -> Token { Token::Case { line_num: u32::MAX, line_pos: u32::MAX } }
-*/
 }
-/*
-pub(crate) static ident_type: Token =  Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } ;
 
-pub(crate) static lambda_type: Token =  Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX } ;
+pub(crate) const IDENT_TYPE: Token = Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const LAMBDA_TYPE: Token = Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const DOT_TYPE: Token = Token::Dot { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const COMMA_TYPE: Token = Token::Comma { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const ASSIGN_TYPE: Token = Token::Assign { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const COLON_TYPE: Token = Token::Colon { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const SEMI_COLON_TYPE: Token = Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const OPEN_PAREN_TYPE: Token = Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CLOSE_PAREN_TYPE: Token = Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const OPEN_CURL_TYPE: Token = Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CLOSE_CURL_TYPE: Token = Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CLASS_TYPE: Token = Token::Class { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const INHERITS_TYPE: Token = Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const IF_TYPE: Token = Token::If { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const THEN_TYPE: Token = Token::Then { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const ELSE_TYPE: Token = Token::Else { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const END_IF_TYPE: Token = Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const LOOP_TYPE: Token = Token::Loop { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const END_LOOP_TYPE: Token = Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const IN_TYPE: Token = Token::In { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const OF_TYPE: Token = Token::Of { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const END_CASE_TYPE: Token = Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const WHILE_TYPE: Token = Token::While { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const LET_TYPE: Token = Token::Let { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CASE_TYPE: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
 
-pub(crate) static dot_type: Token =  Token::Dot { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static comma_type: Token =  Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static assign_type: Token =  Token::Assign { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static colon_type: Token =  Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static semi_colon_type: Token =  Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static open_paren_type: Token =  Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static close_paren_type: Token =  Token::CloseParen { line_num: crate::tokens::Token::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static open_curl_type: Token =  Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static close_curl_type: Token =  Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static class_type: Token =  Token::Class { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static inherits_type: Token =  Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static if_type: Token =  Token::If { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static then_type: Token =  Token::Then { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static else_type: Token =  Token::Else { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static end_if_type: Token =  Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static loop_type: Token =  Token::Loop { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static end_loop_type: Token =  Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static in_type: Token =  Token::In { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static of_type: Token =  Token::Of { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static end_case_type: Token =  Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static while_type: Token =  Token::While { line_num: u32::MAX, line_pos: u32::MAX } ;
-
-pub(crate) static let_type: Token =  Token::Let { line_num: u32::MAX, line_pos: u32::MAX } ;
-pub(crate) static case_type: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
-*/
 #[derive(PartialEq, Debug)]
 pub(crate) enum WhiteSpace {
   Space,
@@ -367,7 +207,8 @@ impl WhiteSpace {
   }
 }
 
-mod test {
+#[cfg(test)]
+mod test_token {
   use super::*;
 
   #[test]
