@@ -614,7 +614,7 @@ fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
 
 mod test {
   use crate::tokens::Token;
-  use crate::{get_filtered_token_iter, parse_program_from_file};
+  use crate::{get_features, get_filtered_token_iter, parse_program_from_file, FilteredTokensIterator};
   use std::mem::discriminant;
 
   #[test]
@@ -645,17 +645,10 @@ mod test {
 
   #[test]
   fn test_method_feature() {
-    let feature = r#"
-    method2(num1 : Int, num2 : Int) : B {  -- plus
-      (let x : Int in
-	 {
-            x <- num1 + num2;
-	    (new B).set_var(x);
-	 }
-      )
-   };"#;
-    
-    
+    let file_path = "test_resources/feature.test";
+    let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
+    let features = get_features(&mut token_iter);
+    println!("{:#?}", features);
   }
   
   #[test]
