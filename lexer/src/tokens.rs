@@ -40,11 +40,11 @@ const KEYWORD_OF: &str = "of";
 const KEYWORD_FALSE: &str = "false";
 const KEYWORD_TRUE: &str = "true";
 
-#[derive(PartialEq, Debug)]
-pub enum Token {
+#[derive(PartialEq, Debug, Clone)]
+pub(crate) enum Token {
   Empty,
   Error { error_char: String, line_num: u32, line_pos: u32 },
-  Comment { comment_value: String, line_num: u32, line_pos: u32 },
+  Comment { value: String, line_num: u32, line_pos: u32 },
 
   Str { value: String, line_num: u32, line_pos: u32 },
   Ident { value: String, line_num: u32, line_pos: u32 },
@@ -101,10 +101,8 @@ pub enum Token {
   False { line_num: u32, line_pos: u32 },
 }
 
-
 impl Token {
-  
-  pub fn get_keyword(&self) -> Option<Token> {
+  pub(crate) fn get_keyword(&self) -> Option<Token> {
     match self {
       Token::Ident { ref value, ref line_num, ref line_pos } => {
         let lower_case = value.to_lowercase();
@@ -144,145 +142,199 @@ impl Token {
     }
   }
 
-  pub fn is_same_type(&self, other: &Token) -> bool {
+  pub(crate) fn is_same_type(&self, other: &Token) -> bool {
     discriminant(self) == discriminant(other)
   }
-
-  /// Generates random [`Token::Empty`]
-  pub fn empty_type() -> Token { Token::Empty }
-
-  /// Generates random [`Token::Error`]
-  pub fn err_type() -> Token { Token::Error { error_char: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Comment`]
-  pub fn comment_type() -> Token { Token::Comment { comment_value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Str`]
-  pub fn str_type() -> Token { Token::Str { value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
-
+  
+  
+  /*
+    /// Generates random [`Token::Empty`]
+    pub(crate) fn empty_type() -> Token { Token::Empty }
+  
+    /// Generates random [`Token::Error`]
+    pub(crate) fn err_type() -> Token { Token::Error { error_char: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Comment`]
+    pub(crate) fn comment_type() -> Token { Token::Comment { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Str`]
+    pub(crate) fn str_type() -> Token { Token::Str { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Int`]
+    pub(crate) fn int_type() -> Token { Token::Int { value: i32::MAX, line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::At`]
+    pub(crate) fn at_type() -> Token { Token::At { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+  
+    /// Generates random [`Token::Tilde`]
+    pub(crate) fn tilde_type() -> Token { Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Star`]
+    pub(crate) fn star_type() -> Token { Token::Star { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+  
+    /// Generates random [`Token::ForwardSlash`]
+    pub(crate) fn random_forward_slash() -> Token { Token::ForwardSlash { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Plus`]
+    pub(crate) fn random_plus() -> Token { Token::Plus { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Minus`]
+    pub(crate) fn random_minus() -> Token { Token::Minus { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::LessOrEqual`]
+    pub(crate) fn less_or_equal_type() -> Token { Token::LessOrEqual { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Less`]
+    pub(crate) fn less_type() -> Token { Token::Less { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Equal`]
+    pub(crate) fn equal_type() -> Token { Token::Equal { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::New`]
+    pub(crate) fn new_type() -> Token { Token::New { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::IsVoid`]
+    pub(crate) fn is_void_type() -> Token { Token::IsVoid { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::Not`]
+    pub(crate) fn not_type() -> Token { Token::Not { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::True`]
+    pub(crate) fn true_type() -> Token { Token::True { line_num: u32::MAX, line_pos: u32::MAX } }
+  
+    /// Generates random [`Token::False`]
+    pub(crate) fn false_type() -> Token { Token::False { line_num: u32::MAX, line_pos: u32::MAX } }
+  */
   /// Generates random [`Token::Ident`]
-  pub fn ident_type() -> Token { Token::Ident { value: "".to_string(), line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Int`]
-  pub fn int_type() -> Token { Token::Int { value: i32::MAX, line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Dot`]
-  pub fn dot_type() -> Token { Token::Dot { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Comma`]
-  pub fn comma_type() -> Token { Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Assign`]
-  pub fn assign_type() -> Token { Token::Assign { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn ident_type() -> Token { Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Lambda`]
-  pub fn lambda_type() -> Token { Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn lambda_type() -> Token { Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX } }
 
-  /// Generates random [`Token::At`]
-  pub fn at_type() -> Token { Token::At { line_num: u32::MAX, line_pos: u32::MAX } }
+  /// Generates random [`Token::Dot`]
+  pub(crate) fn dot_type() -> Token { Token::Dot { line_num: u32::MAX, line_pos: u32::MAX } }
 
-  /// Generates random [`Token::Tilde`]
-  pub fn tilde_type() -> Token { Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX } }
+  /// Generates random [`Token::Comma`]
+  pub(crate) fn comma_type() -> Token { Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } }
 
-  /// Generates random [`Token::Star`]
-  pub fn star_type() -> Token { Token::Star { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::ForwardSlash`]
-  pub fn random_forward_slash() -> Token { Token::ForwardSlash { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Plus`]
-  pub fn random_plus() -> Token { Token::Plus { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Minus`]
-  pub fn random_minus() -> Token { Token::Minus { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::LessOrEqual`]
-  pub fn less_or_equal_type() -> Token { Token::LessOrEqual { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Less`]
-  pub fn less_type() -> Token { Token::Less { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Equal`]
-  pub fn equal_type() -> Token { Token::Equal { line_num: u32::MAX, line_pos: u32::MAX } }
+  /// Generates random [`Token::Assign`]
+  pub(crate) fn assign_type() -> Token { Token::Assign { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Colon`]
-  pub fn colon_type() -> Token { Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn colon_type() -> Token { Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::SemiColon`]
-  pub fn semi_colon_type() -> Token { Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn semi_colon_type() -> Token { Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::OpenParen`]
-  pub fn open_paren_type() -> Token { Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn open_paren_type() -> Token { Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::CloseParen`]
-  pub fn close_paren_type() -> Token { Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn close_paren_type() -> Token { Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::OpenCurl`]
-  pub fn open_curl_type() -> Token { Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn open_curl_type() -> Token { Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::CloseCurl`]
-  pub fn close_curl_type() -> Token { Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn close_curl_type() -> Token { Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Class`]
-  pub fn class_type() -> Token { Token::Class { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn class_type() -> Token { Token::Class { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Inherits`]
-  pub fn inherits_type() -> Token { Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn inherits_type() -> Token { Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::If`]
-  pub fn if_type() -> Token { Token::If { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn if_type() -> Token { Token::If { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Then`]
-  pub fn then_type() -> Token { Token::Then { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn then_type() -> Token { Token::Then { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Else`]
-  pub fn else_type() -> Token { Token::Else { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn else_type() -> Token { Token::Else { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::EndIf`]
-  pub fn end_if_type() -> Token { Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::While`]
-  pub fn random_while() -> Token { Token::While { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn end_if_type() -> Token { Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Loop`]
-  pub fn loop_type() -> Token { Token::Loop { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn loop_type() -> Token { Token::Loop { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::EndLoop`]
-  pub fn end_loop_type() -> Token { Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Let`]
-  pub fn let_type() -> Token { Token::Let { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn end_loop_type() -> Token { Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::In`]
-  pub fn in_type() -> Token { Token::In { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Case`]
-  pub fn case_type() -> Token { Token::Case { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn in_type() -> Token { Token::In { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::Of`]
-  pub fn of_type() -> Token { Token::Of { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn of_type() -> Token { Token::Of { line_num: u32::MAX, line_pos: u32::MAX } }
 
   /// Generates random [`Token::EndCase`]
-  pub fn end_case_type() -> Token { Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX } }
+  pub(crate) fn end_case_type() -> Token { Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX } }
 
-  /// Generates random [`Token::New`]
-  pub fn new_type() -> Token { Token::New { line_num: u32::MAX, line_pos: u32::MAX } }
+  /// Generates random [`Token::While`]
+  pub(crate) fn while_type() -> Token { Token::While { line_num: u32::MAX, line_pos: u32::MAX } }
+/*
+  /// Generates random [`Token::Let`]
+  pub(crate) fn let_type() -> Token { Token::Let { line_num: u32::MAX, line_pos: u32::MAX } }
 
-  /// Generates random [`Token::IsVoid`]
-  pub fn is_void_type() -> Token { Token::IsVoid { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::Not`]
-  pub fn not_type() -> Token { Token::Not { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::True`]
-  pub fn true_type() -> Token { Token::True { line_num: u32::MAX, line_pos: u32::MAX } }
-
-  /// Generates random [`Token::False`]
-  pub fn false_type() -> Token { Token::False { line_num: u32::MAX, line_pos: u32::MAX } }
+  /// Generates random [`Token::Case`]
+  pub(crate) fn case_type() -> Token { Token::Case { line_num: u32::MAX, line_pos: u32::MAX } }
+*/
 }
+/*
+pub(crate) static ident_type: Token =  Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX } ;
 
+pub(crate) static lambda_type: Token =  Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static dot_type: Token =  Token::Dot { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static comma_type: Token =  Token::Comma { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static assign_type: Token =  Token::Assign { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static colon_type: Token =  Token::Colon { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static semi_colon_type: Token =  Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static open_paren_type: Token =  Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static close_paren_type: Token =  Token::CloseParen { line_num: crate::tokens::Token::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static open_curl_type: Token =  Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static close_curl_type: Token =  Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static class_type: Token =  Token::Class { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static inherits_type: Token =  Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static if_type: Token =  Token::If { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static then_type: Token =  Token::Then { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static else_type: Token =  Token::Else { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static end_if_type: Token =  Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static loop_type: Token =  Token::Loop { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static end_loop_type: Token =  Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static in_type: Token =  Token::In { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static of_type: Token =  Token::Of { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static end_case_type: Token =  Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static while_type: Token =  Token::While { line_num: u32::MAX, line_pos: u32::MAX } ;
+
+pub(crate) static let_type: Token =  Token::Let { line_num: u32::MAX, line_pos: u32::MAX } ;
+pub(crate) static case_type: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
+*/
 #[derive(PartialEq, Debug)]
-pub enum WhiteSpace {
+pub(crate) enum WhiteSpace {
   Space,
   Tab,
   NewLine,
@@ -292,7 +344,7 @@ pub enum WhiteSpace {
 }
 
 impl WhiteSpace {
-  pub fn get(value: char) -> WhiteSpace {
+  pub(crate) fn get(value: char) -> WhiteSpace {
     match value {
       ' ' => WhiteSpace::Space,
       '\t' => WhiteSpace::Tab,
@@ -305,7 +357,7 @@ impl WhiteSpace {
     }
   }
 
-  pub fn is_whitespace(value: char) -> bool {
+  pub(crate) fn is_whitespace(value: char) -> bool {
     value == ' ' ||
         value == '\t' ||
         value == '\n' ||
@@ -319,5 +371,9 @@ mod test {
   use super::*;
 
   #[test]
-  fn test_is_same_type() {}
+  fn test_is_same_type() {
+    let test1 = Token::Ident { value: "Test Ident 1".parse().unwrap(), line_num: 10, line_pos: 50 };
+    let test2 = Token::Ident { value: "Test other ident".parse().unwrap(), line_num: 25, line_pos: 15 };
+    assert!(test1.is_same_type(&test2));
+  }
 }

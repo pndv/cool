@@ -8,7 +8,7 @@ use crate::tokens::{AT, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, G
 
 type BufferedCharReader = Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>;
 
-pub fn get_program_token_list(file_path: &str) -> Result<Vec<Token>> {
+pub(crate) fn get_program_token_list(file_path: &str) -> Result<Vec<Token>> {
   let (mut char_iter, mut line_num, mut line_pos) = get_buf_reader(file_path);
 
   let mut tokens: Vec<Token> = Vec::new();
@@ -165,7 +165,7 @@ fn process_single_line_comment(char_iter: &mut BufferedCharReader,
                                line_num: &mut u32,
                                line_pos: &mut u32) -> Token {
   let mut comment = String::new();
-  let mut token = Token::Comment { comment_value: String::new(), line_num: *line_num, line_pos: *line_pos };
+  let mut token = Token::Comment { value: String::new(), line_num: *line_num, line_pos: *line_pos };
   // Comments are between `--` or `--` and till end of line
   while let Some(c) = char_iter.next() {
     *line_pos += 1;
@@ -196,7 +196,7 @@ fn process_single_line_comment(char_iter: &mut BufferedCharReader,
     }
   }
 
-  if let Token::Comment { ref mut comment_value, .. } = token {
+  if let Token::Comment { value: ref mut comment_value, .. } = token {
     *comment_value = comment;
   }
 
@@ -207,7 +207,7 @@ fn process_multi_line_comment(char_iter: &mut BufferedCharReader,
                               line_num: &mut u32,
                               line_pos: &mut u32) -> Token {
   let mut comment = String::new();
-  let mut token = Token::Comment { comment_value: String::new(), line_num: *line_num, line_pos: *line_pos };
+  let mut token = Token::Comment { value: String::new(), line_num: *line_num, line_pos: *line_pos };
   // Comments are between `(*` and `*)`
   while let Some(c) = char_iter.next() {
     *line_pos += 1;
@@ -239,7 +239,7 @@ fn process_multi_line_comment(char_iter: &mut BufferedCharReader,
     }
   }
 
-  if let Token::Comment { ref mut comment_value, .. } = token {
+  if let Token::Comment { value: ref mut comment_value, .. } = token {
     *comment_value = comment;
   }
 
@@ -252,16 +252,12 @@ fn get_ident_token(char_iter: &mut BufferedCharReader,
                    initial_ident: char) -> Token {
   let mut ident_val = String::from(initial_ident);
 
-  for c in char_iter.by_ref() {
-    *line_pos += 1;
-    match c {
-      'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => ident_val.push(c),
-
-      '\r' | '\n' => {
-        char_iter.next_if_eq(&'\n'); // consume \r\n
-        *line_pos = 0;
-        *line_num += 1;
-        break;
+  while let Some(peek) = char_iter.peek() {
+    match peek {
+      'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => {
+        *line_pos += 1;
+        let c = char_iter.next().unwrap();
+        ident_val.push(c);
       }
       _ => break,
     }
