@@ -193,6 +193,15 @@ fn get_formal(token_iter: &mut FilteredTokensIterator) -> Formal {
   (formal_name, formal_type).into()
 }
 
+fn get_expression_helper(token_iter: &mut FilteredTokensIterator, read_till_token: &Token) -> Expression {
+  let expr: Expression = Expression::NoExpr;
+  while !match_peeked_token(token_iter, read_till_token){
+    
+  }
+  
+  expr
+}
+
 fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
   assert!(token_iter.peek().is_some(), "Unexpected EOF"); // assert that there are some tokens remaining
 
@@ -612,6 +621,13 @@ fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
   }
 }
 
+
+#[inline]
+fn match_peeked_token(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
+  token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(expected)
+}
+
+#[cfg(test)]
 mod test {
   use crate::tokens::Token;
   use crate::{get_features, get_filtered_token_iter, parse_program_from_file, FilteredTokensIterator};
