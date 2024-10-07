@@ -254,6 +254,7 @@ impl From<Token> for Expression {
   }
 }
 
+#[cfg(test)]
 mod test {
   use crate::nodes::Expression;
 
