@@ -39,16 +39,15 @@ const KEYWORD_NEW: &str = "new";
 const KEYWORD_OF: &str = "of";
 const KEYWORD_FALSE: &str = "false";
 const KEYWORD_TRUE: &str = "true";
+const KEYWORD_SELF_TYPE: &str = "SELF_TYPE";
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub(crate) enum Token {
   Empty,
   Error { error_char: String, line_num: u32, line_pos: u32 },
   Comment { value: String, line_num: u32, line_pos: u32 },
 
-  Str { value: String, line_num: u32, line_pos: u32 },
   Ident { value: String, line_num: u32, line_pos: u32 },
-  Int { value: i32, line_num: u32, line_pos: u32 },
 
   Dot { line_num: u32, line_pos: u32 },
   Comma { line_num: u32, line_pos: u32 },
@@ -58,10 +57,12 @@ pub(crate) enum Token {
 
   At { line_num: u32, line_pos: u32 },
   Tilde { line_num: u32, line_pos: u32 },
-  Star { line_num: u32, line_pos: u32 },
-  ForwardSlash { line_num: u32, line_pos: u32 },
+
   Plus { line_num: u32, line_pos: u32 },
   Minus { line_num: u32, line_pos: u32 },
+  Star { line_num: u32, line_pos: u32 },
+  ForwardSlash { line_num: u32, line_pos: u32 },
+
   LessOrEqual { line_num: u32, line_pos: u32 },
   Less { line_num: u32, line_pos: u32 },
   Equal { line_num: u32, line_pos: u32 },
@@ -97,8 +98,12 @@ pub(crate) enum Token {
   IsVoid { line_num: u32, line_pos: u32 },
   Not { line_num: u32, line_pos: u32 },
 
+  Int { value: i32, line_num: u32, line_pos: u32 },
+  String { value: String, line_num: u32, line_pos: u32 },
   True { line_num: u32, line_pos: u32 },
   False { line_num: u32, line_pos: u32 },
+
+  SelfType { line_num: u32, line_pos: u32 },
 }
 
 impl Token {
@@ -132,6 +137,7 @@ impl Token {
           KEYWORD_CASE_END => Some(Token::EndCase { line_num: *line_num, line_pos: *line_pos }),
 
           KEYWORD_NEW => Some(Token::New { line_num: *line_num, line_pos: *line_pos }),
+          KEYWORD_SELF_TYPE => Some(Token::SelfType { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_FALSE if value.starts_with('f') => Some(Token::False { line_num: *line_num, line_pos: *line_pos }),
           KEYWORD_TRUE if value.starts_with('t') => Some(Token::True { line_num: *line_num, line_pos: *line_pos }),
 
@@ -172,6 +178,10 @@ pub(crate) const END_CASE_TYPE: Token = Token::EndCase { line_num: u32::MAX, lin
 pub(crate) const WHILE_TYPE: Token = Token::While { line_num: u32::MAX, line_pos: u32::MAX };
 pub(crate) const LET_TYPE: Token = Token::Let { line_num: u32::MAX, line_pos: u32::MAX };
 pub(crate) const CASE_TYPE: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const NEW_TYPE: Token = Token::New { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const NOT_TYPE: Token = Token::Not { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const TILDE_TYPE: Token = Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const AT_TYPE: Token = Token::At { line_num: u32::MAX, line_pos: u32::MAX };
 
 #[derive(PartialEq, Debug)]
 pub(crate) enum WhiteSpace {

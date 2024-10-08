@@ -1,12 +1,14 @@
 use crate::tokens::Token;
 use std::borrow::Cow;
+use crate::expressions::case_expr::CaseBranch;
 
 pub type Type = (Cow<'static, str>, u32, u32);
-pub type Symbol = Type;
-pub(crate) type CaseBranch = (Symbol, Type, Box<Expression>); // ID:TYPE => Expression 
-pub(crate) type LetInit = (Symbol, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
+pub type Id = (Cow<'static, str>, u32, u32);
 
-impl From<Token> for Type {
+pub(crate) type LetInit = (Id, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
+
+
+impl From<Token> for Type { // Type and Symbol have same implementation of From
   fn from(value: Token) -> Self {
     match value {
       Token::Ident { value, line_num, line_pos } => (Cow::Owned(value), line_num, line_pos),
@@ -83,14 +85,14 @@ impl Class {
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Feature {
-  feature_name: Symbol,
+  feature_name: Id,
   formals: Option<Vec<Formal>>,
   return_type: Type,
   expr: Option<Box<Expression>>,
 }
 
-impl From<(Symbol, Option<Vec<Formal>>, Type, Box<Expression>)> for Feature {
-  fn from((feature_name, formals, return_type, expr): (Symbol, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
+impl From<(Id, Option<Vec<Formal>>, Type, Box<Expression>)> for Feature {
+  fn from((feature_name, formals, return_type, expr): (Id, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
     Feature {
       feature_name,
       formals,
@@ -100,8 +102,8 @@ impl From<(Symbol, Option<Vec<Formal>>, Type, Box<Expression>)> for Feature {
   }
 }
 
-impl From<(Symbol, Type, Box<Expression>)> for Feature {
-  fn from((feature_name, return_type, expr): (Symbol, Type, Box<Expression>)) -> Self {
+impl From<(Id, Type, Box<Expression>)> for Feature {
+  fn from((feature_name, return_type, expr): (Id, Type, Box<Expression>)) -> Self {
     Feature {
       feature_name,
       formals: None,
@@ -111,8 +113,8 @@ impl From<(Symbol, Type, Box<Expression>)> for Feature {
   }
 }
 
-impl From<(Symbol, Type)> for Feature {
-  fn from((feature_name, return_type): (Symbol, Type)) -> Self {
+impl From<(Id, Type)> for Feature {
+  fn from((feature_name, return_type): (Id, Type)) -> Self {
     Feature {
       feature_name,
       formals: None,
@@ -124,12 +126,12 @@ impl From<(Symbol, Type)> for Feature {
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Formal {
-  formal_name: Symbol,
+  formal_name: Id,
   formal_type: Type,
 }
 
-impl From<(Symbol, Type)> for Formal {
-  fn from((formal_name, formal_type): (Symbol, Type)) -> Self {
+impl From<(Id, Type)> for Formal {
+  fn from((formal_name, formal_type): (Id, Type)) -> Self {
     Self {
       formal_name,
       formal_type,
@@ -140,17 +142,16 @@ impl From<(Symbol, Type)> for Formal {
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) enum Expression {
   NoExpr,
-  SelfExpr,
 
   PartialAssign { expr: Box<Expression> },
-  Assign { name: Symbol, expr: Box<Expression> },
+  Assign { name: Id, expr: Box<Expression> },
 
-  PartialDispatch { fn_name: Symbol, param_list: Vec<Expression> },
-  PartialCastDispatch { cast_type: Type, partial_dispatch: Box<Expression> },
+  PartialDispatch { fn_name: Id, param_list: Vec<Expression> },
+  PartialCastDispatch { cast_type: Type, fn_name: Id, param_list: Vec<Expression> },
   Dispatch {
     calling_expr: Box<Expression>,
     cast_type_name: Option<Type>,
-    fn_name: Symbol,
+    fn_name: Id,
     param_list: Vec<Expression>, // if no parameters, then it's a single list of [NoExpr] 
   },
 
@@ -177,11 +178,13 @@ pub(crate) enum Expression {
 
   Not { expr: Box<Expression> },
 
-  Ident { name: Symbol },
+  PartialTypeOrSymbol { name_of_symbol_or_type: String, line_num: u32, line_pos: u32 },
+  Ident { name: Id },
 
   Int { value: i32, line_num: u32, line_pos: u32 },
   Bool { value: bool, line_num: u32, line_pos: u32 },
   String { value: String, line_num: u32, line_pos: u32 },
+  SelfExpr{ line_num: u32, line_pos: u32 },
 
   New { type_name: Type },
   IsVoid { expr: Box<Expression> },
@@ -193,13 +196,15 @@ impl Expression {
   pub fn is_partial(&self) -> bool {
     matches!(self, Expression::PartialDispatch { .. } | 
       Expression::PartialCastDispatch { .. } | 
-      Expression::PartialBinary { .. })
+      Expression::PartialAssign { .. } | 
+      Expression::PartialTypeOrSymbol { .. } | 
+      Expression::PartialBinary { .. }) 
   }
 
   pub(crate) fn get_type(&self) -> String {
     match self {
       Expression::NoExpr => String::from("NoExpr"),
-      Expression::SelfExpr => String::from("SelfExpr"),
+      Expression::SelfExpr {..} => String::from("SelfExpr"),
       Expression::PartialAssign { .. } => String::from("PartialAssign"),
       Expression::Assign { .. } => String::from("Assign"),
       Expression::PartialDispatch { .. } => String::from("PartialDispatch"),
@@ -220,6 +225,7 @@ impl Expression {
       Expression::LessThanOrEqual { .. } => String::from("LessThanOrEqual"),
       Expression::Negate { .. } => String::from("Negate"),
       Expression::Not { .. } => String::from("Not"),
+      Expression::PartialTypeOrSymbol { .. } => String::from("PartialTypeOrSymbol"),
       Expression::Ident { .. } => String::from("Ident"),
       Expression::Int { .. } => String::from("Int"),
       Expression::Bool { .. } => String::from("Bool"),
@@ -232,22 +238,24 @@ impl Expression {
 
 impl From<Token> for Expression {
   /// Only for 
-  /// - [Token::Str]
+  /// - [Token::String]
   /// - [Token::Ident]
   /// - [Token::Int]
   /// - [Token::True]
   /// - [Token::False]
+  /// - [Token::SelfType]
   fn from(token: Token) -> Self {
     match token {
-      Token::Str { value, line_num, line_pos } =>
-        Expression::String { value, line_num, line_pos },
-
-      Token::Ident { .. } =>
-        Expression::Ident { name: Symbol::from(token) },
+      Token::Ident { value, line_num, line_pos } => 
+        Expression::PartialTypeOrSymbol { name_of_symbol_or_type: value, line_num, line_pos },
 
       Token::Int { value, line_num, line_pos } => Expression::Int { value, line_num, line_pos },
+      Token::String { value, line_num, line_pos } => Expression::String { value, line_num, line_pos },
+      
       Token::True { line_num, line_pos } => Expression::Bool { value: true, line_num, line_pos },
       Token::False { line_num, line_pos } => Expression::Bool { value: false, line_num, line_pos },
+      
+      Token::SelfType {line_num, line_pos} => Expression::SelfExpr {line_num, line_pos},
 
       _ => panic!("Non-constant token {:?}", token)
     }

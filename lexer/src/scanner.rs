@@ -29,7 +29,8 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
   let mut output: Option<Token> = None;
   let mut token: Token = Token::Empty;
 
-  while let Some(c) = char_iter.next() {
+  let next_char = char_iter.next();
+  while let Some(c) = next_char {
     if WhiteSpace::is_whitespace(c) {
       let ws = WhiteSpace::get(c);
       match ws {
@@ -320,7 +321,7 @@ fn get_string_token(char_iter: &mut BufferedCharReader,
         }
       }
       DOUBLE_QUOTE => {
-        return Token::Str {
+        return Token::String {
           value: token_str,
           line_num: *line_num,
           line_pos: *line_pos,
@@ -380,6 +381,7 @@ fn get_buf_reader(file_path: &str) -> (BufferedCharReader, u32, u32) {
 
 #[cfg(test)]
 mod tests {
+  use crate::tokens::Token::String;
   use super::*;
 
   #[test]
@@ -419,5 +421,15 @@ mod tests {
     for s in token_list {
       println!("{:?}", s);
     }
+  }
+  
+  #[test]
+  fn test_str_tokeniser() {
+    let s: std::string::String = "this is a list of tokens".to_string();
+    let buf = s.chars().peekable();
+    
+    
+    
+    
   }
 }
