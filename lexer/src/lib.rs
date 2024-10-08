@@ -213,7 +213,7 @@ fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
     // If first expression is a PartialDispatch convert it to Dispatch by adding `self`
     if let Expression::PartialDispatch { fn_name, param_list } = expr {
       expr = Expression::Dispatch {
-        calling_expr: Box::from(Expression::SelfExpr{line_num:0, line_pos:0}),
+        calling_expr: Box::from(Expression::SelfExpr ),
         cast_type_name: None,
         fn_name,
         param_list,
@@ -245,13 +245,9 @@ fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
         let first = stack[0].clone();
         expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type_name: None, fn_name, param_list }
       }
-      Expression::PartialCastDispatch { cast_type, partial_dispatch } => {
+      Expression::PartialCastDispatch { cast_type, fn_name, param_list } => {
         let first = stack[0].clone();
-        if let Expression::PartialDispatch { fn_name, param_list } = *partial_dispatch {
-          expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type_name: Some(cast_type), fn_name, param_list }
-        } else {
-          panic!("PartialCast does not have correct dispatch expression {:?}", partial_dispatch);
-        }
+          expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type_name: Some(cast_type), fn_name, param_list };
       }
 
       _ => panic!("Should be partial expression, received {:?}", next_expr.get_type())
@@ -286,8 +282,8 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
       assert!(token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&DOT_TYPE));
 
       let dispatch_expr = get_stack_top(token_iter, stack);
-      if let Expression::PartialDispatch { .. } = dispatch_expr {
-        expr = Expression::PartialCastDispatch { cast_type, partial_dispatch: Box::from(dispatch_expr) }
+      if let Expression::PartialDispatch { fn_name, param_list } = dispatch_expr {
+        expr = Expression::PartialCastDispatch { cast_type, fn_name, param_list };
       } else {
         dbg!(&dispatch_expr);
         panic!("Invalid state for dynamic dispatch expression. Expected PartialDispatch type found {:?}", dispatch_expr.get_type());
@@ -622,12 +618,12 @@ fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
 
 
 #[inline]
-fn match_peeked_token(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
-  token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(expected)
+fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
+  token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(expected)
 }
 
 #[inline]
-fn match_peeked_token_in_list(token_iter: &mut FilteredTokensIterator, expected: &HashSet<Token>) -> bool {
+fn peek_token_in(token_iter: &mut FilteredTokensIterator, expected: &HashSet<Token>) -> bool {
   let Some(peek) = token_iter.peek() else { return false };
 
   let output = expected.iter().any(|token| peek.is_same_type(token));
@@ -638,7 +634,7 @@ fn match_peeked_token_in_list(token_iter: &mut FilteredTokensIterator, expected:
 mod test {
   use std::collections::HashSet;
   use crate::tokens::{Token, CASE_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
-  use crate::{convert_vec_filtered_iter, get_features, get_filtered_token_iter, match_peeked_token_in_list, parse_program_from_file, FilteredTokensIterator};
+  use crate::{convert_vec_filtered_iter, get_features, get_filtered_token_iter, peek_token_in, parse_program_from_file, FilteredTokensIterator};
   use std::mem::discriminant;
 
   #[test]
@@ -669,7 +665,7 @@ mod test {
 
   #[test]
   fn test_method_feature() {
-    let file_path = "test_resources/feature.test";
+    let file_path = "test_resources/feature.first_form";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
     let features = get_features(&mut token_iter);
     assert!(features.is_some());
@@ -692,8 +688,8 @@ mod test {
     let token_list = [IN_TYPE, COMMA_TYPE, LET_TYPE];
     let mut iter = convert_vec_filtered_iter(Vec::from(token_list));
     
-    assert_eq!(match_peeked_token_in_list(&mut iter, &expected_set), true);
+    assert_eq!(peek_token_in(&mut iter, &expected_set), true);
     iter.next(); // remove `In`
-    assert_eq!(match_peeked_token_in_list(&mut iter, &expected_set), false);
+    assert_eq!(peek_token_in(&mut iter, &expected_set), false);
   }
 }

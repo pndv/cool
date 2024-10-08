@@ -1,6 +1,6 @@
 ﻿use crate::nodes::{Expression, Id, LetInit, Type};
 use crate::tokens::{Token, ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
-use crate::{expressions, match_peeked_token, match_required_token, FilteredTokensIterator};
+use crate::{expressions, peek_token_eq, match_required_token, FilteredTokensIterator};
 use std::collections::HashSet;
 use expressions::get_expression_helper;
 
@@ -59,7 +59,7 @@ fn gen_let_init(token_iter: &mut FilteredTokensIterator) -> LetInit {
 
   let mut expr: Option<Box<Expression>> = None;
 
-  if match_peeked_token(token_iter, &ASSIGN_TYPE) {
+  if peek_token_eq(token_iter, &ASSIGN_TYPE) {
     match_required_token(token_iter.next(), ASSIGN_TYPE);
 
     // The end of this expression in `Let` is marked in two ways:
@@ -73,4 +73,22 @@ fn gen_let_init(token_iter: &mut FilteredTokensIterator) -> LetInit {
   }
 
   (id, type_id, expr)
+}
+
+mod test {
+  use std::collections::HashSet;
+  use crate::{convert_vec_filtered_iter, get_filtered_token_iter, FilteredTokensIterator};
+  use crate::expressions::let_expr::gen_let_expression;
+  use crate::tokens::{CASE_TYPE, CLOSE_CURL_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
+
+  #[test]
+  fn test_let_exp() {
+    let file_path = "test_resources/expr.let";
+    let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
+    let read_till_tokens = HashSet::from([CLOSE_CURL_TYPE]);
+    let expr = gen_let_expression(&mut token_iter, &read_till_tokens);
+    println!("{:?}", expr);
+    assert_eq!(expr.get_type(), "Let".to_string());
+  }
+
 }
