@@ -1,0 +1,6 @@
+﻿let x : Int in
+	 {
+            x <- num1 + num2;
+	    (new B).set_var(x);
+	 }
+      

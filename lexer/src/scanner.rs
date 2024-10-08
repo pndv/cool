@@ -29,8 +29,7 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
   let mut output: Option<Token> = None;
   let mut token: Token = Token::Empty;
 
-  let next_char = char_iter.next();
-  while let Some(c) = next_char {
+  while let Some(c) = char_iter.next() {
     if WhiteSpace::is_whitespace(c) {
       let ws = WhiteSpace::get(c);
       match ws {
@@ -353,7 +352,7 @@ fn get_buf_reader(file_path: &str) -> (BufferedCharReader, u32, u32) {
   }
 
   let mut buf_reader = BufReader::new(file_open.unwrap());
-
+  
   // Ignore byte order marker, if present. UTF-8 byte-order marker is first 3 bytes of file = [0xEF 0xBB 0xBF]
   let mut read_byte = [0; 3]; // Buffer to hold 3 bytes
   let r = buf_reader.read(&mut read_byte);
@@ -421,15 +420,5 @@ mod tests {
     for s in token_list {
       println!("{:?}", s);
     }
-  }
-  
-  #[test]
-  fn test_str_tokeniser() {
-    let s: std::string::String = "this is a list of tokens".to_string();
-    let buf = s.chars().peekable();
-    
-    
-    
-    
   }
 }

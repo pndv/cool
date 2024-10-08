@@ -4,18 +4,19 @@ pub(super) mod case_expr;
 pub(super) mod let_expr;
 pub(super) mod dispatch_expr;
 
+use crate::expressions::dispatch_expr::gen_partial_dispatch_expr;
 use crate::nodes::{Expression, Type};
-use crate::tokens::{Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, NEW_TYPE, NOT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, TILDE_TYPE};
-use crate::{match_peeked_token, match_peeked_token_in_list, match_required_token, FilteredTokensIterator};
+use crate::tokens::{Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, IDENT_TYPE, NEW_TYPE, NOT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, TILDE_TYPE};
+use crate::{match_required_token, peek_token_eq, peek_token_in, FilteredTokensIterator};
 use case_expr::gen_case_expression;
+use dispatch_expr::gen_partial_cast_dispatch;
 use let_expr::gen_let_expression;
 use loop_expr::gen_loop_expression;
 use std::collections::HashSet;
-use dispatch_expr::gen_partial_cast_dispatch;
 
 fn get_expression_helper(token_iter: &mut FilteredTokensIterator, read_till_tokens: &HashSet<Token>) -> Vec<Expression> {
   let mut expr_list: Vec<Expression> = Vec::new();
-  while !match_peeked_token_in_list(token_iter, read_till_tokens) {
+  while !peek_token_in(token_iter, read_till_tokens) {
     let Some(peek) = token_iter.peek() else { panic!("get_expression_helper: Unexpected EOF") };
     match peek {
       Token::Empty |
@@ -25,8 +26,19 @@ fn get_expression_helper(token_iter: &mut FilteredTokensIterator, read_till_toke
         panic!("Unexpected token {:?}", peek);
       }
 
+      Token::Ident { .. } => {
+        let ident_token = match_required_token(token_iter.next(), IDENT_TYPE);
+
+        let expr = if peek_token_eq(token_iter, &OPEN_PAREN_TYPE) {
+          gen_partial_dispatch_expr(ident_token, token_iter)
+        } else {
+          Expression::from(ident_token)
+        };
+
+        expr_list.push(expr);
+      }
+
       Token::SelfType { .. } |
-      Token::Ident { .. } |
       Token::String { .. } |
       Token::Int { .. } |
       Token::True { .. } |
@@ -94,7 +106,7 @@ fn get_expression_helper(token_iter: &mut FilteredTokensIterator, read_till_toke
         let partial_cast_dispatch = gen_partial_cast_dispatch(token_iter);
         expr_list.push(partial_cast_dispatch);
       }
-      
+
       // Should never encounter these expressions, since no expression starts with these tokens
       Token::Then { .. } | Token::Else { .. } | Token::EndIf { .. } => panic!("Unexpected conditional branch {:?}", peek),
       Token::Loop { .. } | Token::EndLoop { .. } => panic!("Unexpected loop branch {:?}", peek),
@@ -109,8 +121,58 @@ fn get_expression_helper(token_iter: &mut FilteredTokensIterator, read_till_toke
 }
 
 /// Collapse a list of expressions into a single expression; error otherwise
-fn reduce_expression_list(expressions: Vec<Expression>) -> Expression {
-  todo!()
+fn reduce_expression_list(mut expressions: Vec<Expression>) -> Expression {
+  assert!(!expressions.is_empty(), "The expression list cannot be reduced on empty list");
+
+  if expressions.len() == 1 {
+    let mut e = expressions.pop().unwrap();
+    if let Expression::PartialDispatch { .. } = e {
+      return e.convert_to_dispatch();
+    }
+    
+    assert!(!e.is_partial(), "List with a single partial expression");
+    return e;
+  }
+
+  let mut reduce: Expression = Expression::NoExpr;
+  let top = expressions.pop().unwrap();
+  let second = expressions.pop().unwrap();
+
+  assert!(top.is_partial(), "Last expression must be partial");
+
+  match top {
+    Expression::PartialBinary { binary_token, right_expr } => {
+      match binary_token {
+        Token::Plus { .. } => reduce = Expression::Plus {left: Box::from(second), right: right_expr},
+        Token::Minus { .. } => reduce = Expression::Minus {left: Box::from(second), right: right_expr},
+        Token::Star { .. } => reduce = Expression::Multiply {left: Box::from(second), right: right_expr},
+        Token::ForwardSlash { .. } => reduce = Expression::Divide {left: Box::from(second), right: right_expr},
+
+        Token::Less { .. } => reduce = Expression::LessThan {left: Box::from(second), right: right_expr},
+        Token::LessOrEqual { .. } => reduce = Expression::LessThanOrEqual {left: Box::from(second), right: right_expr},
+        Token::Equal { .. } => reduce = Expression::Equal {left: Box::from(second), right: right_expr},
+        
+        _ => panic!("Unexpected token {:?}", binary_token),
+      }
+    }
+    Expression::PartialAssign { expr } => {
+      let Expression::Ident {name, ..} = second else { panic!("PartialAssign: join expression is not ident") };
+      reduce = Expression::Assign { name, expr }; 
+    }
+    Expression::PartialCastDispatch { fn_name, cast_type, param_list } => {todo!()}
+    Expression::PartialDispatch { fn_name, param_list } => {
+      let Expression::Ident {name, ..} = second else { panic!("PartialDispatch: join expression is not ident") };
+      reduce = Expression::Assign { name, expr };
+    }
+    Expression::PartialTypeOrSymbol { .. } => panic!("Unused: PartialTypeOrSymbol"),
+    _ => panic!("Incorrect expression {:?}", top)
+  }
+
+  for expr in expressions {
+    println!("{:?}", expr)
+  }
+  
+  reduce
 }
 
 /// ...previously seen expression.. + {`+` | `-` | `*`| `/`| `<`| `<=`| `=`} expr
@@ -159,7 +221,7 @@ fn gen_block_expr(token_iter: &mut FilteredTokensIterator) -> Expression {
 
   let mut block_expr_list = Vec::new();
 
-  while !match_peeked_token(token_iter, &CLOSE_CURL_TYPE) { //Loop till end of block
+  while !peek_token_eq(token_iter, &CLOSE_CURL_TYPE) { //Loop till end of block
 
     // each expression in block terminates with a semicolon
     let expr_list = get_expression_helper(token_iter, &HashSet::from([SEMI_COLON_TYPE]));
@@ -175,6 +237,4 @@ fn gen_block_expr(token_iter: &mut FilteredTokensIterator) -> Expression {
 }
 
 #[cfg(test)]
-mod test_expr {
-  
-}
+mod test_expr {}

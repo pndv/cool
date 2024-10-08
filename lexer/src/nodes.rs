@@ -149,7 +149,7 @@ pub(crate) enum Expression {
   PartialDispatch { fn_name: Id, param_list: Vec<Expression> },
   PartialCastDispatch { cast_type: Type, fn_name: Id, param_list: Vec<Expression> },
   Dispatch {
-    calling_expr: Box<Expression>,
+    calling_expr: Box<Expression>, // If empty, then it's 
     cast_type_name: Option<Type>,
     fn_name: Id,
     param_list: Vec<Expression>, // if no parameters, then it's a single list of [NoExpr] 
@@ -184,8 +184,10 @@ pub(crate) enum Expression {
   Int { value: i32, line_num: u32, line_pos: u32 },
   Bool { value: bool, line_num: u32, line_pos: u32 },
   String { value: String, line_num: u32, line_pos: u32 },
-  SelfExpr{ line_num: u32, line_pos: u32 },
-
+  
+  SelfTypeExpr { line_num: u32, line_pos: u32 },
+  SelfExpr,
+  
   New { type_name: Type },
   IsVoid { expr: Box<Expression> },
 
@@ -193,6 +195,20 @@ pub(crate) enum Expression {
 }
 
 impl Expression {
+  
+  pub(super) fn convert_to_dispatch(&self) -> Expression {
+    if let Expression::PartialDispatch {fn_name, param_list} = self {
+      Expression::Dispatch {
+        fn_name: fn_name.clone(), 
+        cast_type_name: None, 
+        calling_expr: Box::from(Expression::SelfExpr),
+        param_list: param_list.clone(),
+      }
+    } else {
+      panic!("Can only convert PartialDispatch to Dispatch");
+    }
+  }
+  
   pub fn is_partial(&self) -> bool {
     matches!(self, Expression::PartialDispatch { .. } | 
       Expression::PartialCastDispatch { .. } | 
@@ -205,6 +221,7 @@ impl Expression {
     match self {
       Expression::NoExpr => String::from("NoExpr"),
       Expression::SelfExpr {..} => String::from("SelfExpr"),
+      Expression::SelfTypeExpr {..} => String::from("SelfTypeExpr"),
       Expression::PartialAssign { .. } => String::from("PartialAssign"),
       Expression::Assign { .. } => String::from("Assign"),
       Expression::PartialDispatch { .. } => String::from("PartialDispatch"),
@@ -247,7 +264,7 @@ impl From<Token> for Expression {
   fn from(token: Token) -> Self {
     match token {
       Token::Ident { value, line_num, line_pos } => 
-        Expression::PartialTypeOrSymbol { name_of_symbol_or_type: value, line_num, line_pos },
+        Expression::Ident { name: (Cow::from(value), line_num, line_pos) },
 
       Token::Int { value, line_num, line_pos } => Expression::Int { value, line_num, line_pos },
       Token::String { value, line_num, line_pos } => Expression::String { value, line_num, line_pos },
@@ -255,7 +272,7 @@ impl From<Token> for Expression {
       Token::True { line_num, line_pos } => Expression::Bool { value: true, line_num, line_pos },
       Token::False { line_num, line_pos } => Expression::Bool { value: false, line_num, line_pos },
       
-      Token::SelfType {line_num, line_pos} => Expression::SelfExpr {line_num, line_pos},
+      Token::SelfType {line_num, line_pos} => Expression::SelfTypeExpr {line_num, line_pos},
 
       _ => panic!("Non-constant token {:?}", token)
     }

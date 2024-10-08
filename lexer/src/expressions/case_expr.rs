@@ -1,7 +1,7 @@
 ﻿use crate::expressions::get_expression_helper;
 use crate::nodes::{Expression, Id, Type};
 use crate::tokens::{CASE_TYPE, COLON_TYPE, END_CASE_TYPE, IDENT_TYPE, LAMBDA_TYPE, OF_TYPE, SEMI_COLON_TYPE};
-use crate::{expressions, match_peeked_token, match_required_token, FilteredTokensIterator};
+use crate::{expressions, peek_token_eq, match_required_token, FilteredTokensIterator};
 use expressions::reduce_expression_list;
 use std::collections::HashSet;
 
@@ -28,7 +28,7 @@ pub(crate) fn gen_case_expression(token_iter: &mut FilteredTokensIterator) -> Ex
 fn gen_case_branch_list(token_iter: &mut FilteredTokensIterator) -> Vec<CaseBranch> {
   let mut case_branch_list: Vec<CaseBranch> = Vec::new();
 
-  while !match_peeked_token(token_iter, &END_CASE_TYPE) {
+  while !peek_token_eq(token_iter, &END_CASE_TYPE) {
     case_branch_list.push(gen_case_branch(token_iter));
   }
 
