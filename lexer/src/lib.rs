@@ -1,170 +1,33 @@
-﻿use crate::nodes::{Class, Expression, Feature, Formal, Id, LetInit, Program, Type};
-use crate::scanner::get_program_token_list;
-use crate::tokens::{Token, ASSIGN_TYPE, CASE_TYPE, CLASS_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, COMMA_TYPE, DOT_TYPE, ELSE_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, IF_TYPE, INHERITS_TYPE, IN_TYPE, LAMBDA_TYPE, LET_TYPE, LOOP_TYPE, OF_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, THEN_TYPE, WHILE_TYPE};
+﻿use crate::nodes::{Expression, Formal, Id, LetInit, Program, Type};
+use crate::tokens::{Token, ASSIGN_TYPE, CASE_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, COMMA_TYPE, DOT_TYPE, ELSE_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, IF_TYPE, IN_TYPE, LAMBDA_TYPE, LET_TYPE, LOOP_TYPE, OF_TYPE, SEMI_COLON_TYPE, THEN_TYPE, WHILE_TYPE};
 use core::iter::Iterator;
-use std::collections::HashSet;
-use std::iter::{Filter, Peekable};
-use std::vec::IntoIter;
 use expressions::case_expr::CaseBranch;
+use tokens::{match_required_token, FilteredTokensIterator};
 
 pub mod scanner;
 pub mod nodes;
 pub mod tokens;
 mod expressions;
-
-type CommentFilter = fn(&Token) -> bool;
-type FilteredTokensIterator = Peekable<Filter<IntoIter<Token>, CommentFilter>>;
+mod terminal_tokens;
+mod feature;
+mod class;
 
 #[must_use]
 pub fn parse_program_from_file(file_path: &str) -> Program {
-  let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
+  let mut token_iter: FilteredTokensIterator = tokens::get_filtered_token_iter(file_path);
 
   get_program(&mut token_iter)
-}
-
-fn get_filtered_token_iter(file_path: &str) -> FilteredTokensIterator {
-  let Ok(tokens) = get_program_token_list(file_path) else { panic!("Error reading file"); };
-
-  convert_vec_filtered_iter(tokens)
-}
-
-fn convert_vec_filtered_iter(tokens: Vec<Token>) -> FilteredTokensIterator {
-  if let Some(err) = check_tokens(&tokens) {
-    panic!("{err}");
-  }
-
-  let is_not_comment: CommentFilter = is_not_comment;
-
-  let token_iter: FilteredTokensIterator = tokens.into_iter()
-                                                 .filter(is_not_comment)
-                                                 .peekable();
-
-  token_iter
-}
-
-fn is_not_comment(token: &Token) -> bool {
-  !matches!(token, Token::Comment { .. })
 }
 
 fn get_program(token_iter: &mut FilteredTokensIterator) -> Program {
   let mut program: Program = Program::new();
 
   while token_iter.peek().is_some() {
-    let class = get_class(token_iter);
+    let class = class::get_class(token_iter, &[]);
     program.add_class(class);
   }
 
   program
-}
-
-fn get_class(token_iter: &mut FilteredTokensIterator) -> Class {
-  match_required_token(token_iter.next(), CLASS_TYPE);
-
-  let mut token = match_required_token(token_iter.next(), IDENT_TYPE);
-  let class_type: Type = Type::from(token);
-
-  let mut parent_type: Option<Type> = None;
-  let peeked_token = token_iter.peek();
-  if peeked_token.is_some() && peeked_token.unwrap().is_same_type(&INHERITS_TYPE) {
-    match_required_token(token_iter.next(), INHERITS_TYPE);
-
-    token = match_required_token(token_iter.next(), IDENT_TYPE);
-    let inherits_from: Type = Type::from(token);
-    parent_type = Some(inherits_from);
-  }
-
-  match_required_token(token_iter.next(), OPEN_CURL_TYPE);
-
-  let mut features: Option<Vec<Feature>> = None;
-  if token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&CLOSE_CURL_TYPE) {
-    features = get_features(token_iter);
-  }
-
-  match_required_token(token_iter.next(), CLOSE_CURL_TYPE);
-  match_required_token(token_iter.next(), SEMI_COLON_TYPE);
-
-  Class::new(class_type, parent_type, features)
-}
-
-/// Features :-> feature; {{ features }}
-fn get_features(token_iter: &mut FilteredTokensIterator) -> Option<Vec<Feature>> {
-  let mut features = Vec::new();
-  let mut feature = get_feature(token_iter);
-  features.push(feature);
-
-  // `{` seen in calling method => read till closing `}` encountered for `class` 
-  while token_iter.peek().is_some() && !token_iter.peek()?.is_same_type(&CLOSE_CURL_TYPE) {
-    feature = get_feature(token_iter);
-    features.push(feature);
-  }
-
-  Some(features)
-}
-
-fn get_feature(token_iter: &mut FilteredTokensIterator) -> Feature {
-  //Feature starts with ID
-  let token = match_required_token(token_iter.next(), IDENT_TYPE);
-  let ident_name: Id = Id::from(token);
-
-  let feature: Feature = match token_iter.peek() {
-    Some(peeked_token) if peeked_token.is_same_type(&COLON_TYPE) =>
-      get_attribute_feature(ident_name, token_iter),
-
-    Some(peeked_token) if peeked_token.is_same_type(&OPEN_PAREN_TYPE) =>
-      get_method_feature(ident_name, token_iter),
-
-    Some(t) => panic!("Incorrect token {:?}", t),
-
-    None => panic!("Unexpected EOF"),
-  };
-
-  // Feature must terminate with a semicolon
-  match_required_token(token_iter.next(), SEMI_COLON_TYPE);
-
-  feature
-}
-
-fn get_method_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator) -> Feature {
-  match_required_token(token_iter.next(), OPEN_PAREN_TYPE);
-
-  let mut formals: Option<Vec<Formal>> = None;
-
-  // `(` seen in calling method => If the next token is not `)`, read formals list
-  if token_iter.peek().is_some() && !token_iter.peek().unwrap().is_same_type(&CLOSE_PAREN_TYPE) {
-    let vec_formals = get_formals(token_iter);
-    formals = Some(vec_formals);
-  }
-
-  match_required_token(token_iter.next(), CLOSE_PAREN_TYPE);
-
-  match_required_token(token_iter.next(), COLON_TYPE);
-
-  let token = match_required_token(token_iter.next(), IDENT_TYPE);
-  let method_return_type = Type::from(token);
-
-  match_required_token(token_iter.next(), OPEN_CURL_TYPE);
-
-  let method_expr = get_expression(token_iter);
-
-  match_required_token(token_iter.next(), CLOSE_CURL_TYPE);
-
-  (ident_name, formals, method_return_type, Box::from(method_expr)).into()
-}
-
-fn get_attribute_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator) -> Feature {
-  match_required_token(token_iter.next(), COLON_TYPE);
-
-  let token = match_required_token(token_iter.next(), IDENT_TYPE);
-  let method_return_type = Id::from(token);
-
-  if token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&COLON_TYPE) {
-    match_required_token(token_iter.next(), ASSIGN_TYPE);
-
-    let method_expr = get_expression(token_iter);
-    (ident_name, method_return_type, Box::from(method_expr)).into()
-  } else {
-    (ident_name, method_return_type).into()
-  }
 }
 
 /// Formals |-> formal {{, formals}}
@@ -213,8 +76,8 @@ fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
     // If first expression is a PartialDispatch convert it to Dispatch by adding `self`
     if let Expression::PartialDispatch { fn_name, param_list } = expr {
       expr = Expression::Dispatch {
-        calling_expr: Box::from(Expression::SelfExpr ),
-        cast_type_name: None,
+        calling_expr: Box::from(Expression::SelfExpr),
+        cast_type: None,
         fn_name,
         param_list,
       }
@@ -243,11 +106,11 @@ fn get_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
 
       Expression::PartialDispatch { fn_name, param_list } => {
         let first = stack[0].clone();
-        expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type_name: None, fn_name, param_list }
+        expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type: None, fn_name, param_list }
       }
       Expression::PartialCastDispatch { cast_type, fn_name, param_list } => {
         let first = stack[0].clone();
-          expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type_name: Some(cast_type), fn_name, param_list };
+        expr = Expression::Dispatch { calling_expr: Box::from(first), cast_type, fn_name, param_list };
       }
 
       _ => panic!("Should be partial expression, received {:?}", next_expr.get_type())
@@ -276,7 +139,7 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
     Token::At { .. } => { // Dynamic dispatch
       let _ = token_iter.next(); // consume `@`
       let ident_type = match_required_token(token_iter.next(), IDENT_TYPE); // consume `TYPE`
-      let cast_type = Type::from(ident_type);
+      let cast_type = Some(Type::from(ident_type));
 
       // `.` must follow the cast_type
       assert!(token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(&DOT_TYPE));
@@ -317,11 +180,11 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
       let void_expr = get_stack_top(token_iter, stack);
       expr = Expression::IsVoid { expr: Box::from(void_expr) };
     }
-    
-    Token::Assign {..} => {
+
+    Token::Assign { .. } => {
       match_required_token(token_iter.next(), ASSIGN_TYPE);
       let assign_expr = get_expression(token_iter);
-      expr = Expression::PartialAssign {expr: Box::from(assign_expr) };
+      expr = Expression::PartialAssign { expr: Box::from(assign_expr) };
     }
 
     Token::Plus { .. } |
@@ -585,67 +448,9 @@ fn get_fn_param_expr_list(token_iter: &mut FilteredTokensIterator, stack: &mut V
   expr_list
 }
 
-fn match_required_token(token_option: Option<Token>, expected: Token) -> Token {
-  if let Some(token) = token_option {
-    assert!(token.is_same_type(&expected), "Unexpected token: {:?}", token);
-    token
-  } else {
-    panic!("Unexpected EOF");
-  }
-}
-
-fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
-  let mut errors: String = String::new();
-  for token in tokens {
-    match token {
-      Token::Empty => {
-        errors.push_str("Empty token! Parsing failed somewhere, can't specify details.\n");
-      }
-      Token::Error { error_char, line_num, line_pos } => {
-        let x = format!("Error on line {line_num} at pos {line_pos}, offending character {error_char}.");
-        errors.push_str(x.as_str());
-      }
-      _ => continue,
-    }
-  }
-
-  if errors.is_empty() {
-    None
-  } else {
-    Some(errors)
-  }
-}
-
-
-#[inline]
-fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
-  token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(expected)
-}
-
-#[inline]
-fn peek_token_in(token_iter: &mut FilteredTokensIterator, expected: &HashSet<Token>) -> bool {
-  let Some(peek) = token_iter.peek() else { return false };
-
-  let output = expected.iter().any(|token| peek.is_same_type(token));
-  output
-}
-
 #[cfg(test)]
 mod test {
-  use std::collections::HashSet;
-  use crate::tokens::{Token, CASE_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
-  use crate::{convert_vec_filtered_iter, get_features, get_filtered_token_iter, peek_token_in, parse_program_from_file, FilteredTokensIterator};
-  use std::mem::discriminant;
-
-  #[test]
-  fn test_filtered_token_iter() {
-    let file = "test_resources/cool.cl";
-    let iter = get_filtered_token_iter(file);
-    for token in iter {
-      assert_ne!(discriminant(&token), discriminant(&Token::Comment { value: String::new(), line_num: 0, line_pos: 0 }));
-      println!("{:?}", token);
-    }
-  }
+  use crate::parse_program_from_file;
 
   #[test]
   fn test_single_program() {
@@ -664,32 +469,10 @@ mod test {
   }
 
   #[test]
-  fn test_method_feature() {
-    let file_path = "test_resources/feature.first_form";
-    let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let features = get_features(&mut token_iter);
-    assert!(features.is_some());
-    let feature_list = features.unwrap();
-    assert_eq!(feature_list.len(), 1);
-    println!("{:#?}", feature_list);
-  }
-  
-  #[test]
   #[should_panic(expected = "Unexpected token: Dot { line_num: 5, line_pos: 54 }")]
   fn test_single_program_fail() {
     let file = "test_resources/cool_bad.cl";
     let program = parse_program_from_file(file);
     println!("{:#?}", program);
-  }
-
-  #[test]
-  fn test_match_peek_in_list() {
-    let expected_set = HashSet::from([IN_TYPE, CASE_TYPE, IDENT_TYPE]);
-    let token_list = [IN_TYPE, COMMA_TYPE, LET_TYPE];
-    let mut iter = convert_vec_filtered_iter(Vec::from(token_list));
-    
-    assert_eq!(peek_token_in(&mut iter, &expected_set), true);
-    iter.next(); // remove `In`
-    assert_eq!(peek_token_in(&mut iter, &expected_set), false);
   }
 }

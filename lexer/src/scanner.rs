@@ -2,9 +2,9 @@
 use std::io::{BufReader, Bytes, Error, ErrorKind, Read, Result, Seek, SeekFrom};
 use std::iter::{Map, Peekable};
 
-use crate::tokens::WhiteSpace::{CarriageReturn, NewLine, Space, Tab, FormFeed, VerticalTab};
+use crate::tokens::WhiteSpace::{CarriageReturn, FormFeed, NewLine, Space, Tab, VerticalTab};
 use crate::tokens::{Token, WhiteSpace};
-use crate::tokens::{AT, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, OPEN_CURL, OPEN_PAREN, LESS_THAN, MINUS, PLUS, CLOSE_CURL, CLOSE_PAREN, SEMI_COLON, STAR, TILDE};
+use crate::tokens::{AT, CLOSE_CURL, CLOSE_PAREN, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LESS_THAN, MINUS, OPEN_CURL, OPEN_PAREN, PLUS, SEMI_COLON, STAR, TILDE};
 
 type BufferedCharReader = Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>;
 
@@ -352,7 +352,7 @@ fn get_buf_reader(file_path: &str) -> (BufferedCharReader, u32, u32) {
   }
 
   let mut buf_reader = BufReader::new(file_open.unwrap());
-  
+
   // Ignore byte order marker, if present. UTF-8 byte-order marker is first 3 bytes of file = [0xEF 0xBB 0xBF]
   let mut read_byte = [0; 3]; // Buffer to hold 3 bytes
   let r = buf_reader.read(&mut read_byte);
@@ -380,7 +380,6 @@ fn get_buf_reader(file_path: &str) -> (BufferedCharReader, u32, u32) {
 
 #[cfg(test)]
 mod tests {
-  use crate::tokens::Token::String;
   use super::*;
 
   #[test]
