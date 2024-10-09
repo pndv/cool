@@ -43,7 +43,7 @@ impl Class {
   }
 }
 
-pub fn get_class(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Class {
+pub(crate) fn get_class(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Class {
   match_required_token(token_iter.next(), CLASS_TYPE);
 
   let mut token = match_required_token(token_iter.next(), IDENT_TYPE);
