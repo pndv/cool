@@ -3,6 +3,8 @@ use crate::tokens::{Token, ASSIGN_TYPE, CASE_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_
 use core::iter::Iterator;
 use expressions::case_expr::CaseBranch;
 use tokens::{match_required_token, FilteredTokensIterator};
+use crate::class::Class;
+use crate::terminal_tokens::TERMINATE_TOKEN_SEMI_COLON;
 
 pub mod scanner;
 pub mod nodes;
@@ -11,6 +13,7 @@ mod expressions;
 mod terminal_tokens;
 mod feature;
 mod class;
+mod formal;
 
 #[must_use]
 pub fn parse_program_from_file(file_path: &str) -> Program {
@@ -19,11 +22,13 @@ pub fn parse_program_from_file(file_path: &str) -> Program {
   get_program(&mut token_iter)
 }
 
+/// Program is a list of semicolon separated classes 
 fn get_program(token_iter: &mut FilteredTokensIterator) -> Program {
   let mut program: Program = Program::new();
 
   while token_iter.peek().is_some() {
-    let class = class::get_class(token_iter, &[]);
+    let class: Class = class::gen_class(token_iter, &TERMINATE_TOKEN_SEMI_COLON);
+    match_required_token(token_iter.next(), SEMI_COLON_TYPE);
     program.add_class(class);
   }
 

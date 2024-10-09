@@ -13,6 +13,16 @@ use dispatch_expr::gen_partial_cast_dispatch;
 use let_expr::gen_let_expression;
 use loop_expr::gen_loop_expression;
 
+pub(super) fn gen_expression_new(token_iter: &mut FilteredTokensIterator,
+                                 read_till_token: &Token) -> Expression {
+  let mut tokens:Vec<_> = token_iter.take_while(|token| token.is_same_type(read_till_token)).collect();
+  let iter = tokens.into_iter().peekable();
+  
+  let partial_expressions = gen_partial_expressions(&mut iter, &[]);
+  let expr = reduce_expression_list(partial_expressions);
+  expr
+}
+
 pub(super) fn gen_expression(token_iter: &mut FilteredTokensIterator,
                              read_till_tokens: &[Token]) -> Expression {
   let partial_expressions = gen_partial_expressions(token_iter, read_till_tokens);
@@ -20,8 +30,7 @@ pub(super) fn gen_expression(token_iter: &mut FilteredTokensIterator,
   expr
 }
 
-fn gen_partial_expressions(token_iter: &mut FilteredTokensIterator,
-                           read_till_tokens: &[Token]) -> Vec<Expression> {
+fn gen_partial_expressions(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Vec<Expression> {
   let mut expr_list: Vec<Expression> = Vec::new();
   while peek_token_not_in(token_iter, read_till_tokens) {
     let Some(peek) = token_iter.peek() else { panic!("get_expression_helper: Unexpected EOF") };
@@ -104,8 +113,7 @@ fn gen_partial_expressions(token_iter: &mut FilteredTokensIterator,
 
       Token::Assign { .. } => {
         match_required_token(token_iter.next(), ASSIGN_TYPE);
-        let partial_assign_expr_list = gen_partial_expressions(token_iter, read_till_tokens);
-        let assign_expr = reduce_expression_list(partial_assign_expr_list);
+        let assign_expr = gen_expression(token_iter, read_till_tokens);
         expr_list.push(Expression::PartialAssign { expr: Box::new(assign_expr) });
       }
 
@@ -183,8 +191,7 @@ fn reduce_expression_list(mut expressions: Vec<Expression>) -> Expression {
 /// ...previously seen expression.. + {`+` | `-` | `*`| `/`| `<`| `<=`| `=`} expr
 fn gen_partial_binary_expr(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Expression {
   let binary_token = token_iter.next().unwrap_or_else(|| panic!("get_expression_helper: Error reading binary token"));
-  let right_expr_list = gen_partial_expressions(token_iter, read_till_tokens);
-  let right = reduce_expression_list(right_expr_list);
+  let right = gen_expression(token_iter, read_till_tokens);
   let partial_binary_expr = Expression::PartialBinary { binary_token, right_expr: Box::new(right) };
   partial_binary_expr
 }
@@ -194,8 +201,7 @@ fn gen_unary_expr(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[T
   // match / consume the unary token
   let unary_token = token_iter.next().unwrap_or_else(|| panic!("get_expression_helper: Error reading unary token"));
 
-  let sub_expr_list = gen_partial_expressions(token_iter, read_till_tokens);
-  let sub_expr = reduce_expression_list(sub_expr_list);
+  let sub_expr = gen_expression(token_iter, read_till_tokens);
 
   let unary_expr = if unary_token.is_same_type(&NOT_TYPE) {
     Expression::Not { expr: Box::from(sub_expr) }
@@ -212,8 +218,7 @@ fn gen_unary_expr(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[T
 fn gen_single_expr_within_paren(token_iter: &mut FilteredTokensIterator) -> Expression {
   match_required_token(token_iter.next(), OPEN_PAREN_TYPE);
 
-  let expr_list = gen_partial_expressions(token_iter, &TERMINATE_TOKEN_CLOSE_PAREN);
-  let expr = reduce_expression_list(expr_list);
+  let expr = gen_expression(token_iter, &TERMINATE_TOKEN_CLOSE_PAREN);
 
   match_required_token(token_iter.next(), CLOSE_PAREN_TYPE);
 
@@ -229,8 +234,7 @@ fn gen_block_expr(token_iter: &mut FilteredTokensIterator) -> Expression {
   while !peek_token_eq(token_iter, &CLOSE_CURL_TYPE) { //Loop till end of block
 
     // each expression in block terminates with a semicolon
-    let expr_list = gen_partial_expressions(token_iter, &TERMINATE_TOKEN_SEMI_COLON);
-    let expr = reduce_expression_list(expr_list);
+    let expr = gen_expression(token_iter, &TERMINATE_TOKEN_SEMI_COLON);
     match_required_token(token_iter.next(), SEMI_COLON_TYPE);
 
     block_expr_list.push(expr);

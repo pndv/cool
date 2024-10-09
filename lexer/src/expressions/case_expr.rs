@@ -52,4 +52,3 @@ fn gen_case_branch(token_iter: &mut FilteredTokensIterator) -> CaseBranch {
 
   (id, type_id, Box::from(case_branch_expr))
 }
-

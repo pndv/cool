@@ -1,8 +1,8 @@
 ﻿use crate::expressions;
-use crate::terminal_tokens::TERMINATE_TOKENS_DISPATCH_FN_PARAMS;
+use crate::expressions::gen_expression;
 use crate::nodes::{Expression, Id, Type};
+use crate::terminal_tokens::TERMINATE_TOKENS_DISPATCH_FN_PARAMS;
 use crate::tokens::{match_required_token, peek_token_eq, peek_token_not_in, FilteredTokensIterator, Token, AT_TYPE, CLOSE_PAREN_TYPE, COMMA_TYPE, DOT_TYPE, IDENT_TYPE, OPEN_PAREN_TYPE};
-use expressions::{gen_partial_expressions, reduce_expression_list};
 
 /// ...expr (seen before)... { `@` TYPE } `.` ID `(` { expr {{ `,` expr }} } 
 pub(super) fn gen_partial_cast_dispatch(token_iter: &mut FilteredTokensIterator) -> Expression {
@@ -48,8 +48,7 @@ fn gen_fn_params(token_iter: &mut FilteredTokensIterator) -> Vec<Expression> {
   let mut param_list: Vec<Expression> = Vec::new();
 
   while peek_token_not_in(token_iter, &terminal_tokens) {
-    let param_expr_list = gen_partial_expressions(token_iter, &TERMINATE_TOKENS_DISPATCH_FN_PARAMS);
-    let param_expr = reduce_expression_list(param_expr_list);
+    let param_expr = gen_expression(token_iter, &TERMINATE_TOKENS_DISPATCH_FN_PARAMS);
     param_list.push(param_expr);
   }
 
