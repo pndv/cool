@@ -48,8 +48,8 @@ impl Program {
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Formal {
-  pub(crate) formal_name: Id,
-  pub(crate) formal_type: Type,
+  pub(super) formal_name: Id,
+  pub(super) formal_type: Type,
 }
 
 impl From<(Id, Type)> for Formal {
@@ -140,8 +140,8 @@ impl Expression {
   pub(crate) fn get_type(&self) -> String {
     match self {
       Expression::NoExpr => String::from("NoExpr"),
-      Expression::SelfExpr {..} => String::from("SelfExpr"),
-      Expression::SelfTypeExpr {..} => String::from("SelfTypeExpr"),
+      Expression::SelfExpr {..} => String::from("Self"),
+      Expression::SelfTypeExpr {..} => String::from("SelfType"),
       Expression::PartialAssign { .. } => String::from("PartialAssign"),
       Expression::Assign { .. } => String::from("Assign"),
       Expression::PartialDispatch { .. } => String::from("PartialDispatch"),

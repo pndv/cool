@@ -1,8 +1,8 @@
 ﻿use crate::expressions;
-use crate::terminal_tokens::TERMINATE_TOKENS_LET_INIT_EXPR;
+use crate::expressions::gen_expression;
 use crate::nodes::{Expression, Id, LetInit, Type};
+use crate::terminal_tokens::TERMINATE_TOKENS_LET_INIT_EXPR;
 use crate::tokens::{match_required_token, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
-use expressions::{gen_partial_expressions, reduce_expression_list};
 
 pub(crate) fn gen_let_expression(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Expression {
   match_required_token(token_iter.next(), LET_TYPE);
@@ -11,8 +11,7 @@ pub(crate) fn gen_let_expression(token_iter: &mut FilteredTokensIterator, read_t
   match_required_token(token_iter.next(), IN_TYPE);
 
   // Continue reading till calling code's end-token
-  let let_in_expr_list = gen_partial_expressions(token_iter, read_till_tokens);
-  let let_in_expr = reduce_expression_list(let_in_expr_list);
+  let let_in_expr = gen_expression(token_iter, read_till_tokens);
 
   Expression::Let {
     let_init: let_init_list,
@@ -65,8 +64,7 @@ fn gen_let_init(token_iter: &mut FilteredTokensIterator) -> LetInit {
     // The end of this expression in `Let` is marked in two ways:
     // 1. `,` -> indicates the expression has ended, but more `LetInit` will follow
     // 2. `in` -> indicates the expression and the `LetInit` has ended
-    let intermediate_expr_list: Vec<Expression> = gen_partial_expressions(token_iter, &TERMINATE_TOKENS_LET_INIT_EXPR);
-    let init_expr = reduce_expression_list(intermediate_expr_list);
+    let init_expr = gen_expression(token_iter, &TERMINATE_TOKENS_LET_INIT_EXPR);
 
     expr = Some(Box::new(init_expr));
   }
