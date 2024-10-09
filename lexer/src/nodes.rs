@@ -2,11 +2,12 @@ use crate::tokens::Token;
 use std::borrow::Cow;
 use crate::class::Class;
 use crate::expressions::case_expr::CaseBranch;
-pub type Type = (Cow<'static, str>, u32, u32);
-pub type Id = (Cow<'static, str>, u32, u32);
+
 
 pub(crate) type LetInit = (Id, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
+pub type Id = (Cow<'static, str>, u32, u32);
 
+pub type Type = (Cow<'static, str>, u32, u32);
 
 impl From<Token> for Type { // Type and Symbol have same implementation of From
   fn from(value: Token) -> Self {
@@ -35,10 +36,11 @@ impl Program {
     Program { classes }
   }
 
-  pub fn add_class(&mut self, class: Class) {
+  pub(crate) fn add_class(&mut self, class: Class) {
     self.classes.push(class);
   }
 
+  #[must_use] 
   pub fn classes(&self) -> &Vec<Class> {
     &self.classes
   }
