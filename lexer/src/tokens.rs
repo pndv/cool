@@ -1,5 +1,8 @@
-﻿use mem::discriminant;
+﻿use crate::scanner::get_program_token_list;
+use mem::discriminant;
+use std::iter::{Filter, Peekable};
 use std::mem;
+use std::vec::IntoIter;
 
 pub const DOT: char = '.';
 pub const AT: char = '@';
@@ -40,6 +43,39 @@ const KEYWORD_OF: &str = "of";
 const KEYWORD_FALSE: &str = "false";
 const KEYWORD_TRUE: &str = "true";
 const KEYWORD_SELF_TYPE: &str = "SELF_TYPE";
+
+pub(crate) const IDENT_TYPE: Token = Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const LAMBDA_TYPE: Token = Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const DOT_TYPE: Token = Token::Dot { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const COMMA_TYPE: Token = Token::Comma { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const ASSIGN_TYPE: Token = Token::Assign { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const COLON_TYPE: Token = Token::Colon { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const SEMI_COLON_TYPE: Token = Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const OPEN_PAREN_TYPE: Token = Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CLOSE_PAREN_TYPE: Token = Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const OPEN_CURL_TYPE: Token = Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CLOSE_CURL_TYPE: Token = Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CLASS_TYPE: Token = Token::Class { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const INHERITS_TYPE: Token = Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const IF_TYPE: Token = Token::If { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const THEN_TYPE: Token = Token::Then { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const ELSE_TYPE: Token = Token::Else { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const END_IF_TYPE: Token = Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const LOOP_TYPE: Token = Token::Loop { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const END_LOOP_TYPE: Token = Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const IN_TYPE: Token = Token::In { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const OF_TYPE: Token = Token::Of { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const END_CASE_TYPE: Token = Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const WHILE_TYPE: Token = Token::While { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const LET_TYPE: Token = Token::Let { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const CASE_TYPE: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const NEW_TYPE: Token = Token::New { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const NOT_TYPE: Token = Token::Not { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const TILDE_TYPE: Token = Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX };
+pub(crate) const AT_TYPE: Token = Token::At { line_num: u32::MAX, line_pos: u32::MAX };
+
+type CommentFilter = fn(&Token) -> bool;
+pub(crate) type FilteredTokensIterator = Peekable<Filter<IntoIter<Token>, CommentFilter>>;
 
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub(crate) enum Token {
@@ -153,36 +189,6 @@ impl Token {
   }
 }
 
-pub(crate) const IDENT_TYPE: Token = Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const LAMBDA_TYPE: Token = Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const DOT_TYPE: Token = Token::Dot { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const COMMA_TYPE: Token = Token::Comma { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const ASSIGN_TYPE: Token = Token::Assign { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const COLON_TYPE: Token = Token::Colon { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const SEMI_COLON_TYPE: Token = Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const OPEN_PAREN_TYPE: Token = Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CLOSE_PAREN_TYPE: Token = Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const OPEN_CURL_TYPE: Token = Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CLOSE_CURL_TYPE: Token = Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CLASS_TYPE: Token = Token::Class { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const INHERITS_TYPE: Token = Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const IF_TYPE: Token = Token::If { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const THEN_TYPE: Token = Token::Then { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const ELSE_TYPE: Token = Token::Else { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const END_IF_TYPE: Token = Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const LOOP_TYPE: Token = Token::Loop { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const END_LOOP_TYPE: Token = Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const IN_TYPE: Token = Token::In { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const OF_TYPE: Token = Token::Of { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const END_CASE_TYPE: Token = Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const WHILE_TYPE: Token = Token::While { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const LET_TYPE: Token = Token::Let { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CASE_TYPE: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const NEW_TYPE: Token = Token::New { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const NOT_TYPE: Token = Token::Not { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const TILDE_TYPE: Token = Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const AT_TYPE: Token = Token::At { line_num: u32::MAX, line_pos: u32::MAX };
-
 #[derive(PartialEq, Debug)]
 pub(crate) enum WhiteSpace {
   Space,
@@ -217,6 +223,88 @@ impl WhiteSpace {
   }
 }
 
+pub fn get_filtered_token_iter(file_path: &str) -> FilteredTokensIterator {
+  let Ok(tokens) = get_program_token_list(file_path) else { panic!("Error reading file"); };
+
+  convert_vec_filtered_iter(tokens)
+}
+
+pub fn convert_vec_filtered_iter(tokens: Vec<Token>) -> FilteredTokensIterator {
+  if let Some(err) = check_tokens(&tokens) {
+    panic!("{err}");
+  }
+
+  let is_not_comment: CommentFilter = is_not_comment;
+
+  let token_iter: FilteredTokensIterator = tokens.into_iter()
+                                                 .filter(is_not_comment)
+                                                 .peekable();
+
+  token_iter
+}
+
+fn is_not_comment(token: &Token) -> bool {
+  !matches!(token, Token::Comment { .. })
+}
+
+pub fn match_required_token(token_option: Option<Token>, expected: Token) -> Token {
+  if let Some(token) = token_option {
+    assert!(token.is_same_type(&expected), "Unexpected token: {:?}", token);
+    token
+  } else {
+    panic!("Unexpected EOF");
+  }
+}
+
+fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
+  let mut errors: String = String::new();
+  for token in tokens {
+    match token {
+      Token::Empty => {
+        errors.push_str("Empty token! Parsing failed somewhere, can't specify details.\n");
+      }
+      Token::Error { error_char, line_num, line_pos } => {
+        let x = format!("Error on line {line_num} at pos {line_pos}, offending character {error_char}.");
+        errors.push_str(x.as_str());
+      }
+      _ => continue,
+    }
+  }
+
+  if errors.is_empty() {
+    None
+  } else {
+    Some(errors)
+  }
+}
+
+#[inline]
+pub fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
+  token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(expected)
+}
+
+#[inline]
+pub fn peek_token_neq(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
+  !peek_token_eq(token_iter, expected)
+}
+
+#[inline]
+pub fn peek_token_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]) -> bool {
+  // Read till end of file if `expected` is empty
+  if expected.is_empty() {
+    return token_iter.peek().is_none(); // check if `token_iter` has reached the EOF 
+  }
+
+  let Some(peek) = token_iter.peek() else { return false };
+
+  expected.iter().any(|token| peek.is_same_type(token))
+}
+
+#[inline]
+pub fn peek_token_not_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]) -> bool {
+  !peek_token_in(token_iter, expected)
+}
+
 #[cfg(test)]
 mod test_token {
   use super::*;
@@ -226,5 +314,26 @@ mod test_token {
     let test1 = Token::Ident { value: "Test Ident 1".parse().unwrap(), line_num: 10, line_pos: 50 };
     let test2 = Token::Ident { value: "Test other ident".parse().unwrap(), line_num: 25, line_pos: 15 };
     assert!(test1.is_same_type(&test2));
+  }
+
+  #[test]
+  fn test_filtered_token_iter() {
+    let file = "test_resources/cool.cl";
+    let iter = get_filtered_token_iter(file);
+    for token in iter {
+      assert_ne!(discriminant(&token), discriminant(&Token::Comment { value: String::new(), line_num: 0, line_pos: 0 }));
+      println!("{:?}", token);
+    }
+  }
+
+  #[test]
+  fn test_match_peek_in_list() {
+    let expected_set = [IN_TYPE, CASE_TYPE, IDENT_TYPE];
+    let token_list = [IN_TYPE, COMMA_TYPE, LET_TYPE];
+    let mut iter = convert_vec_filtered_iter(Vec::from(token_list));
+
+    assert_eq!(peek_token_in(&mut iter, &expected_set), true);
+    iter.next(); // remove `In`
+    assert_eq!(peek_token_in(&mut iter, &expected_set), false);
   }
 }

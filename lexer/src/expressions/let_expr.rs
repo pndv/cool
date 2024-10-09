@@ -1,18 +1,18 @@
-﻿use crate::nodes::{Expression, Id, LetInit, Type};
-use crate::tokens::{Token, ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
-use crate::{expressions, peek_token_eq, match_required_token, FilteredTokensIterator};
-use std::collections::HashSet;
-use expressions::get_expression_helper;
+﻿use crate::expressions;
+use crate::terminal_tokens::TERMINATE_TOKENS_LET_INIT_EXPR;
+use crate::nodes::{Expression, Id, LetInit, Type};
+use crate::tokens::{match_required_token, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
+use expressions::{gen_partial_expressions, reduce_expression_list};
 
-pub(crate) fn gen_let_expression(token_iter: &mut FilteredTokensIterator, read_till_tokens: &HashSet<Token>) -> Expression {
+pub(crate) fn gen_let_expression(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Expression {
   match_required_token(token_iter.next(), LET_TYPE);
 
   let let_init_list = gen_let_init_list(token_iter);
   match_required_token(token_iter.next(), IN_TYPE);
 
   // Continue reading till calling code's end-token
-  let let_in_expr_list = get_expression_helper(token_iter, read_till_tokens);
-  let let_in_expr = expressions::reduce_expression_list(let_in_expr_list);
+  let let_in_expr_list = gen_partial_expressions(token_iter, read_till_tokens);
+  let let_in_expr = reduce_expression_list(let_in_expr_list);
 
   Expression::Let {
     let_init: let_init_list,
@@ -65,9 +65,8 @@ fn gen_let_init(token_iter: &mut FilteredTokensIterator) -> LetInit {
     // The end of this expression in `Let` is marked in two ways:
     // 1. `,` -> indicates the expression has ended, but more `LetInit` will follow
     // 2. `in` -> indicates the expression and the `LetInit` has ended
-    let token_match_set = HashSet::from([COMMA_TYPE, IN_TYPE]);
-    let intermediate_expr_list: Vec<Expression> = get_expression_helper(token_iter, &token_match_set);
-    let init_expr = expressions::reduce_expression_list(intermediate_expr_list);
+    let intermediate_expr_list: Vec<Expression> = gen_partial_expressions(token_iter, &TERMINATE_TOKENS_LET_INIT_EXPR);
+    let init_expr = reduce_expression_list(intermediate_expr_list);
 
     expr = Some(Box::new(init_expr));
   }
@@ -76,19 +75,15 @@ fn gen_let_init(token_iter: &mut FilteredTokensIterator) -> LetInit {
 }
 
 mod test {
-  use std::collections::HashSet;
-  use crate::{convert_vec_filtered_iter, get_filtered_token_iter, FilteredTokensIterator};
   use crate::expressions::let_expr::gen_let_expression;
-  use crate::tokens::{CASE_TYPE, CLOSE_CURL_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
+  use crate::tokens::{get_filtered_token_iter, FilteredTokensIterator};
 
   #[test]
   fn test_let_exp() {
     let file_path = "test_resources/expr.let";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let read_till_tokens = HashSet::from([CLOSE_CURL_TYPE]);
-    let expr = gen_let_expression(&mut token_iter, &read_till_tokens);
+    let expr = gen_let_expression(&mut token_iter, &[]);
     println!("{:?}", expr);
     assert_eq!(expr.get_type(), "Let".to_string());
   }
-
 }

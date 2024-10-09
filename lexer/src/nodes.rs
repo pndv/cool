@@ -1,7 +1,7 @@
 use crate::tokens::Token;
 use std::borrow::Cow;
+use crate::class::Class;
 use crate::expressions::case_expr::CaseBranch;
-
 pub type Type = (Cow<'static, str>, u32, u32);
 pub type Id = (Cow<'static, str>, u32, u32);
 
@@ -45,89 +45,9 @@ impl Program {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) struct Class {
-  class_type: Type,
-  parent_type: Option<Type>, // if no parent is given, then 'Object' is the parent of all classes
-  features: Option<Vec<Feature>>,
-}
-
-const OBJECT: Class = Class {
-  class_type: (Cow::Borrowed("Object"), 0, 0),
-  parent_type: None,
-  features: None,
-};
-
-impl Class {
-  pub(crate) fn new(class_type: Type, parent_type: Option<Type>, features: Option<Vec<Feature>>) -> Self {
-    let parent: Type = if parent_type.is_some() {
-      parent_type.unwrap()
-    } else {
-      OBJECT.class_type.clone()
-    };
-
-    Class {
-      class_type,
-      parent_type: Some(parent),
-      features,
-    }
-  }
-
-  pub fn add_feature(&mut self, feature: Feature) {
-    if self.features.is_none() {
-      self.features = Some(Vec::new());
-    }
-
-    if let Some(ref mut features) = self.features {
-      features.push(feature);
-    }
-  }
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub(crate) struct Feature {
-  feature_name: Id,
-  formals: Option<Vec<Formal>>,
-  return_type: Type,
-  expr: Option<Box<Expression>>,
-}
-
-impl From<(Id, Option<Vec<Formal>>, Type, Box<Expression>)> for Feature {
-  fn from((feature_name, formals, return_type, expr): (Id, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
-    Feature {
-      feature_name,
-      formals,
-      return_type,
-      expr: Some(expr),
-    }
-  }
-}
-
-impl From<(Id, Type, Box<Expression>)> for Feature {
-  fn from((feature_name, return_type, expr): (Id, Type, Box<Expression>)) -> Self {
-    Feature {
-      feature_name,
-      formals: None,
-      return_type,
-      expr: Some(expr),
-    }
-  }
-}
-
-impl From<(Id, Type)> for Feature {
-  fn from((feature_name, return_type): (Id, Type)) -> Self {
-    Feature {
-      feature_name,
-      formals: None,
-      return_type,
-      expr: None,
-    }
-  }
-}
-
-#[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Formal {
-  formal_name: Id,
-  formal_type: Type,
+  pub(crate) formal_name: Id,
+  pub(crate) formal_type: Type,
 }
 
 impl From<(Id, Type)> for Formal {
@@ -147,10 +67,10 @@ pub(crate) enum Expression {
   Assign { name: Id, expr: Box<Expression> },
 
   PartialDispatch { fn_name: Id, param_list: Vec<Expression> },
-  PartialCastDispatch { cast_type: Type, fn_name: Id, param_list: Vec<Expression> },
+  PartialCastDispatch { cast_type: Option<Type>, fn_name: Id, param_list: Vec<Expression> },
   Dispatch {
     calling_expr: Box<Expression>, // If empty, then it's 
-    cast_type_name: Option<Type>,
+    cast_type: Option<Type>,
     fn_name: Id,
     param_list: Vec<Expression>, // if no parameters, then it's a single list of [NoExpr] 
   },
@@ -178,7 +98,6 @@ pub(crate) enum Expression {
 
   Not { expr: Box<Expression> },
 
-  PartialTypeOrSymbol { name_of_symbol_or_type: String, line_num: u32, line_pos: u32 },
   Ident { name: Id },
 
   Int { value: i32, line_num: u32, line_pos: u32 },
@@ -200,7 +119,7 @@ impl Expression {
     if let Expression::PartialDispatch {fn_name, param_list} = self {
       Expression::Dispatch {
         fn_name: fn_name.clone(), 
-        cast_type_name: None, 
+        cast_type: None, 
         calling_expr: Box::from(Expression::SelfExpr),
         param_list: param_list.clone(),
       }
@@ -213,7 +132,6 @@ impl Expression {
     matches!(self, Expression::PartialDispatch { .. } | 
       Expression::PartialCastDispatch { .. } | 
       Expression::PartialAssign { .. } | 
-      Expression::PartialTypeOrSymbol { .. } | 
       Expression::PartialBinary { .. }) 
   }
 
@@ -242,7 +160,6 @@ impl Expression {
       Expression::LessThanOrEqual { .. } => String::from("LessThanOrEqual"),
       Expression::Negate { .. } => String::from("Negate"),
       Expression::Not { .. } => String::from("Not"),
-      Expression::PartialTypeOrSymbol { .. } => String::from("PartialTypeOrSymbol"),
       Expression::Ident { .. } => String::from("Ident"),
       Expression::Int { .. } => String::from("Int"),
       Expression::Bool { .. } => String::from("Bool"),
