@@ -244,18 +244,26 @@ pub(crate) fn convert_vec_filtered_iter(tokens: Vec<Token>) -> FilteredTokensIte
   token_iter
 }
 
-pub(crate) fn generate_iter_till_token_or_end(token_iter: &mut FilteredTokensIterator, read_till_token: &Token) -> FilteredTokensIterator {
+pub(crate) fn gen_iter_till_token_or_end(token_iter: &mut FilteredTokensIterator, read_till_token: &Token) -> FilteredTokensIterator {
   let mut tokens: Vec<Token> = vec![];
 
   let mut seen_open_curl = 0;
   let mut seen_open_paren = 0;
+  let mut seen_start_if = 0;
+  let mut seen_start_case = 0;
+  let mut seen_start_loop = 0;
 
   // let mut seen_open_curl = if read_till_token.is_same_type(&CLOSE_PAREN_TYPE) { -1 } else {0};
   // let mut seen_open_paren = if read_till_token.is_same_type(&CLOSE_CURL_TYPE) { -1 } else {0};;
 
-  // read tokens, accounting for matching brackets
+  // read tokens, accounting for matching brackets and matching expressions
   loop {
-    if peek_token_eq(token_iter, read_till_token) && seen_open_curl == 0 && seen_open_paren == 0 {
+    if peek_token_eq(token_iter, read_till_token) &&
+        seen_open_curl == 0 &&
+        seen_open_paren == 0 &&
+        seen_start_if == 0 &&
+        seen_start_case == 0 &&
+        seen_start_loop == 0 {
       break; // reached the real end, accounted for all matching brackets
     }
 
@@ -265,24 +273,27 @@ pub(crate) fn generate_iter_till_token_or_end(token_iter: &mut FilteredTokensIte
         assert_eq!(seen_open_paren, 0);
         break;
       }
-      Some(t) if t.is_same_type(&OPEN_PAREN_TYPE) => {
-        seen_open_paren += 1;
-        t
-      }
-      Some(t) if t.is_same_type(&OPEN_CURL_TYPE) => {
-        seen_open_curl += 1;
-        t
-      }
-      Some(t) if t.is_same_type(&CLOSE_PAREN_TYPE) => {
-        seen_open_paren -= 1;
-        t
-      }
-      Some(t) if t.is_same_type(&CLOSE_CURL_TYPE) => {
-        seen_open_curl -= 1;
-        t
-      }
       Some(t) => t,
     };
+
+    match token {
+      Token::OpenParen { .. } => seen_open_paren += 1,
+      Token::CloseParen { .. } => seen_open_paren -= 1,
+
+      Token::OpenCurl { .. } => seen_open_curl += 1,
+      Token::CloseCurl { .. } => seen_open_curl -= 1,
+
+      Token::If { .. } => seen_start_if += 1,
+      Token::EndIf { .. } => seen_start_if -= 1,
+
+      Token::Case { .. } => seen_start_case += 1,
+      Token::EndCase { .. } => seen_start_case -= 1,
+
+      Token::Loop { .. } => seen_start_loop += 1,
+      Token::EndLoop { .. } => seen_start_loop -= 1,
+
+      _ => ()
+    }
 
     tokens.push(token);
   }
@@ -450,11 +461,6 @@ pub(crate) fn peek_token_in(token_iter: &mut FilteredTokensIterator, expected: &
   let Some(peek) = token_iter.peek() else { return false };
 
   expected.iter().any(|token| peek.is_same_type(token))
-}
-
-#[inline]
-pub(crate) fn peek_token_not_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]) -> bool {
-  !peek_token_in(token_iter, expected)
 }
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
-﻿use crate::expressions::gen_expression;
-use crate::get_formals;
-use crate::nodes::{Expression, Formal, Id, Type};
+﻿use crate::expressions::{gen_expression, Expression};
+use crate::formal::{gen_formals, Formal};
+use crate::nodes::{Id, Type};
 use crate::tokens::{consume_required, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, IDENT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE};
 
 #[derive(PartialEq, Debug, Clone)]
@@ -88,7 +88,7 @@ fn gen_method_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator) -
 
   // `(` seen in calling method => If the next token is not `)`, read formals list
   if peek_not_eq_or_eof(token_iter, &CLOSE_PAREN_TYPE) {
-    let vec_formals = get_formals(token_iter);
+    let vec_formals = gen_formals(token_iter);
     formals = Some(vec_formals);
   }
 

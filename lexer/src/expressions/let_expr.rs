@@ -1,11 +1,11 @@
-﻿use crate::expressions::gen_expression;
-use crate::nodes::{Expression, Id, LetInit, Type};
-use crate::tokens::{consume_if_available, consume_required, generate_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
+﻿use crate::expressions::{gen_expression, Expression, LetInit};
+use crate::nodes::{Id, Type};
+use crate::tokens::{consume_if_available, consume_required, gen_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
 
 pub(crate) fn gen_let_expression(token_iter: &mut FilteredTokensIterator, read_till_token: &Token) -> Expression {
   consume_required(token_iter, LET_TYPE);
 
-  let mut init_list_iter = generate_iter_till_token_or_end(token_iter, &IN_TYPE);
+  let mut init_list_iter = gen_iter_till_token_or_end(token_iter, &IN_TYPE);
 
   /*  if cfg!(test) {
       let iter = init_list_iter.clone().collect::<Vec<_>>();
@@ -73,7 +73,7 @@ fn gen_let_init(token_iter: &mut FilteredTokensIterator) -> LetInit {
   let ident = match_required_token(token_iter.next(), IDENT_TYPE);
   let id: Id = Id::from(ident);
 
-  match_required_token(token_iter.next(), COLON_TYPE);
+  consume_required(token_iter, COLON_TYPE);
 
   let type_ident = match_required_token(token_iter.next(), IDENT_TYPE);
   let type_id: Type = Type::from(type_ident);
