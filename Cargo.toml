@@ -13,4 +13,4 @@ lexer = { path = "./lexer" }
 parser = { path = "./parser" }
 
 [features]
-debug=[]
+debug = []

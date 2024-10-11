@@ -1,6 +1,6 @@
 ﻿use crate::expressions::gen_expression;
 use crate::nodes::{Expression, Id, Type};
-use crate::tokens::{consume_if_available, consume_required, generate_iter_till_token_or_end, is_eof, match_required_token, peek_token_eq, peek_token_neq_or_eof, FilteredTokensIterator, Token, AT_TYPE, CLOSE_PAREN_TYPE, COMMA_TYPE, DOT_TYPE, IDENT_TYPE, OPEN_PAREN_TYPE};
+use crate::tokens::{consume_if_available, consume_required, generate_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, AT_TYPE, CLOSE_PAREN_TYPE, COMMA_TYPE, DOT_TYPE, IDENT_TYPE, OPEN_PAREN_TYPE};
 
 /// ...expr (seen before)... { `@` TYPE } `.` ID `(` { expr {{ `,` expr }} } 
 pub(super) fn gen_partial_cast_dispatch(token_iter: &mut FilteredTokensIterator) -> Expression {
@@ -29,27 +29,26 @@ pub(super) fn gen_partial_dispatch_expr(ident_token: Token, token_iter: &mut Fil
   Expression::PartialDispatch { fn_name: Id::from(ident_token), param_list }
 }
 
-
 fn gen_fn_param_list(token_iter: &mut FilteredTokensIterator) -> Vec<Expression> {
   consume_required(token_iter, OPEN_PAREN_TYPE);
   let mut fn_param_gen_iter = generate_iter_till_token_or_end(token_iter, &CLOSE_PAREN_TYPE);
   consume_required(token_iter, CLOSE_PAREN_TYPE);
 
   let mut param_list: Vec<Expression> = Vec::new();
-  
-  if cfg!(test) {
-    let mut counter = 0;
-    for t in fn_param_gen_iter.clone() {
-      println!("gen_fn_param_list: >> {:?}", t);
-      counter += 1;
-    }
-    println!("gen_fn_param_list: counter => {counter}");
-  }
 
-  while !is_eof(token_iter) && peek_token_neq_or_eof(&mut fn_param_gen_iter, &COMMA_TYPE) {
+  /*  if cfg!(test) {
+      let mut counter = 0;
+      for t in fn_param_gen_iter.clone() {
+        println!("gen_fn_param_list: >> {:?}", t);
+        counter += 1;
+      }
+      println!("gen_fn_param_list: counter => {counter}");
+    }
+  */
+  while peek_not_eq_or_eof(&mut fn_param_gen_iter, &COMMA_TYPE) {
     let param_expr = gen_expression(&mut fn_param_gen_iter, &COMMA_TYPE);
     param_list.push(param_expr);
-    
+
     // consume ',' if we are not at the end of the stream
     consume_if_available(&mut fn_param_gen_iter, COMMA_TYPE);
   }

@@ -1,6 +1,7 @@
 ﻿use crate::expressions::gen_expression;
+use crate::get_formals;
 use crate::nodes::{Expression, Formal, Id, Type};
-use crate::tokens::{consume_required, match_required_token, peek_token_eq, peek_token_neq_or_eof, peek_token_not_in, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, IDENT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE};
+use crate::tokens::{consume_required, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, IDENT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE};
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Feature {
@@ -48,11 +49,11 @@ pub fn gen_features(token_iter: &mut FilteredTokensIterator, read_till_tokens: &
   let mut features: Vec<Feature> = Vec::new();
 
   // `{` seen in calling method => read till closing `}` encountered for `class`
-  while peek_token_neq_or_eof(token_iter, read_till_tokens) {
+  while peek_not_eq_or_eof(token_iter, read_till_tokens) {
     let feature: Feature = gen_feature(token_iter, &SEMI_COLON_TYPE);
 
     // Feature must terminate with a semicolon
-    match_required_token(token_iter.next(), SEMI_COLON_TYPE);
+    consume_required(token_iter, SEMI_COLON_TYPE);
 
     features.push(feature);
   }
@@ -81,28 +82,28 @@ pub fn gen_feature(token_iter: &mut FilteredTokensIterator, read_till_token: &To
 }
 
 fn gen_method_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator) -> Feature {
-  match_required_token(token_iter.next(), OPEN_PAREN_TYPE);
+  consume_required(token_iter, OPEN_PAREN_TYPE);
 
   let mut formals: Option<Vec<Formal>> = None;
 
   // `(` seen in calling method => If the next token is not `)`, read formals list
-  if peek_token_neq_or_eof(token_iter, &CLOSE_PAREN_TYPE) {
-    let vec_formals = crate::get_formals(token_iter);
+  if peek_not_eq_or_eof(token_iter, &CLOSE_PAREN_TYPE) {
+    let vec_formals = get_formals(token_iter);
     formals = Some(vec_formals);
   }
 
-  match_required_token(token_iter.next(), CLOSE_PAREN_TYPE);
+  consume_required(token_iter, CLOSE_PAREN_TYPE);
 
-  match_required_token(token_iter.next(), COLON_TYPE);
+  consume_required(token_iter, COLON_TYPE);
 
   let token = match_required_token(token_iter.next(), IDENT_TYPE);
   let method_return_type = Type::from(token);
 
-  match_required_token(token_iter.next(), OPEN_CURL_TYPE);
+  consume_required(token_iter, OPEN_CURL_TYPE);
 
   let method_expr = gen_expression(token_iter, &CLOSE_CURL_TYPE);
 
-  match_required_token(token_iter.next(), CLOSE_CURL_TYPE);
+  consume_required(token_iter, CLOSE_CURL_TYPE);
 
   (ident_name, formals, method_return_type, Box::from(method_expr)).into()
 }
@@ -115,7 +116,7 @@ fn gen_attribute_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator
 
   if peek_token_eq(token_iter, &ASSIGN_TYPE) {
     consume_required(token_iter, ASSIGN_TYPE);
-    
+
     let method_expr = gen_expression(token_iter, read_till_tokens);
     (ident_name, method_return_type, Box::from(method_expr)).into()
   } else {
@@ -148,7 +149,7 @@ mod test {
     let Formal { formal_name, formal_type } = formal_list.pop().unwrap();
     assert_eq!(formal_name.0, "num1");
     assert_eq!(formal_type.0, "Int");
-    
+
     let (formal_return_type, ..) = return_type;
     assert_eq!(formal_return_type, "B");
 
@@ -168,14 +169,14 @@ mod test {
     assert_eq!(name, "main");
 
     assert!(formals.is_none());
-    
+
     let (formal_return_type, ..) = return_type;
     assert_eq!(formal_return_type, "SELF_TYPE");
 
     assert!(expr.is_some());
     let Some(feature_expr) = expr else { panic!("feature expr should not be empty") };
     assert_eq!(feature_expr.get_type(), "Block");
-    
+
     println!("{:?}", feature_expr);
   }
 
@@ -200,15 +201,13 @@ mod test {
   fn test_feature_list() {
     let file_path = "test_resources/features/feature.list.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    
+
     let features = gen_features(&mut token_iter, &Token::EOF);
     assert!(features.is_some());
 
     let Some(feature_list) = features else { panic!("FeatureList should not be empty") };
 
     assert_eq!(feature_list.len(), 5);
-    
-    
   }
 
   #[test]

@@ -157,8 +157,8 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
 
   if token != Token::Empty {
     output = Some(token);
-  } 
-  
+  }
+
   output
 }
 

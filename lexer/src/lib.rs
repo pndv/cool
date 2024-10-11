@@ -1,9 +1,9 @@
-﻿use crate::nodes::{Expression, Formal, Id, LetInit, Program, Type};
+﻿use crate::class::Class;
+use crate::nodes::{Expression, Formal, Id, LetInit, Program, Type};
 use crate::tokens::{consume_required, Token, ASSIGN_TYPE, CASE_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, COMMA_TYPE, DOT_TYPE, ELSE_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, IF_TYPE, IN_TYPE, LAMBDA_TYPE, LET_TYPE, LOOP_TYPE, OF_TYPE, SEMI_COLON_TYPE, THEN_TYPE, WHILE_TYPE};
 use core::iter::Iterator;
 use expressions::case_expr::CaseBranch;
 use tokens::{match_required_token, FilteredTokensIterator};
-use crate::class::Class;
 
 pub mod scanner;
 pub mod nodes;
