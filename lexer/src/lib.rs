@@ -1,19 +1,18 @@
 ﻿use crate::nodes::{Expression, Formal, Id, LetInit, Program, Type};
-use crate::tokens::{Token, ASSIGN_TYPE, CASE_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, COMMA_TYPE, DOT_TYPE, ELSE_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, IF_TYPE, IN_TYPE, LAMBDA_TYPE, LET_TYPE, LOOP_TYPE, OF_TYPE, SEMI_COLON_TYPE, THEN_TYPE, WHILE_TYPE};
+use crate::tokens::{consume_required, Token, ASSIGN_TYPE, CASE_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, COMMA_TYPE, DOT_TYPE, ELSE_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, IF_TYPE, IN_TYPE, LAMBDA_TYPE, LET_TYPE, LOOP_TYPE, OF_TYPE, SEMI_COLON_TYPE, THEN_TYPE, WHILE_TYPE};
 use core::iter::Iterator;
 use expressions::case_expr::CaseBranch;
 use tokens::{match_required_token, FilteredTokensIterator};
 use crate::class::Class;
-use crate::terminal_tokens::TERMINATE_TOKEN_SEMI_COLON;
 
 pub mod scanner;
 pub mod nodes;
 pub mod tokens;
 mod expressions;
-mod terminal_tokens;
 mod feature;
 mod class;
 mod formal;
+mod token_iter;
 
 #[must_use]
 pub fn parse_program_from_file(file_path: &str) -> Program {
@@ -27,7 +26,7 @@ fn get_program(token_iter: &mut FilteredTokensIterator) -> Program {
   let mut program: Program = Program::new();
 
   while token_iter.peek().is_some() {
-    let class: Class = class::gen_class(token_iter, &TERMINATE_TOKEN_SEMI_COLON);
+    let class: Class = class::gen_class(token_iter, &SEMI_COLON_TYPE);
     match_required_token(token_iter.next(), SEMI_COLON_TYPE);
     program.add_class(class);
   }
@@ -242,15 +241,15 @@ fn fill_expression_stack(token_iter: &mut FilteredTokensIterator, stack: &mut Ve
 }
 
 fn get_case_expr(token_iter: &mut FilteredTokensIterator, stack: &mut Vec<Expression>) -> Expression {
-  match_required_token(token_iter.next(), CASE_TYPE); // consume `case`
+  consume_required(token_iter, CASE_TYPE); // consume `case`
 
   let switch_expression = get_stack_top(token_iter, stack);
 
-  match_required_token(token_iter.next(), OF_TYPE); // consume `of`
+  consume_required(token_iter, OF_TYPE); // consume `of`
 
   let branches = get_case_branch_list(token_iter, stack);
 
-  match_required_token(token_iter.next(), END_CASE_TYPE); // consume `esac` 
+  consume_required(token_iter, END_CASE_TYPE); // consume `esac` 
 
   Expression::Case { switch_expression: Box::from(switch_expression), branches }
 }
