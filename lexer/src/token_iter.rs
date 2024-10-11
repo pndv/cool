@@ -90,7 +90,7 @@ impl Iterator for CharIter {
     match self.bytes_iter.next() {
       None => None,
       Some(byte_result) => match byte_result {
-        Ok(byte) => Some(byte as char), 
+        Ok(byte) => Some(byte as char),
         Err(e) => panic!("Failed to read file at position {}:{} with error {}", self.line_num, self.line_pos, e),
       }
     }

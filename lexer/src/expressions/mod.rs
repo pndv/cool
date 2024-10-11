@@ -4,35 +4,33 @@ pub(super) mod case_expr;
 pub(super) mod let_expr;
 pub(super) mod dispatch_expr;
 
-use std::collections::VecDeque;
 use crate::expressions::dispatch_expr::gen_partial_dispatch_expr;
 use crate::nodes::{Expression, Type};
-use crate::tokens::{generate_iter_till_token_or_end, is_eof, match_required_token, peek_token_eq, peek_token_neq_or_eof, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, IDENT_TYPE, NEW_TYPE, NOT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, TILDE_TYPE};
+use crate::tokens::{generate_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, IDENT_TYPE, NEW_TYPE, NOT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, TILDE_TYPE};
 use case_expr::gen_case_expression;
 use dispatch_expr::gen_partial_cast_dispatch;
 use let_expr::gen_let_expression;
 use loop_expr::gen_loop_expression;
+use std::collections::VecDeque;
 
 pub(super) fn gen_expression(token_iter: &mut FilteredTokensIterator,
                              read_till_token: &Token) -> Expression {
+  let mut expression_token_iter: FilteredTokensIterator = generate_iter_till_token_or_end(token_iter, read_till_token);
 
-  let mut iter: FilteredTokensIterator = generate_iter_till_token_or_end(token_iter, read_till_token);
-
-/*  if cfg!(test) {
-    for t in iter.clone() {
-      println!("gen_expression: {:?}", t);
+  /*  if cfg!(test) {
+      for t in iter.clone() {
+        println!("gen_expression: {:?}", t);
+      }
     }
-  }
-*/  
-  let partial_expressions = gen_partial_expressions(&mut iter, &Token::EOF);
+  */
+  let partial_expressions = gen_partial_expressions(&mut expression_token_iter, &Token::EOF);
   let expr = reduce_expression_list(partial_expressions);
   expr
 }
 
-
 fn gen_partial_expressions(token_iter: &mut FilteredTokensIterator, read_till_token: &Token) -> VecDeque<Expression> {
   let mut expr_list: VecDeque<Expression> = VecDeque::new();
-  while !is_eof(token_iter) && peek_token_neq_or_eof(token_iter, &read_till_token) {
+  while peek_not_eq_or_eof(token_iter, read_till_token) {
     let Some(peek) = token_iter.peek() else { panic!("get_expression_helper: Unexpected EOF") };
     match peek {
       Token::Empty |
@@ -155,7 +153,7 @@ fn reduce_expression_list(mut expressions: VecDeque<Expression>) -> Expression {
   let mut second = (expressions.get(0).unwrap()).clone();
 
   assert!(second.is_partial(), "Last expression must be partial");
-  
+
   match second {
     Expression::PartialBinary { binary_token, right_expr } => {
       match binary_token {

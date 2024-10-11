@@ -1,8 +1,7 @@
-use crate::tokens::Token;
-use std::borrow::Cow;
 use crate::class::Class;
 use crate::expressions::case_expr::CaseBranch;
-
+use crate::tokens::Token;
+use std::borrow::Cow;
 
 pub(crate) type LetInit = (Id, Type, Option<Box<Expression>>); // ID: TYPE [[ <- Expression ]]
 pub type Id = (Cow<'static, str>, u32, u32);
@@ -40,7 +39,7 @@ impl Program {
     self.classes.push(class);
   }
 
-  #[must_use] 
+  #[must_use]
   pub fn classes(&self) -> &Vec<Class> {
     &self.classes
   }
@@ -105,10 +104,10 @@ pub(crate) enum Expression {
   Int { value: i32, line_num: u32, line_pos: u32 },
   Bool { value: bool, line_num: u32, line_pos: u32 },
   String { value: String, line_num: u32, line_pos: u32 },
-  
+
   SelfTypeExpr { line_num: u32, line_pos: u32 },
   SelfExpr,
-  
+
   New { type_name: Type },
   IsVoid { expr: Box<Expression> },
 
@@ -116,12 +115,11 @@ pub(crate) enum Expression {
 }
 
 impl Expression {
-  
   pub(super) fn convert_to_dispatch(&self) -> Expression {
-    if let Expression::PartialDispatch {fn_name, param_list} = self {
+    if let Expression::PartialDispatch { fn_name, param_list } = self {
       Expression::Dispatch {
-        fn_name: fn_name.clone(), 
-        cast_type: None, 
+        fn_name: fn_name.clone(),
+        cast_type: None,
         calling_expr: Box::from(Expression::SelfExpr),
         param_list: param_list.clone(),
       }
@@ -129,19 +127,19 @@ impl Expression {
       panic!("Can only convert PartialDispatch to Dispatch");
     }
   }
-  
+
   pub fn is_partial(&self) -> bool {
     matches!(self, Expression::PartialDispatch { .. } | 
       Expression::PartialCastDispatch { .. } | 
       Expression::PartialAssign { .. } | 
-      Expression::PartialBinary { .. }) 
+      Expression::PartialBinary { .. })
   }
 
   pub(crate) fn get_type(&self) -> String {
     match self {
       Expression::NoExpr => String::from("NoExpr"),
-      Expression::SelfExpr {..} => String::from("Self"),
-      Expression::SelfTypeExpr {..} => String::from("SelfType"),
+      Expression::SelfExpr { .. } => String::from("Self"),
+      Expression::SelfTypeExpr { .. } => String::from("SelfType"),
       Expression::PartialAssign { .. } => String::from("PartialAssign"),
       Expression::Assign { .. } => String::from("Assign"),
       Expression::PartialDispatch { .. } => String::from("PartialDispatch"),
@@ -182,16 +180,16 @@ impl From<Token> for Expression {
   /// - [Token::SelfType]
   fn from(token: Token) -> Self {
     match token {
-      Token::Ident { value, line_num, line_pos } => 
+      Token::Ident { value, line_num, line_pos } =>
         Expression::Ident { name: (Cow::from(value), line_num, line_pos) },
 
       Token::Int { value, line_num, line_pos } => Expression::Int { value, line_num, line_pos },
       Token::String { value, line_num, line_pos } => Expression::String { value, line_num, line_pos },
-      
+
       Token::True { line_num, line_pos } => Expression::Bool { value: true, line_num, line_pos },
       Token::False { line_num, line_pos } => Expression::Bool { value: false, line_num, line_pos },
-      
-      Token::SelfType {line_num, line_pos} => Expression::SelfTypeExpr {line_num, line_pos},
+
+      Token::SelfType { line_num, line_pos } => Expression::SelfTypeExpr { line_num, line_pos },
 
       _ => panic!("Non-constant token {:?}", token)
     }

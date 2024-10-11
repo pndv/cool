@@ -6,15 +6,15 @@ version = 3
 name = "cool"
 version = "0.1.0"
 dependencies = [
- "lexer",
- "parser",
+    "lexer",
+    "parser",
 ]
 
 [[package]]
 name = "lexer"
 version = "0.1.0"
 dependencies = [
- "log",
+    "log",
 ]
 
 [[package]]
@@ -27,5 +27,5 @@ checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 name = "parser"
 version = "0.1.0"
 dependencies = [
- "lexer",
+    "lexer",
 ]

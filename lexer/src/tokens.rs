@@ -1,7 +1,6 @@
 ﻿use crate::scanner::get_file_token_list;
-use crate::tokens::Token::Loop;
 use mem::discriminant;
-use std::iter::{from_fn, Filter, Peekable};
+use std::iter::{Filter, Peekable};
 use std::mem;
 use std::vec::IntoIter;
 
@@ -316,19 +315,19 @@ pub(crate) fn generate_iter_till_token_or_end(token_iter: &mut FilteredTokensIte
       tokens = from_fn(|| token_iter.next_if(|token| !token.is_same_type(read_till_token))).collect();
     }
   */
-  
-/*
-  if cfg!(test) {
-    println!("START: ============================================");
-    println!("generate_iter_till_token: peek: {:?}, expected: {:?}", token_iter.peek(), read_till_token);
 
-    println!("Item count: {}", tokens.len());
-    for t in tokens.clone() {
-      println!("{:?}", t);
+  /*
+    if cfg!(test) {
+      println!("START: ============================================");
+      println!("generate_iter_till_token: peek: {:?}, expected: {:?}", token_iter.peek(), read_till_token);
+  
+      println!("Item count: {}", tokens.len());
+      for t in tokens.clone() {
+        println!("{:?}", t);
+      }
+      println!("END:   ================ {:?} ", read_till_token);
     }
-    println!("END:   ================ {:?} ", read_till_token);
-  }
-*/
+  */
   if token_iter.peek().is_some() {
     // If there are more tokens, then the next token in iterator must match the `read_till_token`;
     // Otherwise we have reached the end of list, no need to assert
@@ -348,17 +347,16 @@ pub(crate) fn is_eof(token_iter: &mut FilteredTokensIterator) -> bool {
 }
 
 pub(crate) fn consume_if_available(token_iter: &mut FilteredTokensIterator, expected: Token) {
-  if cfg!(test) {
-    for token in token_iter.clone() {
-      println!("consume_if_available: {:?}", token);
-    }
-  } 
-  
+  /*  if cfg!(test) {
+      for token in token_iter.clone() {
+        println!("consume_if_available: {:?}", token);
+      }
+    } 
+  */
   match token_iter.next() {
     None => return,
-    Some(token ) => {
+    Some(token) => {
       assert!(token.is_same_type(&expected), "Token not matched, expected: {:?} received {:?}", expected, token);
-      return;
     }
   };
 }
@@ -418,28 +416,28 @@ pub(crate) fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &
 }
 
 #[inline]
-pub(crate) fn peek_token_neq_or_eof(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
+pub(crate) fn peek_not_eq_or_eof(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
   !is_eof(token_iter) && !peek_token_eq(token_iter, expected)
-/*  
-  let peeked_token = token_iter.peek();
-  let result = match peeked_token {
-    Some(token) => {
-      if cfg!(test) {
-        println!("peek_token_neq: {:?}, expected: {:?}", token, expected);
+  /*  
+    let peeked_token = token_iter.peek();
+    let result = match peeked_token {
+      Some(token) => {
+        if cfg!(test) {
+          println!("peek_token_neq: {:?}, expected: {:?}", token, expected);
+        }
+        !token.is_same_type(expected)
       }
-      !token.is_same_type(expected)
+      
+      None => !expected.is_same_type(&Token::EOF), // iterator is at end, check if peeked = eof
+    };
+    result
+  
+      if token_iter.peek().is_none() {
+      return false;
     }
-    
-    None => !expected.is_same_type(&Token::EOF), // iterator is at end, check if peeked = eof
-  };
-  result
-
-    if token_iter.peek().is_none() {
-    return false;
-  }
-  let next_token_is_expected_token = peek_token_eq(token_iter, expected);
-  !next_token_is_expected_token
-*/  
+    let next_token_is_expected_token = peek_token_eq(token_iter, expected);
+    !next_token_is_expected_token
+  */
 }
 
 #[inline]

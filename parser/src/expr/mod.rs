@@ -1,8 +1,6 @@
 ﻿pub mod constants;
 
-trait Expr {
-  
-}
+trait Expr {}
 
 struct Id {
   name: String,
@@ -32,10 +30,6 @@ struct Block {
   expr_stmts: Vec<Box<dyn Expr>>,
 }
 
-struct Let {
-  
-}
+struct Let {}
 
-struct Dispatch {
-  
-}
+struct Dispatch {}

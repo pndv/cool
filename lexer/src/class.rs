@@ -1,9 +1,9 @@
-﻿use std::borrow::Cow;
-use feature::gen_features;
-use crate::feature;
+﻿use crate::feature;
 use crate::feature::Feature;
 use crate::nodes::Type;
-use crate::tokens::{consume_required, is_eof, match_required_token, peek_token_eq, peek_token_neq_or_eof, FilteredTokensIterator, Token, CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE, SEMI_COLON_TYPE};
+use crate::tokens::{consume_required, generate_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE};
+use feature::gen_features;
+use std::borrow::Cow;
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Class {
@@ -62,9 +62,16 @@ pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator, read_till_token
   consume_required(token_iter, OPEN_CURL_TYPE);
 
   let mut features: Option<Vec<Feature>> = None;
-  if !is_eof(token_iter) && peek_token_neq_or_eof(token_iter, &CLOSE_CURL_TYPE) {
-    features = gen_features(token_iter, &SEMI_COLON_TYPE);
-    consume_required(token_iter, SEMI_COLON_TYPE); // features in class are terminated by semicolon
+  if peek_not_eq_or_eof(token_iter, &CLOSE_CURL_TYPE) {
+    let mut feature_token_iter: FilteredTokensIterator = generate_iter_till_token_or_end(token_iter, &CLOSE_CURL_TYPE);
+
+    /*    if cfg!(test) {
+          for t in feature_token_iter.clone() {
+            println!("gen_class | feature_token_iter: {:?}", t);
+          }
+        }
+    */
+    features = gen_features(&mut feature_token_iter, &Token::EOF);
   }
 
   consume_required(token_iter, CLOSE_CURL_TYPE);
@@ -78,11 +85,27 @@ mod test_class {
   use crate::tokens::{get_filtered_token_iter, FilteredTokensIterator, Token};
 
   #[test]
-  pub fn test_class() {
-    let file_path = "test_resources/classes/class.1.cl_partial";
+  pub fn test_class_single_feature() {
+    let file_path = "test_resources/classes/class.single_feature.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
     let class: Class = gen_class(&mut token_iter, &Token::EOF);
-    
     println!("{:?}", class);
+
+    assert!(class.features.is_some());
+
+    let features = class.features.unwrap();
+    assert_eq!(features.len(), 1);
+  }
+
+  #[test]
+  pub fn test_class_multi_feature() {
+    let file_path = "test_resources/classes/class.multi_feature.cl_partial";
+    let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
+    let class: Class = gen_class(&mut token_iter, &Token::EOF);
+    println!("{:?}", class);
+    assert!(class.features.is_some());
+
+    let features = class.features.unwrap();
+    assert_eq!(features.len(), 3);
   }
 }

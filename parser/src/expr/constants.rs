@@ -8,7 +8,7 @@ struct StringConstant {
 
 impl StringConstant {
   fn set_value(&mut self, value: String) {
-    assert!(value.chars().count() <= 1024, 
+    assert!(value.chars().count() <= 1024,
             "String exceeds maximum length of 1024 characters; has {} characters", value.len());
 
     self.value = value;
