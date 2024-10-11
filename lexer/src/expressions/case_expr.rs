@@ -1,6 +1,5 @@
 ﻿use crate::expressions::gen_expression;
 use crate::nodes::{Expression, Id, Type};
-use crate::terminal_tokens::{TERMINATE_TOKEN_OF, TERMINATE_TOKEN_SEMI_COLON};
 use crate::tokens::{match_required_token, peek_token_eq, FilteredTokensIterator, CASE_TYPE, COLON_TYPE, END_CASE_TYPE, IDENT_TYPE, LAMBDA_TYPE, OF_TYPE, SEMI_COLON_TYPE};
 
 pub type CaseBranch = (Id, Type, Box<Expression>); // ID:TYPE => Expression 
@@ -8,7 +7,7 @@ pub type CaseBranch = (Id, Type, Box<Expression>); // ID:TYPE => Expression
 pub(crate) fn gen_case_expression(token_iter: &mut FilteredTokensIterator) -> Expression {
   match_required_token(token_iter.next(), CASE_TYPE);
 
-  let predicate_expr = gen_expression(token_iter, &TERMINATE_TOKEN_OF);
+  let predicate_expr = gen_expression(token_iter, &OF_TYPE);
   match_required_token(token_iter.next(), OF_TYPE);
 
   let case_branches = gen_case_branch_list(token_iter);
@@ -47,7 +46,7 @@ fn gen_case_branch(token_iter: &mut FilteredTokensIterator) -> CaseBranch {
   match_required_token(token_iter.next(), LAMBDA_TYPE);
 
   // each expression of case branch ends with semicolon
-  let case_branch_expr = gen_expression(token_iter, &TERMINATE_TOKEN_SEMI_COLON);
+  let case_branch_expr = gen_expression(token_iter, &SEMI_COLON_TYPE);
   match_required_token(token_iter.next(), SEMI_COLON_TYPE);
 
   (id, type_id, Box::from(case_branch_expr))

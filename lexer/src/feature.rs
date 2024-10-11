@@ -1,7 +1,6 @@
 ﻿use crate::expressions::gen_expression;
 use crate::nodes::{Expression, Formal, Id, Type};
-use crate::terminal_tokens::{TERMINATE_TOKEN_FEATURE_METHOD_EXPR, TERMINATE_TOKEN_SEMI_COLON};
-use crate::tokens::{match_required_token, peek_token_eq, peek_token_neq, peek_token_not_in, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, IDENT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE};
+use crate::tokens::{consume_required, match_required_token, peek_token_eq, peek_token_neq_or_eof, peek_token_not_in, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, IDENT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE};
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Feature {
@@ -45,12 +44,12 @@ impl From<(Id, Type)> for Feature {
 }
 
 /// Features :-> {{ features; }}*
-pub fn gen_features(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Option<Vec<Feature>> {
+pub fn gen_features(token_iter: &mut FilteredTokensIterator, read_till_tokens: &Token) -> Option<Vec<Feature>> {
   let mut features: Vec<Feature> = Vec::new();
 
   // `{` seen in calling method => read till closing `}` encountered for `class`
-  while peek_token_not_in(token_iter, read_till_tokens) {
-    let feature: Feature = gen_feature(token_iter, &TERMINATE_TOKEN_SEMI_COLON);
+  while peek_token_neq_or_eof(token_iter, read_till_tokens) {
+    let feature: Feature = gen_feature(token_iter, &SEMI_COLON_TYPE);
 
     // Feature must terminate with a semicolon
     match_required_token(token_iter.next(), SEMI_COLON_TYPE);
@@ -61,17 +60,17 @@ pub fn gen_features(token_iter: &mut FilteredTokensIterator, read_till_tokens: &
   if features.is_empty() { None } else { Some(features) }
 }
 
-pub fn gen_feature(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Feature {
+pub fn gen_feature(token_iter: &mut FilteredTokensIterator, read_till_token: &Token) -> Feature {
   //Feature starts with ID
   let token = match_required_token(token_iter.next(), IDENT_TYPE);
   let ident_name: Id = Id::from(token);
 
   let feature: Feature = match token_iter.peek() {
     Some(peeked_token) if peeked_token.is_same_type(&COLON_TYPE) =>
-      gen_attribute_feature(ident_name, token_iter, read_till_tokens),
+      gen_attribute_feature(ident_name, token_iter, read_till_token),
 
     Some(peeked_token) if peeked_token.is_same_type(&OPEN_PAREN_TYPE) =>
-      gen_method_feature(ident_name, token_iter, read_till_tokens),
+      gen_method_feature(ident_name, token_iter),
 
     Some(t) => panic!("Incorrect token {:?}", t),
 
@@ -81,13 +80,13 @@ pub fn gen_feature(token_iter: &mut FilteredTokensIterator, read_till_tokens: &[
   feature
 }
 
-fn gen_method_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Feature {
+fn gen_method_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator) -> Feature {
   match_required_token(token_iter.next(), OPEN_PAREN_TYPE);
 
   let mut formals: Option<Vec<Formal>> = None;
 
   // `(` seen in calling method => If the next token is not `)`, read formals list
-  if peek_token_neq(token_iter, &CLOSE_PAREN_TYPE) {
+  if peek_token_neq_or_eof(token_iter, &CLOSE_PAREN_TYPE) {
     let vec_formals = crate::get_formals(token_iter);
     formals = Some(vec_formals);
   }
@@ -101,22 +100,22 @@ fn gen_method_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator, r
 
   match_required_token(token_iter.next(), OPEN_CURL_TYPE);
 
-  let method_expr = gen_expression(token_iter, &TERMINATE_TOKEN_FEATURE_METHOD_EXPR);
+  let method_expr = gen_expression(token_iter, &CLOSE_CURL_TYPE);
 
   match_required_token(token_iter.next(), CLOSE_CURL_TYPE);
 
   (ident_name, formals, method_return_type, Box::from(method_expr)).into()
 }
 
-fn gen_attribute_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator, read_till_tokens: &[Token]) -> Feature {
-  match_required_token(token_iter.next(), COLON_TYPE);
+fn gen_attribute_feature(ident_name: Id, token_iter: &mut FilteredTokensIterator, read_till_tokens: &Token) -> Feature {
+  consume_required(token_iter, COLON_TYPE);
 
   let token = match_required_token(token_iter.next(), IDENT_TYPE);
   let method_return_type = Id::from(token);
 
   if peek_token_eq(token_iter, &ASSIGN_TYPE) {
-    match_required_token(token_iter.next(), ASSIGN_TYPE);
-
+    consume_required(token_iter, ASSIGN_TYPE);
+    
     let method_expr = gen_expression(token_iter, read_till_tokens);
     (ident_name, method_return_type, Box::from(method_expr)).into()
   } else {
@@ -133,7 +132,7 @@ mod test {
   fn test_feature_method() {
     let file_path = "test_resources/features/feature.method_form.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let feature: Feature = gen_feature(&mut token_iter, &[]);
+    let feature: Feature = gen_feature(&mut token_iter, &Token::EOF);
     let Feature { feature_name, formals, return_type, expr } = feature;
 
     let (name, ..) = feature_name;
@@ -162,7 +161,7 @@ mod test {
   fn test_feature_method_self_type() {
     let file_path = "test_resources/features/feature.method_form_self_type.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let feature: Feature = gen_feature(&mut token_iter, &[]);
+    let feature: Feature = gen_feature(&mut token_iter, &Token::EOF);
     let Feature { feature_name, formals, return_type, expr } = feature;
 
     let (name, ..) = feature_name;
@@ -176,13 +175,15 @@ mod test {
     assert!(expr.is_some());
     let Some(feature_expr) = expr else { panic!("feature expr should not be empty") };
     assert_eq!(feature_expr.get_type(), "Block");
+    
+    println!("{:?}", feature_expr);
   }
 
   #[test]
   fn test_feature_attribute_without_expr() {
     let file_path = "test_resources/features/feature.attribute_no_expr.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let feature: Feature = gen_feature(&mut token_iter, &[]);
+    let feature: Feature = gen_feature(&mut token_iter, &Token::EOF);
     let Feature { feature_name, formals, return_type, expr } = feature;
 
     let (name, ..) = feature_name;
@@ -197,21 +198,24 @@ mod test {
 
   #[test]
   fn test_feature_list() {
-    let file_path = "test_resources/features/feature.list..cl_partial";
+    let file_path = "test_resources/features/feature.list.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let features = gen_features(&mut token_iter, &[]);
+    
+    let features = gen_features(&mut token_iter, &Token::EOF);
     assert!(features.is_some());
 
     let Some(feature_list) = features else { panic!("FeatureList should not be empty") };
 
     assert_eq!(feature_list.len(), 5);
+    
+    
   }
 
   #[test]
   fn test_feature_attribute_with_expr() {
     let file_path = "test_resources/features/feature.attribute_with_expr.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let feature: Feature = gen_feature(&mut token_iter, &[]);
+    let feature: Feature = gen_feature(&mut token_iter, &Token::EOF);
     let Feature { feature_name, formals, return_type, expr } = feature;
 
     let (name, ..) = feature_name;

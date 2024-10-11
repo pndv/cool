@@ -1,6 +1,7 @@
-﻿use crate::scanner::get_program_token_list;
+﻿use crate::scanner::get_file_token_list;
+use crate::tokens::Token::Loop;
 use mem::discriminant;
-use std::iter::{Filter, Peekable};
+use std::iter::{from_fn, Filter, Peekable};
 use std::mem;
 use std::vec::IntoIter;
 
@@ -80,6 +81,7 @@ pub(crate) type FilteredTokensIterator = Peekable<Filter<IntoIter<Token>, Commen
 #[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub(crate) enum Token {
   Empty,
+  EOF, //end of file
   Error { error_char: String, line_num: u32, line_pos: u32 },
   Comment { value: String, line_num: u32, line_pos: u32 },
 
@@ -223,13 +225,13 @@ impl WhiteSpace {
   }
 }
 
-pub fn get_filtered_token_iter(file_path: &str) -> FilteredTokensIterator {
-  let Ok(tokens) = get_program_token_list(file_path) else { panic!("Error reading file"); };
+pub(crate) fn get_filtered_token_iter(file_path: &str) -> FilteredTokensIterator {
+  let Ok(tokens) = get_file_token_list(file_path) else { panic!("Error reading file"); };
 
   convert_vec_filtered_iter(tokens)
 }
 
-pub fn convert_vec_filtered_iter(tokens: Vec<Token>) -> FilteredTokensIterator {
+pub(crate) fn convert_vec_filtered_iter(tokens: Vec<Token>) -> FilteredTokensIterator {
   if let Some(err) = check_tokens(&tokens) {
     panic!("{err}");
   }
@@ -243,11 +245,139 @@ pub fn convert_vec_filtered_iter(tokens: Vec<Token>) -> FilteredTokensIterator {
   token_iter
 }
 
+pub(crate) fn generate_iter_till_token_or_end(token_iter: &mut FilteredTokensIterator, read_till_token: &Token) -> FilteredTokensIterator {
+  let mut tokens: Vec<Token> = vec![];
+
+  let mut seen_open_curl = 0;
+  let mut seen_open_paren = 0;
+
+  // let mut seen_open_curl = if read_till_token.is_same_type(&CLOSE_PAREN_TYPE) { -1 } else {0};
+  // let mut seen_open_paren = if read_till_token.is_same_type(&CLOSE_CURL_TYPE) { -1 } else {0};;
+
+  // read tokens, accounting for matching brackets
+  loop {
+    if peek_token_eq(token_iter, read_till_token) && seen_open_curl == 0 && seen_open_paren == 0 {
+      break; // reached the real end, accounted for all matching brackets
+    }
+
+    let token = match token_iter.next() {
+      None => {
+        assert_eq!(seen_open_curl, 0);
+        assert_eq!(seen_open_paren, 0);
+        break;
+      }
+      Some(t) if t.is_same_type(&OPEN_PAREN_TYPE) => {
+        seen_open_paren += 1;
+        t
+      }
+      Some(t) if t.is_same_type(&OPEN_CURL_TYPE) => {
+        seen_open_curl += 1;
+        t
+      }
+      Some(t) if t.is_same_type(&CLOSE_PAREN_TYPE) => {
+        seen_open_paren -= 1;
+        t
+      }
+      Some(t) if t.is_same_type(&CLOSE_CURL_TYPE) => {
+        seen_open_curl -= 1;
+        t
+      }
+      Some(t) => t,
+    };
+
+    tokens.push(token);
+  }
+
+  /*  if read_till_token.is_same_type(&CLOSE_CURL_TYPE) || read_till_token.is_same_type(&CLOSE_PAREN_TYPE) {
+      let open_bracket_type = if read_till_token.is_same_type(&CLOSE_CURL_TYPE) { OPEN_CURL_TYPE } else { OPEN_PAREN_TYPE };
+      let mut seen_matching_brackets = 0;
+      
+      // read tokens, accounting for matching brackets
+      loop {
+        if peek_token_eq(token_iter, read_till_token) && seen_matching_brackets == 0 {
+          break; // reached the real end, accounted for all matching brackets
+        }
+        
+        let token = match token_iter.next() {
+          None => break,
+          Some(t) => t, 
+        };
+        
+        if token.is_same_type(&open_bracket_type) {
+          seen_matching_brackets += 1;
+        } else if token.is_same_type(read_till_token) {
+          seen_matching_brackets -= 1;
+        }
+        
+        tokens.push(token);
+      }
+    } else {
+      // reads all tokens till first [`read_till_token`] is seen, returns a new iterator
+      tokens = from_fn(|| token_iter.next_if(|token| !token.is_same_type(read_till_token))).collect();
+    }
+  */
+  
+/*
+  if cfg!(test) {
+    println!("START: ============================================");
+    println!("generate_iter_till_token: peek: {:?}, expected: {:?}", token_iter.peek(), read_till_token);
+
+    println!("Item count: {}", tokens.len());
+    for t in tokens.clone() {
+      println!("{:?}", t);
+    }
+    println!("END:   ================ {:?} ", read_till_token);
+  }
+*/
+  if token_iter.peek().is_some() {
+    // If there are more tokens, then the next token in iterator must match the `read_till_token`;
+    // Otherwise we have reached the end of list, no need to assert
+    assert!(peek_token_eq(token_iter, read_till_token));
+  }
+
+  let iter = convert_vec_filtered_iter(tokens);
+  iter
+}
+
 fn is_not_comment(token: &Token) -> bool {
   !matches!(token, Token::Comment { .. })
 }
 
-pub fn match_required_token(token_option: Option<Token>, expected: Token) -> Token {
+pub(crate) fn is_eof(token_iter: &mut FilteredTokensIterator) -> bool {
+  matches!(token_iter.peek(), None | Some(Token::EOF))
+}
+
+pub(crate) fn consume_if_available(token_iter: &mut FilteredTokensIterator, expected: Token) {
+  if cfg!(test) {
+    for token in token_iter.clone() {
+      println!("consume_if_available: {:?}", token);
+    }
+  } 
+  
+  match token_iter.next() {
+    None => return,
+    Some(token ) => {
+      assert!(token.is_same_type(&expected), "Token not matched, expected: {:?} received {:?}", expected, token);
+      return;
+    }
+  };
+}
+
+pub(crate) fn consume_required(token_iter: &mut FilteredTokensIterator, expected: Token) {
+  assert!(token_iter.peek().is_some(), "Unexpected end of token stream");
+
+  match token_iter.next() {
+    None => panic!("Error reading token from the iterator"),
+    Some(token) if !token.is_same_type(&expected) => panic!("The next token from the iterator does not match expected. Read {:?} Expected {:?}", token, expected),
+    _ => ()
+  }
+}
+
+/// # Panics 
+///
+/// if [`token_option`] is [`None`]
+#[must_use]
+pub(crate) fn match_required_token(token_option: Option<Token>, expected: Token) -> Token {
   if let Some(token) = token_option {
     assert!(token.is_same_type(&expected), "Unexpected token: {:?}", token);
     token
@@ -279,17 +409,41 @@ fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
 }
 
 #[inline]
-pub fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
-  token_iter.peek().is_some() && token_iter.peek().unwrap().is_same_type(expected)
+pub(crate) fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
+  let peeked_token = token_iter.peek();
+  match peeked_token {
+    Some(token) => token.is_same_type(expected),
+    None => expected.is_same_type(&Token::EOF),
+  }
 }
 
 #[inline]
-pub fn peek_token_neq(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
-  !peek_token_eq(token_iter, expected)
+pub(crate) fn peek_token_neq_or_eof(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
+  !is_eof(token_iter) && !peek_token_eq(token_iter, expected)
+/*  
+  let peeked_token = token_iter.peek();
+  let result = match peeked_token {
+    Some(token) => {
+      if cfg!(test) {
+        println!("peek_token_neq: {:?}, expected: {:?}", token, expected);
+      }
+      !token.is_same_type(expected)
+    }
+    
+    None => !expected.is_same_type(&Token::EOF), // iterator is at end, check if peeked = eof
+  };
+  result
+
+    if token_iter.peek().is_none() {
+    return false;
+  }
+  let next_token_is_expected_token = peek_token_eq(token_iter, expected);
+  !next_token_is_expected_token
+*/  
 }
 
 #[inline]
-pub fn peek_token_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]) -> bool {
+pub(crate) fn peek_token_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]) -> bool {
   // Read till end of file if `expected` is empty
   if expected.is_empty() {
     return token_iter.peek().is_none(); // check if `token_iter` has reached the EOF 
@@ -301,7 +455,7 @@ pub fn peek_token_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]
 }
 
 #[inline]
-pub fn peek_token_not_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]) -> bool {
+pub(crate) fn peek_token_not_in(token_iter: &mut FilteredTokensIterator, expected: &[Token]) -> bool {
   !peek_token_in(token_iter, expected)
 }
 

@@ -8,7 +8,7 @@ use crate::tokens::{AT, CLOSE_CURL, CLOSE_PAREN, COLON, COMMA, DOT, DOUBLE_QUOTE
 
 type BufferedCharReader = Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>;
 
-pub(crate) fn get_program_token_list(file_path: &str) -> Result<Vec<Token>> {
+pub(crate) fn get_file_token_list(file_path: &str) -> Result<Vec<Token>> {
   let (mut char_iter, mut line_num, mut line_pos) = get_buf_reader(file_path);
 
   let mut tokens: Vec<Token> = Vec::new();
@@ -19,6 +19,7 @@ pub(crate) fn get_program_token_list(file_path: &str) -> Result<Vec<Token>> {
   if tokens.is_empty() {
     Err(Error::from(ErrorKind::InvalidInput))
   } else {
+    tokens.push(Token::EOF); // Add EOF character at the end of the list
     Ok(tokens)
   }
 }
@@ -156,8 +157,8 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
 
   if token != Token::Empty {
     output = Some(token);
-  }
-
+  } 
+  
   output
 }
 
@@ -413,7 +414,7 @@ mod tests {
   #[test]
   fn test_token_stack() {
     let file = "test_resources/arith.cl";
-    let result = get_program_token_list(file);
+    let result = get_file_token_list(file);
     assert!(result.is_ok());
     let token_list = result.unwrap();
     for s in token_list {
