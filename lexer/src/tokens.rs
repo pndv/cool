@@ -252,10 +252,8 @@ pub(crate) fn gen_iter_till_token_or_end(token_iter: &mut FilteredTokensIterator
   let mut seen_start_if = 0;
   let mut seen_start_case = 0;
   let mut seen_start_loop = 0;
-
-  // let mut seen_open_curl = if read_till_token.is_same_type(&CLOSE_PAREN_TYPE) { -1 } else {0};
-  // let mut seen_open_paren = if read_till_token.is_same_type(&CLOSE_CURL_TYPE) { -1 } else {0};;
-
+  let mut seen_start_let = 0; // matches with `in`
+  
   // read tokens, accounting for matching brackets and matching expressions
   loop {
     if peek_token_eq(token_iter, read_till_token) &&
@@ -292,53 +290,15 @@ pub(crate) fn gen_iter_till_token_or_end(token_iter: &mut FilteredTokensIterator
       Token::Loop { .. } => seen_start_loop += 1,
       Token::EndLoop { .. } => seen_start_loop -= 1,
 
+      Token::Let { .. } => seen_start_let += 1,
+      Token::In { .. } => seen_start_let -= 1,
+
       _ => ()
     }
 
     tokens.push(token);
   }
 
-  /*  if read_till_token.is_same_type(&CLOSE_CURL_TYPE) || read_till_token.is_same_type(&CLOSE_PAREN_TYPE) {
-      let open_bracket_type = if read_till_token.is_same_type(&CLOSE_CURL_TYPE) { OPEN_CURL_TYPE } else { OPEN_PAREN_TYPE };
-      let mut seen_matching_brackets = 0;
-      
-      // read tokens, accounting for matching brackets
-      loop {
-        if peek_token_eq(token_iter, read_till_token) && seen_matching_brackets == 0 {
-          break; // reached the real end, accounted for all matching brackets
-        }
-        
-        let token = match token_iter.next() {
-          None => break,
-          Some(t) => t, 
-        };
-        
-        if token.is_same_type(&open_bracket_type) {
-          seen_matching_brackets += 1;
-        } else if token.is_same_type(read_till_token) {
-          seen_matching_brackets -= 1;
-        }
-        
-        tokens.push(token);
-      }
-    } else {
-      // reads all tokens till first [`read_till_token`] is seen, returns a new iterator
-      tokens = from_fn(|| token_iter.next_if(|token| !token.is_same_type(read_till_token))).collect();
-    }
-  */
-
-  /*
-    if cfg!(test) {
-      println!("START: ============================================");
-      println!("generate_iter_till_token: peek: {:?}, expected: {:?}", token_iter.peek(), read_till_token);
-  
-      println!("Item count: {}", tokens.len());
-      for t in tokens.clone() {
-        println!("{:?}", t);
-      }
-      println!("END:   ================ {:?} ", read_till_token);
-    }
-  */
   if token_iter.peek().is_some() {
     // If there are more tokens, then the next token in iterator must match the `read_till_token`;
     // Otherwise we have reached the end of list, no need to assert
@@ -428,27 +388,7 @@ pub(crate) fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &
 
 #[inline]
 pub(crate) fn peek_not_eq_or_eof(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
-  !is_eof(token_iter) && !peek_token_eq(token_iter, expected)
-  /*  
-    let peeked_token = token_iter.peek();
-    let result = match peeked_token {
-      Some(token) => {
-        if cfg!(test) {
-          println!("peek_token_neq: {:?}, expected: {:?}", token, expected);
-        }
-        !token.is_same_type(expected)
-      }
-      
-      None => !expected.is_same_type(&Token::EOF), // iterator is at end, check if peeked = eof
-    };
-    result
-  
-      if token_iter.peek().is_none() {
-      return false;
-    }
-    let next_token_is_expected_token = peek_token_eq(token_iter, expected);
-    !next_token_is_expected_token
-  */
+  !is_eof(token_iter) && !peek_token_eq(token_iter, expected) 
 }
 
 #[inline]
