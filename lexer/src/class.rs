@@ -1,19 +1,19 @@
 ﻿use crate::feature;
 use crate::feature::Feature;
 use crate::nodes::Type;
-use crate::tokens::{consume_required, generate_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE};
+use crate::tokens::{consume_required, gen_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE};
 use feature::gen_features;
 use std::borrow::Cow;
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Class {
-  class_type: Type,
+  name: Type,
   parent_type: Option<Type>, // if no parent is given, then 'Object' is the parent of all classes
   features: Option<Vec<Feature>>,
 }
 
 const OBJECT: Class = Class {
-  class_type: (Cow::Borrowed("Object"), 0, 0),
+  name: (Cow::Borrowed("Object"), 0, 0),
   parent_type: None,
   features: None,
 };
@@ -23,28 +23,18 @@ impl Class {
     let parent: Type = if parent_type.is_some() {
       parent_type.unwrap()
     } else {
-      OBJECT.class_type.clone()
+      OBJECT.name.clone()
     };
 
     Class {
-      class_type,
+      name: class_type,
       parent_type: Some(parent),
       features,
     }
   }
-
-  pub fn add_feature(&mut self, feature: Feature) {
-    if self.features.is_none() {
-      self.features = Some(Vec::new());
-    }
-
-    if let Some(ref mut features) = self.features {
-      features.push(feature);
-    }
-  }
 }
 
-pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator, read_till_tokens: &Token) -> Class {
+pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator) -> Class {
   consume_required(token_iter, CLASS_TYPE);
 
   let mut token = match_required_token(token_iter.next(), IDENT_TYPE);
@@ -63,7 +53,7 @@ pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator, read_till_token
 
   let mut features: Option<Vec<Feature>> = None;
   if peek_not_eq_or_eof(token_iter, &CLOSE_CURL_TYPE) {
-    let mut feature_token_iter: FilteredTokensIterator = generate_iter_till_token_or_end(token_iter, &CLOSE_CURL_TYPE);
+    let mut feature_token_iter: FilteredTokensIterator = gen_iter_till_token_or_end(token_iter, &CLOSE_CURL_TYPE);
 
     /*    if cfg!(test) {
           for t in feature_token_iter.clone() {
@@ -82,13 +72,13 @@ pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator, read_till_token
 #[cfg(test)]
 mod test_class {
   use crate::class::{gen_class, Class};
-  use crate::tokens::{get_filtered_token_iter, FilteredTokensIterator, Token};
+  use crate::tokens::{get_filtered_token_iter, FilteredTokensIterator};
 
   #[test]
   pub fn test_class_single_feature() {
     let file_path = "test_resources/classes/class.single_feature.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let class: Class = gen_class(&mut token_iter, &Token::EOF);
+    let class: Class = gen_class(&mut token_iter);
     println!("{:?}", class);
 
     assert!(class.features.is_some());
@@ -101,7 +91,7 @@ mod test_class {
   pub fn test_class_multi_feature() {
     let file_path = "test_resources/classes/class.multi_feature.cl_partial";
     let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-    let class: Class = gen_class(&mut token_iter, &Token::EOF);
+    let class: Class = gen_class(&mut token_iter);
     println!("{:?}", class);
     assert!(class.features.is_some());
 

@@ -1,19 +1,19 @@
-﻿use crate::expressions::gen_expression;
-use crate::nodes::{Expression, Id, Type};
-use crate::tokens::{consume_if_available, consume_required, generate_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, AT_TYPE, CLOSE_PAREN_TYPE, COMMA_TYPE, DOT_TYPE, IDENT_TYPE, OPEN_PAREN_TYPE};
+﻿use crate::expressions::{gen_expression, Expression};
+use crate::nodes::{Id, Type};
+use crate::tokens::{consume_if_available, consume_required, gen_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, AT_TYPE, CLOSE_PAREN_TYPE, COMMA_TYPE, DOT_TYPE, IDENT_TYPE, OPEN_PAREN_TYPE};
 
 /// ...expr (seen before)... { `@` TYPE } `.` ID `(` { expr {{ `,` expr }} } 
 pub(super) fn gen_partial_cast_dispatch(token_iter: &mut FilteredTokensIterator) -> Expression {
   let mut cast_type: Option<Type> = None;
 
   if peek_token_eq(token_iter, &AT_TYPE) {
-    match_required_token(token_iter.next(), AT_TYPE);
+    consume_required(token_iter, AT_TYPE);
 
     let type_ident: Token = match_required_token(token_iter.next(), IDENT_TYPE);
     cast_type = Some(Type::from(type_ident));
   }
 
-  match_required_token(token_iter.next(), DOT_TYPE);
+  consume_required(token_iter, DOT_TYPE);
 
   let fn_name_ident = match_required_token(token_iter.next(), IDENT_TYPE);
   let fn_name: Id = Id::from(fn_name_ident);
@@ -31,7 +31,7 @@ pub(super) fn gen_partial_dispatch_expr(ident_token: Token, token_iter: &mut Fil
 
 fn gen_fn_param_list(token_iter: &mut FilteredTokensIterator) -> Vec<Expression> {
   consume_required(token_iter, OPEN_PAREN_TYPE);
-  let mut fn_param_gen_iter = generate_iter_till_token_or_end(token_iter, &CLOSE_PAREN_TYPE);
+  let mut fn_param_gen_iter = gen_iter_till_token_or_end(token_iter, &CLOSE_PAREN_TYPE);
   consume_required(token_iter, CLOSE_PAREN_TYPE);
 
   let mut param_list: Vec<Expression> = Vec::new();

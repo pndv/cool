@@ -167,18 +167,18 @@ fn process_single_line_comment(char_iter: &mut BufferedCharReader,
                                line_pos: &mut u32) -> Token {
   let mut comment = String::new();
   let mut token = Token::Comment { value: String::new(), line_num: *line_num, line_pos: *line_pos };
-  // Comments are between `--` or `--` and till end of line
+  // Comments are from `--` and either till end of line or end of file
   while let Some(c) = char_iter.next() {
     *line_pos += 1;
 
     match c {
-      MINUS => {
-        if char_iter.next_if_eq(&MINUS).is_some() {
-          // comment ends
-          *line_pos += 1;
-          break;
-        }
-      }
+      // MINUS => {
+      //   if char_iter.next_if_eq(&MINUS).is_some() {
+      //     // comment ends
+      //     *line_pos += 1;
+      //     break;
+      //   }
+      // }
       '\r' | '\n' => {
         if c == '\r' {
           // consume \r\n together
@@ -346,13 +346,7 @@ fn map_result_to_char(result: Result<u8>) -> char {
 }
 
 fn get_buf_reader(file_path: &str) -> (BufferedCharReader, u32, u32) {
-  let file_open = File::open(file_path);
-
-  if let Err(e) = file_open {
-    panic!("Failed to open file {file_path} with error {e}");
-  }
-
-  let mut buf_reader = BufReader::new(file_open.unwrap());
+  let mut buf_reader = get_buf_char_reader_from_file(file_path);
 
   // Ignore byte order marker, if present. UTF-8 byte-order marker is first 3 bytes of file = [0xEF 0xBB 0xBF]
   let mut read_byte = [0; 3]; // Buffer to hold 3 bytes
@@ -377,6 +371,17 @@ fn get_buf_reader(file_path: &str) -> (BufferedCharReader, u32, u32) {
   let line_pos = 1;
 
   (peekable_buffer, line_num, line_pos)
+}
+
+fn get_buf_char_reader_from_file(file_path: &str) -> BufReader<File> {
+  let file_open = File::open(file_path);
+
+  if let Err(e) = file_open {
+    panic!("Failed to open file {file_path} with error {e}");
+  }
+
+  let mut buf_reader = BufReader::new(file_open.unwrap());
+  buf_reader
 }
 
 #[cfg(test)]
