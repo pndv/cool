@@ -80,6 +80,5 @@ mod program_test {
     let f = File::open("test_resources/cool_bad.cl").unwrap();
     let file = "test_resources/cool_bad.cl";
     let program = gen_programs(file);
-    println!("{:#?}", program);
   }
 }
