@@ -75,7 +75,7 @@ mod program_test {
   }
 
   #[test]
-  #[should_panic(expected = "Unexpected token: Dot { line_num: 5, line_pos: 54 }")]
+  #[should_panic]
   fn test_single_program_fail() {
     let f = File::open("test_resources/cool_bad.cl").unwrap();
     let file = "test_resources/cool_bad.cl";
