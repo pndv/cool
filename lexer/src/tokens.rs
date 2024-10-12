@@ -261,6 +261,7 @@ pub(crate) fn gen_iter_till_token_or_end(token_iter: &mut FilteredTokensIterator
         seen_open_paren == 0 &&
         seen_start_if == 0 &&
         seen_start_case == 0 &&
+        seen_start_let == 0 &&
         seen_start_loop == 0 {
       break; // reached the real end, accounted for all matching brackets
     }
