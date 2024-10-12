@@ -1,10 +1,9 @@
-﻿use std::fs::File;
-use std::io::{BufReader, Bytes, Error, ErrorKind, Read, Result, Seek, SeekFrom};
-use std::iter::{Map, Peekable};
-
-use crate::tokens::WhiteSpace::{CarriageReturn, FormFeed, NewLine, Space, Tab, VerticalTab};
+﻿use crate::tokens::WhiteSpace::{CarriageReturn, FormFeed, NewLine, Space, Tab, VerticalTab};
 use crate::tokens::{Token, WhiteSpace};
 use crate::tokens::{AT, CLOSE_CURL, CLOSE_PAREN, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LESS_THAN, MINUS, OPEN_CURL, OPEN_PAREN, PLUS, SEMI_COLON, STAR, TILDE};
+use std::fs::File;
+use std::io::{BufReader, Bytes, Error, ErrorKind, Read, Result, Seek, SeekFrom};
+use std::iter::{Map, Peekable};
 
 type BufferedCharReader = Peekable<Map<Bytes<BufReader<File>>, fn(Result<u8>) -> char>>;
 
@@ -24,9 +23,7 @@ pub(crate) fn get_file_token_list(file_path: &str) -> Result<Vec<Token>> {
   }
 }
 
-fn get_next_token(char_iter: &mut BufferedCharReader,
-                  line_num: &mut u32,
-                  line_pos: &mut u32) -> Option<Token> {
+fn get_next_token(char_iter: &mut BufferedCharReader, line_num: &mut u32, line_pos: &mut u32) -> Option<Token> {
   let mut output: Option<Token> = None;
   let mut token: Token = Token::Empty;
 
@@ -89,24 +86,6 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
         token = Token::Plus { line_num: *line_num, line_pos: *line_pos };
         break;
       }
-      MINUS => {
-        if char_iter.next_if_eq(&MINUS).is_some() {
-          *line_pos += 1;
-          token = process_single_line_comment(char_iter, line_num, line_pos);
-        } else {
-          token = Token::Minus { line_num: *line_num, line_pos: *line_pos };
-        }
-        break;
-      }
-      EQUAL => {
-        if char_iter.next_if_eq(&GREATER_THAN).is_some() {
-          *line_pos += 1;
-          token = Token::Lambda { line_num: *line_num, line_pos: *line_pos };
-        } else {
-          token = Token::Equal { line_num: *line_num, line_pos: *line_pos };
-        }
-        break;
-      }
       COLON => {
         token = Token::Colon { line_num: *line_num, line_pos: *line_pos };
         break;
@@ -119,15 +98,6 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
         token = Token::CloseParen { line_num: *line_num, line_pos: *line_pos };
         break;
       }
-      OPEN_PAREN => {
-        if char_iter.next_if_eq(&STAR).is_some() {
-          *line_pos += 1;
-          token = process_multi_line_comment(char_iter, line_num, line_pos);
-        } else {
-          token = Token::OpenParen { line_num: *line_num, line_pos: *line_pos };
-        }
-        break;
-      }
       OPEN_CURL => {
         token = Token::OpenCurl { line_num: *line_num, line_pos: *line_pos };
         break;
@@ -138,6 +108,33 @@ fn get_next_token(char_iter: &mut BufferedCharReader,
       }
       DOUBLE_QUOTE => {
         token = get_string_token(char_iter, line_num, line_pos);
+        break;
+      }
+      MINUS => {
+        if char_iter.next_if_eq(&MINUS).is_some() {
+          *line_pos += 1;
+          token = process_single_line_comment(char_iter, line_num, line_pos);
+        } else {
+          token = Token::Minus { line_num: *line_num, line_pos: *line_pos };
+        }
+        break;
+      }
+      EQUAL => {
+        if char_iter.next_if_eq(&GREATER_THAN).is_some() {
+          *line_pos += 1;
+          token = Token::CaseBranch { line_num: *line_num, line_pos: *line_pos };
+        } else {
+          token = Token::Equal { line_num: *line_num, line_pos: *line_pos };
+        }
+        break;
+      }
+      OPEN_PAREN => {
+        if char_iter.next_if_eq(&STAR).is_some() {
+          *line_pos += 1;
+          token = process_multi_line_comment(char_iter, line_num, line_pos);
+        } else {
+          token = Token::OpenParen { line_num: *line_num, line_pos: *line_pos };
+        }
         break;
       }
 
@@ -172,13 +169,6 @@ fn process_single_line_comment(char_iter: &mut BufferedCharReader,
     *line_pos += 1;
 
     match c {
-      // MINUS => {
-      //   if char_iter.next_if_eq(&MINUS).is_some() {
-      //     // comment ends
-      //     *line_pos += 1;
-      //     break;
-      //   }
-      // }
       '\r' | '\n' => {
         if c == '\r' {
           // consume \r\n together
@@ -302,7 +292,7 @@ fn get_string_token(char_iter: &mut BufferedCharReader,
     *line_pos += 1;
     match c {
       '\0' => {
-        return Token::Error { error_char: String::from("Null Character"), line_num: *line_num, line_pos: *line_pos }
+        return Token::Error { value: String::from("Null Character"), line_num: *line_num, line_pos: *line_pos }
       }
       '\\' => { // cover escaped characters
         let p = char_iter.peek();
@@ -390,7 +380,7 @@ mod tests {
 
   #[test]
   fn test_buf_reader() {
-    const TEST_TEXT_FILE_PATH: &str = "test_resources/test";
+    const TEST_TEXT_FILE_PATH: &str = "test_resources/file_iter_read_single_line";
 
     let (buf_reader, _line_num, _line_pos) = get_buf_reader(TEST_TEXT_FILE_PATH);
 

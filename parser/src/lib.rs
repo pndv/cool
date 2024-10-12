@@ -1,5 +1,9 @@
-mod tree_nodes;
-mod expr;
+
+pub mod program;
+pub(crate) mod class;
+pub(crate) mod feature;
+pub(crate) mod formal;
+pub(crate) mod expressions;
 mod nodes;
 
 pub fn add(left: u64, right: u64) -> u64 {

@@ -1,7 +1,10 @@
+use std::iter::Peekable;
+use std::vec::IntoIter;
 use crate::class::Class;
-use crate::tokens::{consume_required, gen_iter_till_token_or_end, is_eof, FilteredTokensIterator, SEMI_COLON_TYPE};
+use lexer::tokens::{match_and_consume, gen_iter_till_token_or_end, is_eof, FilteredTokensIterator, SEMI_COLON_TYPE, Token};
 use crate::{class, tokens};
 use class::gen_class;
+use lexer::iter::token::TokenIter;
 use tokens::get_filtered_token_iter;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -33,23 +36,23 @@ impl Program {
 }
 
 /// Program is a list of semicolon separated classes 
-pub(crate) fn gen_program(token_iter: &mut FilteredTokensIterator) -> Program {
+pub(crate) fn gen_program(iter: &mut TokenIter) -> Program {
   let mut program: Program = Program::new();
 
-  while !is_eof(token_iter) {
-    let mut class_token_iter = gen_iter_till_token_or_end(token_iter, &SEMI_COLON_TYPE);
+  while iter.has_next() {
+    let mut class_token_iter: Peekable<IntoIter<Token>> = iter.collect_till(&SEMI_COLON_TYPE);
     let class: Class = gen_class(&mut class_token_iter);
-    consume_required(token_iter, SEMI_COLON_TYPE);
+    assert!(iter.consume_required(&SEMI_COLON_TYPE));
     program.add_class(class);
   }
-
+  
   program
 }
 
 #[must_use]
 pub(crate) fn gen_programs(file_path: &str) -> Program {
-  let mut token_iter: FilteredTokensIterator = get_filtered_token_iter(file_path);
-
+  let mut token_iter: TokenIter = TokenIter::from(file_path.to_string());
+  
   gen_program(&mut token_iter)
 }
 

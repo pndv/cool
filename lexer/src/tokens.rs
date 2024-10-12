@@ -1,9 +1,14 @@
-﻿use crate::scanner::get_file_token_list;
+﻿use crate::iter::char::ProgramChar;
+use crate::scanner::get_file_token_list;
 use mem::discriminant;
+use std::fmt::{Display, Formatter};
 use std::iter::{Filter, Peekable};
 use std::mem;
 use std::vec::IntoIter;
 
+pub const NULL_CHAR: char = '\0';
+pub const CARRIAGE_RETURN: char = '\r';
+pub const LINE_FEED: char = '\n';
 pub const DOT: char = '.';
 pub const AT: char = '@';
 pub const TILDE: char = '~';
@@ -44,44 +49,44 @@ const KEYWORD_FALSE: &str = "false";
 const KEYWORD_TRUE: &str = "true";
 const KEYWORD_SELF_TYPE: &str = "SELF_TYPE";
 
-pub(crate) const IDENT_TYPE: Token = Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const LAMBDA_TYPE: Token = Token::Lambda { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const DOT_TYPE: Token = Token::Dot { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const COMMA_TYPE: Token = Token::Comma { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const ASSIGN_TYPE: Token = Token::Assign { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const COLON_TYPE: Token = Token::Colon { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const SEMI_COLON_TYPE: Token = Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const OPEN_PAREN_TYPE: Token = Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CLOSE_PAREN_TYPE: Token = Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const OPEN_CURL_TYPE: Token = Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CLOSE_CURL_TYPE: Token = Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CLASS_TYPE: Token = Token::Class { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const INHERITS_TYPE: Token = Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const IF_TYPE: Token = Token::If { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const THEN_TYPE: Token = Token::Then { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const ELSE_TYPE: Token = Token::Else { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const END_IF_TYPE: Token = Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const LOOP_TYPE: Token = Token::Loop { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const END_LOOP_TYPE: Token = Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const IN_TYPE: Token = Token::In { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const OF_TYPE: Token = Token::Of { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const END_CASE_TYPE: Token = Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const WHILE_TYPE: Token = Token::While { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const LET_TYPE: Token = Token::Let { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const CASE_TYPE: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const NEW_TYPE: Token = Token::New { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const NOT_TYPE: Token = Token::Not { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const TILDE_TYPE: Token = Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX };
-pub(crate) const AT_TYPE: Token = Token::At { line_num: u32::MAX, line_pos: u32::MAX };
+pub const IDENT_TYPE: Token = Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX };
+pub const LAMBDA_TYPE: Token = Token::CaseBranch { line_num: u32::MAX, line_pos: u32::MAX };
+pub const DOT_TYPE: Token = Token::Dot { line_num: u32::MAX, line_pos: u32::MAX };
+pub const COMMA_TYPE: Token = Token::Comma { line_num: u32::MAX, line_pos: u32::MAX };
+pub const ASSIGN_TYPE: Token = Token::Assign { line_num: u32::MAX, line_pos: u32::MAX };
+pub const COLON_TYPE: Token = Token::Colon { line_num: u32::MAX, line_pos: u32::MAX };
+pub const SEMI_COLON_TYPE: Token = Token::SemiColon { line_num: u32::MAX, line_pos: u32::MAX };
+pub const OPEN_PAREN_TYPE: Token = Token::OpenParen { line_num: u32::MAX, line_pos: u32::MAX };
+pub const CLOSE_PAREN_TYPE: Token = Token::CloseParen { line_num: u32::MAX, line_pos: u32::MAX };
+pub const OPEN_CURL_TYPE: Token = Token::OpenCurl { line_num: u32::MAX, line_pos: u32::MAX };
+pub const CLOSE_CURL_TYPE: Token = Token::CloseCurl { line_num: u32::MAX, line_pos: u32::MAX };
+pub const CLASS_TYPE: Token = Token::Class { line_num: u32::MAX, line_pos: u32::MAX };
+pub const INHERITS_TYPE: Token = Token::Inherits { line_num: u32::MAX, line_pos: u32::MAX };
+pub const IF_TYPE: Token = Token::If { line_num: u32::MAX, line_pos: u32::MAX };
+pub const THEN_TYPE: Token = Token::Then { line_num: u32::MAX, line_pos: u32::MAX };
+pub const ELSE_TYPE: Token = Token::Else { line_num: u32::MAX, line_pos: u32::MAX };
+pub const END_IF_TYPE: Token = Token::EndIf { line_num: u32::MAX, line_pos: u32::MAX };
+pub const LOOP_TYPE: Token = Token::Loop { line_num: u32::MAX, line_pos: u32::MAX };
+pub const END_LOOP_TYPE: Token = Token::EndLoop { line_num: u32::MAX, line_pos: u32::MAX };
+pub const IN_TYPE: Token = Token::In { line_num: u32::MAX, line_pos: u32::MAX };
+pub const OF_TYPE: Token = Token::Of { line_num: u32::MAX, line_pos: u32::MAX };
+pub const END_CASE_TYPE: Token = Token::EndCase { line_num: u32::MAX, line_pos: u32::MAX };
+pub const WHILE_TYPE: Token = Token::While { line_num: u32::MAX, line_pos: u32::MAX };
+pub const LET_TYPE: Token = Token::Let { line_num: u32::MAX, line_pos: u32::MAX };
+pub const CASE_TYPE: Token = Token::Case { line_num: u32::MAX, line_pos: u32::MAX };
+pub const NEW_TYPE: Token = Token::New { line_num: u32::MAX, line_pos: u32::MAX };
+pub const NOT_TYPE: Token = Token::Not { line_num: u32::MAX, line_pos: u32::MAX };
+pub const TILDE_TYPE: Token = Token::Tilde { line_num: u32::MAX, line_pos: u32::MAX };
+pub const AT_TYPE: Token = Token::At { line_num: u32::MAX, line_pos: u32::MAX };
 
 type CommentFilter = fn(&Token) -> bool;
 pub(crate) type FilteredTokensIterator = Peekable<Filter<IntoIter<Token>, CommentFilter>>;
 
-#[derive(PartialEq, Eq, Debug, Clone, Hash)]
-pub(crate) enum Token {
+#[derive(Eq, Debug, Clone)]
+pub enum Token {
   Empty,
   EOF, //end of file
-  Error { error_char: String, line_num: u32, line_pos: u32 },
+  Error { value: String, line_num: u32, line_pos: u32 },
   Comment { value: String, line_num: u32, line_pos: u32 },
 
   Ident { value: String, line_num: u32, line_pos: u32 },
@@ -90,7 +95,7 @@ pub(crate) enum Token {
   Comma { line_num: u32, line_pos: u32 },
 
   Assign { line_num: u32, line_pos: u32 }, // `<-`
-  Lambda { line_num: u32, line_pos: u32 }, // `=>`
+  CaseBranch { line_num: u32, line_pos: u32 }, // `=>`
 
   At { line_num: u32, line_pos: u32 },
   Tilde { line_num: u32, line_pos: u32 },
@@ -143,6 +148,67 @@ pub(crate) enum Token {
   SelfType { line_num: u32, line_pos: u32 },
 }
 
+impl PartialEq for Token {
+  fn eq(&self, other: &Self) -> bool {
+    discriminant(self) == discriminant(other)
+  }
+}
+
+impl Display for Token {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    let token_str = match self {
+      Token::Empty => "Empty".to_string(),
+      Token::EOF => "EOF".to_string(),
+      Token::Error { value, line_num, line_pos } => format!("Error({value}, {line_num}, {line_pos})"),
+      Token::Comment { value, line_num, line_pos } => format!("Comment({value}, {line_num}, {line_pos})"),
+      Token::Ident { value, line_num, line_pos } => format!("Ident({value}, {line_num}, {line_pos})"),
+      Token::Int { value, line_num, line_pos } => format!("Int({value}, {line_num}, {line_pos})"),
+      Token::String { value, line_num, line_pos } => format!("String({value}, {line_num}, {line_pos})"),
+      Token::Dot { line_num, line_pos } => format!("Dot({line_num}, {line_pos})"),
+      Token::Comma { line_num, line_pos } => format!("Comma({line_num}, {line_pos})"),
+      Token::Assign { line_num, line_pos } => format!("Assign({line_num}, {line_pos})"),
+      Token::CaseBranch { line_num, line_pos } => format!("CaseBranch({line_num}, {line_pos})"),
+      Token::At { line_num, line_pos } => format!("At({line_num}, {line_pos})"),
+      Token::Tilde { line_num, line_pos } => format!("Tilde({line_num}, {line_pos})"),
+      Token::Plus { line_num, line_pos } => format!("Plus({line_num}, {line_pos})"),
+      Token::Minus { line_num, line_pos } => format!("Minus({line_num}, {line_pos})"),
+      Token::Star { line_num, line_pos } => format!("Star({line_num}, {line_pos})"),
+      Token::ForwardSlash { line_num, line_pos } => format!("ForwardSlash({line_num}, {line_pos})"),
+      Token::LessOrEqual { line_num, line_pos } => format!("LessOrEqual({line_num}, {line_pos})"),
+      Token::Less { line_num, line_pos } => format!("Less({line_num}, {line_pos})"),
+      Token::Equal { line_num, line_pos } => format!("Equal({line_num}, {line_pos})"),
+      Token::Colon { line_num, line_pos } => format!("Colon({line_num}, {line_pos})"),
+      Token::SemiColon { line_num, line_pos } => format!("SemiColon({line_num}, {line_pos})"),
+      Token::OpenParen { line_num, line_pos } => format!("OpenParen({line_num}, {line_pos})"),
+      Token::CloseParen { line_num, line_pos } => format!("CloseParen({line_num}, {line_pos})"),
+      Token::OpenCurl { line_num, line_pos } => format!("OpenCurl({line_num}, {line_pos})"),
+      Token::CloseCurl { line_num, line_pos } => format!("CloseCurl({line_num}, {line_pos})"),
+      Token::Class { line_num, line_pos } => format!("Class({line_num}, {line_pos})"),
+      Token::Inherits { line_num, line_pos } => format!("Inherits({line_num}, {line_pos})"),
+      Token::If { line_num, line_pos } => format!("If({line_num}, {line_pos})"),
+      Token::Then { line_num, line_pos } => format!("Then({line_num}, {line_pos})"),
+      Token::Else { line_num, line_pos } => format!("Else({line_num}, {line_pos})"),
+      Token::EndIf { line_num, line_pos } => format!("EndIf({line_num}, {line_pos})"),
+      Token::While { line_num, line_pos } => format!("While({line_num}, {line_pos})"),
+      Token::Loop { line_num, line_pos } => format!("Loop({line_num}, {line_pos})"),
+      Token::EndLoop { line_num, line_pos } => format!("EndLoop({line_num}, {line_pos})"),
+      Token::Let { line_num, line_pos } => format!("Let({line_num}, {line_pos})"),
+      Token::In { line_num, line_pos } => format!("In({line_num}, {line_pos})"),
+      Token::Case { line_num, line_pos } => format!("Case({line_num}, {line_pos})"),
+      Token::Of { line_num, line_pos } => format!("Of({line_num}, {line_pos})"),
+      Token::EndCase { line_num, line_pos } => format!("EndCase({line_num}, {line_pos})"),
+      Token::New { line_num, line_pos } => format!("New({line_num}, {line_pos})"),
+      Token::IsVoid { line_num, line_pos } => format!("IsVoid({line_num}, {line_pos})"),
+      Token::Not { line_num, line_pos } => format!("Not({line_num}, {line_pos})"),
+      Token::True { line_num, line_pos } => format!("True({line_num}, {line_pos})"),
+      Token::False { line_num, line_pos } => format!("False({line_num}, {line_pos})"),
+      Token::SelfType { line_num, line_pos } => format!("SelfType({line_num}, {line_pos})"),
+    };
+
+    write!(f, "{token_str}")
+  }
+}
+
 impl Token {
   pub(crate) fn get_keyword(&self) -> Option<Token> {
     match self {
@@ -188,6 +254,10 @@ impl Token {
   pub(crate) fn is_same_type(&self, other: &Token) -> bool {
     discriminant(self) == discriminant(other)
   }
+  
+  pub fn is_comment(&self) -> bool {
+    matches!(self, Token::Comment { .. })
+  }
 }
 
 #[derive(PartialEq, Debug)]
@@ -198,6 +268,29 @@ pub(crate) enum WhiteSpace {
   CarriageReturn,
   FormFeed,
   VerticalTab,
+}
+
+impl From<ProgramChar> for Token {
+  fn from(value: ProgramChar) -> Self {
+    let ProgramChar { char_at, line_num, line_pos } = value;
+
+    match char_at {
+      DOT => Token::Dot { line_num, line_pos },
+      COMMA => Token::Comma { line_num, line_pos },
+      AT => Token::At { line_num, line_pos },
+      TILDE => Token::Tilde { line_num, line_pos },
+      STAR => Token::Star { line_num, line_pos },
+      FORWARD_SLASH => Token::ForwardSlash { line_num, line_pos },
+      PLUS => Token::Plus { line_num, line_pos },
+      COLON => Token::Colon { line_num, line_pos },
+      SEMI_COLON => Token::SemiColon { line_num, line_pos },
+      CLOSE_PAREN => Token::CloseParen { line_num, line_pos },
+      OPEN_CURL => Token::OpenCurl { line_num, line_pos },
+      CLOSE_CURL => Token::CloseCurl { line_num, line_pos },
+
+      _ => Token::Empty,
+    }
+  }
 }
 
 impl WhiteSpace {
@@ -253,7 +346,7 @@ pub(crate) fn gen_iter_till_token_or_end(token_iter: &mut FilteredTokensIterator
   let mut seen_start_case = 0;
   let mut seen_start_loop = 0;
   let mut seen_start_let = 0; // matches with `in`
-  
+
   // read tokens, accounting for matching brackets and matching expressions
   loop {
     if peek_token_eq(token_iter, read_till_token) &&
@@ -313,12 +406,12 @@ fn is_not_comment(token: &Token) -> bool {
   !matches!(token, Token::Comment { .. })
 }
 
-pub(crate) fn is_eof(token_iter: &mut FilteredTokensIterator) -> bool {
+pub fn is_eof(token_iter: &mut FilteredTokensIterator) -> bool {
   matches!(token_iter.peek(), None | Some(Token::EOF))
 }
 
 pub(crate) fn consume_if_available(token_iter: &mut FilteredTokensIterator, expected: Token) {
-  /*  if cfg!(test) {
+  /*  if cfg!(file_iter_read_single_line) {
       for token in token_iter.clone() {
         println!("consume_if_available: {:?}", token);
       }
@@ -362,7 +455,7 @@ fn check_tokens(tokens: &Vec<Token>) -> Option<String> {
       Token::Empty => {
         errors.push_str("Empty token! Parsing failed somewhere, can't specify details.\n");
       }
-      Token::Error { error_char, line_num, line_pos } => {
+      Token::Error { value: error_char, line_num, line_pos } => {
         let x = format!("Error on line {line_num} at pos {line_pos}, offending character {error_char}.");
         errors.push_str(x.as_str());
       }
@@ -388,7 +481,7 @@ pub(crate) fn peek_token_eq(token_iter: &mut FilteredTokensIterator, expected: &
 
 #[inline]
 pub(crate) fn peek_not_eq_or_eof(token_iter: &mut FilteredTokensIterator, expected: &Token) -> bool {
-  !is_eof(token_iter) && !peek_token_eq(token_iter, expected) 
+  !is_eof(token_iter) && !peek_token_eq(token_iter, expected)
 }
 
 #[inline]

@@ -4,10 +4,11 @@ pub(super) mod case_expr;
 pub(super) mod let_expr;
 pub(super) mod dispatch_expr;
 
+use lexer::iter::token::TokenIter;
 use crate::expressions::case_expr::CaseBranch;
 use crate::expressions::dispatch_expr::gen_partial_dispatch_expr;
 use crate::nodes::{Id, Type};
-use crate::tokens::{consume_required, gen_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, NEW_TYPE, NOT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, TILDE_TYPE};
+use lexer::tokens::{consume_required, gen_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, NEW_TYPE, NOT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, TILDE_TYPE};
 use case_expr::gen_case_expression;
 use cond_expr::gen_conditional_expression;
 use dispatch_expr::gen_partial_cast_dispatch;
@@ -17,9 +18,11 @@ use std::borrow::Cow;
 use std::collections::VecDeque;
 use std::mem::replace;
 
-pub(super) fn gen_expression(token_iter: &mut FilteredTokensIterator,
+pub(super) fn gen_expression(iter: &mut TokenIter,
                              read_till_token: &Token) -> Expression {
-  let mut expression_token_iter: FilteredTokensIterator = gen_iter_till_token_or_end(token_iter, read_till_token);
+  
+  let vec = iter.collect_till(read_till_token);
+  let mut expression_token_iter: FilteredTokensIterator = gen_iter_till_token_or_end(iter, read_till_token);
 
   /*  if cfg!(file_iter_read_single_line) {
       for t in iter.clone() {
@@ -132,7 +135,7 @@ fn gen_partial_expressions(token_iter: &mut FilteredTokensIterator, read_till_to
       // Should never encounter these expressions, since no expression starts with these tokens
       Token::Then { .. } | Token::Else { .. } | Token::EndIf { .. } => panic!("Unexpected conditional branch {:?}", peek),
       Token::Loop { .. } | Token::EndLoop { .. } => panic!("Unexpected loop branch {:?}", peek),
-      Token::CaseBranch { .. } | Token::Of { .. } | Token::EndCase { .. } => panic!("Unexpected case branch {:?}", peek),
+      Token::Lambda { .. } | Token::Of { .. } | Token::EndCase { .. } => panic!("Unexpected case branch {:?}", peek),
       Token::In { .. } => panic!("Unexpected let branch {:?}", peek),
 
       _ => panic!("Unexpected token {:?}", peek),

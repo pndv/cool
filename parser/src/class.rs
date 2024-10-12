@@ -4,6 +4,9 @@ use crate::nodes::Type;
 use crate::tokens::{consume_required, gen_iter_till_token_or_end, match_required_token, peek_not_eq_or_eof, peek_token_eq, FilteredTokensIterator, Token, CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE};
 use feature::gen_features;
 use std::borrow::Cow;
+use std::iter::Peekable;
+use std::vec::IntoIter;
+use lexer::tokens::Token;
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Class {
@@ -34,26 +37,26 @@ impl Class {
   }
 }
 
-pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator) -> Class {
-  consume_required(token_iter, CLASS_TYPE);
+pub(crate) fn gen_class(iter: &mut Peekable<IntoIter<Token>>) -> Class {
+  consume_required(iter, CLASS_TYPE);
 
-  let mut token = match_required_token(token_iter.next(), IDENT_TYPE);
+  let mut token = match_required_token(iter.next(), IDENT_TYPE);
   let class_type: Type = Type::from(token);
 
   let mut parent_type: Option<Type> = None;
-  if peek_token_eq(token_iter, &INHERITS_TYPE) {
-    consume_required(token_iter, INHERITS_TYPE);
+  if peek_token_eq(iter, &INHERITS_TYPE) {
+    consume_required(iter, INHERITS_TYPE);
 
-    token = match_required_token(token_iter.next(), IDENT_TYPE);
+    token = match_required_token(iter.next(), IDENT_TYPE);
     let inherits_from: Type = Type::from(token);
     parent_type = Some(inherits_from);
   }
 
-  consume_required(token_iter, OPEN_CURL_TYPE);
+  consume_required(iter, OPEN_CURL_TYPE);
 
   let mut features: Option<Vec<Feature>> = None;
-  if peek_not_eq_or_eof(token_iter, &CLOSE_CURL_TYPE) {
-    let mut feature_token_iter: FilteredTokensIterator = gen_iter_till_token_or_end(token_iter, &CLOSE_CURL_TYPE);
+  if peek_not_eq_or_eof(iter, &CLOSE_CURL_TYPE) {
+    let mut feature_token_iter: FilteredTokensIterator = gen_iter_till_token_or_end(iter, &CLOSE_CURL_TYPE);
 
     /*    if cfg!(file_iter_read_single_line) {
           for t in feature_token_iter.clone() {
@@ -64,7 +67,7 @@ pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator) -> Class {
     features = gen_features(&mut feature_token_iter, &Token::EOF);
   }
 
-  consume_required(token_iter, CLOSE_CURL_TYPE);
+  consume_required(iter, CLOSE_CURL_TYPE);
 
   Class::new(class_type, parent_type, features)
 }
