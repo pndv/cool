@@ -43,7 +43,6 @@ pub const KEYWORD_FALSE: &str = "false";
 pub const KEYWORD_TRUE: &str = "true";
 pub const KEYWORD_SELF_TYPE: &str = "SELF_TYPE";
 
-
 pub const IDENT_TYPE: Token = Token::Ident { value: String::new(), line_num: u32::MAX, line_pos: u32::MAX };
 pub const CASE_BRANCH_TYPE: Token = Token::CaseBranch { line_num: u32::MAX, line_pos: u32::MAX };
 pub const DOT_TYPE: Token = Token::Dot { line_num: u32::MAX, line_pos: u32::MAX };

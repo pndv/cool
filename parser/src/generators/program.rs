@@ -11,7 +11,7 @@ pub(crate) fn gen_programs(file_path: &str) -> Result<Program, String> {
 }
 
 #[must_use]
-pub(crate) fn gen_program_from_file(file:File) -> Result<Program, String> {
+pub(crate) fn gen_program_from_file(file: File) -> Result<Program, String> {
   let mut token_iter: TokenIter = TokenIter::from(file);
   gen_program(&mut token_iter)
 }
@@ -69,4 +69,6 @@ mod program_test {
     let program = gen_program_from_file(file);
     assert!(program.is_err());
   }
+  
+  
 }

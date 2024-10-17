@@ -1,6 +1,6 @@
 ﻿use crate::iter::char::CharIter;
 use crate::model::token::Token;
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use std::fs::File;
 use std::iter::Peekable;
 use std::mem::discriminant;
@@ -29,7 +29,7 @@ pub trait BaseTokenIter: Iterator {
   fn consume_next_if_eq(&mut self, expected: &Token) {
     if self.peek_eq(expected) {
       let _ = self.next_token();
-    } 
+    }
   }
 
   /// Returns if there are more tokens to be consumed
@@ -109,8 +109,8 @@ pub trait BaseTokenIter: Iterator {
         Token::Let { .. } => seen_start_let += 1,
 
         Token::In { .. } => seen_start_let -= 1,
-        
-        Token::Comment {..} => continue,
+
+        Token::Comment { .. } => continue,
 
         _ => ()
       }
@@ -197,8 +197,6 @@ impl From<File> for TokenIter {
     TokenIter { char_iter: CharIter::from(value).peekable(), last_line_num: 0, last_line_pos: 0 }
   }
 }
-
-
 
 impl Iterator for TokenIter {
   type Item = Token;

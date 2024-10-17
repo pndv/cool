@@ -30,7 +30,6 @@ impl Display for Type {
   }
 }
 
-
 impl From<String> for Type {
   fn from(value: String) -> Self {
     Type(Cow::Owned(value))

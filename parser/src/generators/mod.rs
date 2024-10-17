@@ -1,5 +1,5 @@
-﻿pub(crate) mod expressions;
-pub(crate) mod program;
+﻿mod expressions;
+mod program;
 mod class;
 mod feature;
 mod formal; 

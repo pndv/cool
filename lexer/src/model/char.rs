@@ -21,11 +21,6 @@ impl PartialEq<char> for ProgramChar {
 
 impl ProgramChar {
   pub(crate) fn is_whitespace(&self) -> bool {
-    self.char_at == ' ' ||
-        self.char_at == '\t' ||
-        self.char_at == '\n' ||
-        self.char_at == '\r' ||
-        self.char_at == '\u{c}' ||
-        self.char_at == '\u{b}'
+    self.char_at == ' ' || self.char_at == '\t' || self.char_at == '\n' || self.char_at == '\r' || self.char_at == '\u{c}' || self.char_at == '\u{b}'
   }
 }

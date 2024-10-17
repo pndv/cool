@@ -5,7 +5,7 @@ use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
 use lexer::model::constants::{CASE_BRANCH_TYPE, CASE_TYPE, COLON_TYPE, END_CASE_TYPE, IDENT_TYPE, OF_TYPE, SEMI_COLON_TYPE};
 use lexer::model::token::Token;
 
-pub(crate) fn gen_case_expression(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
+pub(super) fn gen_case_expression(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
   iter.consume_required(&CASE_TYPE)?;
 
   let predicate_expr = gen_expression(iter, &OF_TYPE)?;

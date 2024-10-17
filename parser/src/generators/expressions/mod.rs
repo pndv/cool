@@ -1,8 +1,10 @@
-﻿pub(super) mod cond_expr;
-pub(super) mod loop_expr;
-pub(super) mod case_expr;
-pub(super) mod let_expr;
-pub(super) mod dispatch_expr;
+﻿mod cond_expr;
+mod loop_expr;
+mod case_expr;
+mod let_expr;
+mod dispatch_expr;
+mod block_expr;
+mod unary_expr;
 
 use crate::generators::expressions::dispatch_expr::gen_partial_dispatch_expr;
 use crate::model::expressions::Expression;
@@ -12,7 +14,7 @@ use cond_expr::gen_conditional_expression;
 use dispatch_expr::gen_partial_cast_dispatch;
 use let_expr::gen_let_expression;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lexer::model::constants::{ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, NEW_TYPE, NOT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE, TILDE_TYPE};
+use lexer::model::constants::{ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE, IDENT_TYPE, NEW_TYPE, OPEN_PAREN_TYPE};
 use lexer::model::token::Token;
 use loop_expr::gen_loop_expression;
 use std::collections::VecDeque;
@@ -57,7 +59,7 @@ fn gen_partial_expressions(iter: &mut BufferedTokenIter, read_till_token: &Token
       Token::New { .. } => {
         iter.consume_required(&NEW_TYPE)?;
 
-        let Token::Ident {value, ..} = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
+        let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
         expr_list.push_back(Expression::New { type_name: Type::from(value) });
       }
 
@@ -92,12 +94,12 @@ fn gen_partial_expressions(iter: &mut BufferedTokenIter, read_till_token: &Token
 
       Token::OpenCurl { .. } => {
         let mut block_expr_iter = iter.gen_iter_till(&CLOSE_CURL_TYPE);
-        let block_expr = gen_block_expr(&mut block_expr_iter)?;
+        let block_expr = block_expr::gen_block_expr(&mut block_expr_iter)?;
         expr_list.push_back(block_expr);
       }
 
       Token::IsVoid { .. } | Token::Not { .. } | Token::Tilde { .. } => {
-        let unary_expr = gen_unary_expr(iter, read_till_token)?;
+        let unary_expr = unary_expr::gen_unary_expr(iter, read_till_token)?;
         expr_list.push_back(unary_expr);
       }
 
@@ -198,24 +200,6 @@ fn gen_partial_binary_expr(token_iter: &mut BufferedTokenIter, read_till_tokens:
   Ok(partial_binary_expr)
 }
 
-/// {`~` | `not` | `IsVoid`} expr
-fn gen_unary_expr(iter: &mut BufferedTokenIter, read_till_tokens: &Token) -> Result<Expression, String> {
-  // match / consume the unary token
-  let unary_token = iter.next().unwrap_or_else(|| panic!("get_expression_helper: Error reading unary token"));
-
-  let sub_expr = gen_expression(iter, read_till_tokens)?;
-
-  let unary_expr = if unary_token == NOT_TYPE {
-    Expression::Not { expr: Box::from(sub_expr) }
-  } else if unary_token == TILDE_TYPE {
-    Expression::Negate { expr: Box::from(sub_expr) }
-  } else {
-    Expression::IsVoid { expr: Box::from(sub_expr) }
-  };
-
-  Ok(unary_expr)
-}
-
 /// `(` expr `)`
 fn gen_single_expr_within_paren(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
   iter.consume_required(&OPEN_PAREN_TYPE)?;
@@ -225,25 +209,4 @@ fn gen_single_expr_within_paren(iter: &mut BufferedTokenIter) -> Result<Expressi
   iter.consume_required(&CLOSE_PAREN_TYPE)?;
 
   Ok(expr)
-}
-
-/// `{` expr `;` {{ expr `;` ... }} `}`
-fn gen_block_expr(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
-  iter.consume_required(&OPEN_CURL_TYPE)?;
-
-  let mut block_expr_list = Vec::new();
-
-  while iter.has_next() && !iter.peek_eq(&CLOSE_CURL_TYPE) { //Loop till end of block
-
-    // each expression in block terminates with a semicolon
-    let expr = gen_expression(iter, &SEMI_COLON_TYPE)?;
-    iter.consume_required(&SEMI_COLON_TYPE)?;
-
-    block_expr_list.push(expr);
-  }
-
-  assert!(!block_expr_list.is_empty(), "Block expression must contain at least one expression");
-  iter.consume_required(&CLOSE_CURL_TYPE)?;
-
-  Ok(Expression::Block { expr_list: block_expr_list })
 }

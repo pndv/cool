@@ -1,6 +1,7 @@
 pub mod model;
 pub(crate) mod generators;
 
+#[cfg(test)]
 pub(crate) mod test {
   use lexer::iter::token::{BufferedTokenIter, TokenIter};
   use std::fs::File;

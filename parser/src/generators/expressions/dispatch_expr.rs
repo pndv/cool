@@ -20,7 +20,7 @@ pub(super) fn gen_partial_cast_dispatch(iter: &mut BufferedTokenIter) -> Result<
   if iter.peek_eq(&AT_TYPE) {
     iter.consume_required(&AT_TYPE)?;
 
-    let Token::Ident {value, ..} = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
+    let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
     cast_type = Some(Type::from(value));
   }
 

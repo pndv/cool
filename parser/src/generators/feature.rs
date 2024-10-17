@@ -8,7 +8,7 @@ use lexer::model::constants::{ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, CO
 use lexer::model::token::Token;
 
 /// Features :-> {{ features; }}*
-pub fn gen_features(iter: &mut BufferedTokenIter) -> Result<Option<Vec<Feature>>, String> {
+pub(super) fn gen_features(iter: &mut BufferedTokenIter) -> Result<Option<Vec<Feature>>, String> {
   let mut features: Vec<Feature> = Vec::new();
 
   // `{` seen in calling method => read till closing `}` encountered for `class`
@@ -24,9 +24,9 @@ pub fn gen_features(iter: &mut BufferedTokenIter) -> Result<Option<Vec<Feature>>
   if features.is_empty() { Ok(None) } else { Ok(Some(features)) }
 }
 
-pub fn gen_feature(iter: &mut BufferedTokenIter, read_till_token: &Token) -> Result<Feature, String> {
+fn gen_feature(iter: &mut BufferedTokenIter, read_till_token: &Token) -> Result<Feature, String> {
   //Feature starts with ID
-  let Token::Ident {value, ..} = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
+  let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
   let ident_name = Ident::from(value);
 
   let feature: Feature = match iter.peek() {
@@ -74,18 +74,18 @@ fn gen_attribute_feature(ident_name: Ident, iter: &mut BufferedTokenIter, read_t
   let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
   let method_return_type = Type::from(value);
 
-  let feature =  match iter.peek_eq(&ASSIGN_TYPE) {
-    true => { iter.consume_required(&ASSIGN_TYPE)?;
+  let feature = match iter.peek_eq(&ASSIGN_TYPE) {
+    true => {
+      iter.consume_required(&ASSIGN_TYPE)?;
 
       let method_expr = gen_expression(iter, read_till_tokens)?;
 
       Feature::from((ident_name, method_return_type, Box::from(method_expr)))
-    },
-    
-    false => Feature::from((ident_name, method_return_type)), 
+    }
+
+    false => Feature::from((ident_name, method_return_type)),
   };
 
-  
   Ok(feature)
 }
 

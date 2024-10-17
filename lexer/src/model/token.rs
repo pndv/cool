@@ -131,10 +131,9 @@ impl Display for Token {
 }
 
 impl Token {
-  
   pub fn get_pos(&self) -> (u32, u32) {
     match self {
-      Token::Empty | Token::EOF => (0,0),
+      Token::Empty | Token::EOF => (0, 0),
       Token::Error { line_num, line_pos, .. } => (*line_num, *line_pos),
       Token::Comment { line_num, line_pos, .. } => (*line_num, *line_pos),
       Token::Ident { line_num, line_pos, .. } => (*line_num, *line_pos),
@@ -223,7 +222,6 @@ impl Token {
   }
 }
 
-
 #[cfg(test)]
 mod test {
   use crate::model::constants::IDENT_TYPE;
@@ -233,7 +231,7 @@ mod test {
   fn test_equality() {
     let token1 = Token::Ident { value: String::from("Test1"), line_pos: 15, line_num: 40 };
     let token2 = Token::Ident { value: String::from("Test2"), line_pos: 25, line_num: 30 };
-    
+
     assert!(token1 == token2);
     assert!(token1 == IDENT_TYPE);
   }

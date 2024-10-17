@@ -6,8 +6,8 @@ version = 3
 name = "cool"
 version = "0.1.0"
 dependencies = [
- "lexer",
- "parser",
+    "lexer",
+    "parser",
 ]
 
 [[package]]
@@ -18,5 +18,5 @@ version = "0.1.0"
 name = "parser"
 version = "0.1.0"
 dependencies = [
- "lexer",
+    "lexer",
 ]
