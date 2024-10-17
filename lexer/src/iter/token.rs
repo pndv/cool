@@ -242,4 +242,17 @@ mod tests {
       }
     }
   }
+
+  #[test]
+  fn test_token_printer() {
+    let file = File::open("../test_resources/programs/lam.cl").expect("Cannot open file");
+
+    let iter = TokenIter::from(file);
+
+    for t in iter {
+      println!("{t}");
+      let is_error_token = matches!(t, Token::Error { .. });
+      assert!(!is_error_token);
+    }
+  }
 }

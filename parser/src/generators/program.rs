@@ -43,6 +43,9 @@ pub(crate) fn gen_program(iter: &mut TokenIter) -> Result<Program, String> {
 #[cfg(test)]
 mod program_test {
   use super::*;
+  use std::ffi::OsStr;
+  use std::fs;
+  use std::path::Path;
 
   #[test]
   fn test_single_program() {
@@ -52,7 +55,7 @@ mod program_test {
   }
 
   #[test]
-  fn test_large_program() {
+  fn test_arith() {
     let file = File::open("../test_resources/programs/arith.cl").expect("Cannot open file");
     let program_result = gen_program_from_file(file);
     assert!(program_result.is_ok());
@@ -63,12 +66,41 @@ mod program_test {
   }
 
   #[test]
+  fn test_lam() {
+    let file = File::open("../test_resources/programs/lam.cl").expect("Cannot open file");
+    let program_result = gen_program_from_file(file);
+    assert!(program_result.is_ok());
+    let program = program_result.unwrap();
+    assert!(program.classes().len() > 1);
+    assert_eq!(program.classes().len(), 11);
+    println!("{:#?}", program.classes().len());
+  }
+
+  #[test]
   #[should_panic]
   fn test_single_program_fail() {
-    let file = File::open("../test_resources/programs/cool_bad.cl").expect("Cannot open file");
+    let file = File::open("../../../test_resources/cool_bad.cl").expect("Cannot open file");
     let program = gen_program_from_file(file);
     assert!(program.is_err());
   }
-  
-  
+
+  #[test]
+  fn test_all_programs() {
+    let filter_extn = OsStr::new("cl");
+    let dir = Path::new("../test_resources/programs");
+    let entries = fs::read_dir(dir).expect("Cannot open dir");
+
+    for entry in entries {
+      if entry.is_err() { continue; }
+      let path = entry.unwrap().path();
+      if path.extension() != Some(filter_extn) { continue; }
+      println!("==== Processing: {:#?}", path);
+      let file = File::open(path).expect("Cannot open file");
+      let mut token_iter = TokenIter::from(file);
+      let result = gen_program(&mut token_iter);
+      assert!(result.is_ok());
+    }
+
+    println!("{:#?}", dir);
+  }
 }
