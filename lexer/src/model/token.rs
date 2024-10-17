@@ -220,6 +220,57 @@ impl Token {
       _ => None,
     }
   }
+  
+  pub fn get_key(&self) -> &str {
+    match self {
+      Token::Empty => "Empty", 
+      Token::EOF => "[ EOF ]",
+      Token::Error { .. } => "[ Error ]",
+      Token::Comment { .. } => "[ Comment ]",
+      Token::Ident { .. } => "[ Ident ]",
+      Token::Dot { .. } => "[ . ]",
+      Token::Comma { .. } => "[ , ]",
+      Token::Assign { .. } => "[ <- ]",
+      Token::CaseBranch { .. } => "[ => ]",
+      Token::At { .. } => "[ @ ]",
+      Token::Tilde { .. } => "[ ~ ]",
+      Token::Plus { .. } => "[ + ]",
+      Token::Minus { .. } => "[ - ]",
+      Token::Star { .. } => "[ * ]",
+      Token::ForwardSlash { .. } => "[ / ]",
+      Token::LessOrEqual { .. } => "[ <= ]",
+      Token::Less { .. } => "[ < ]",
+      Token::Equal { .. } => "[ = ]",
+      Token::Colon { .. } => "[ : ]",
+      Token::SemiColon { .. } => "[ ; ]",
+      Token::OpenParen { .. } => "[ ( ]",
+      Token::CloseParen { .. } => "[ ) ]",
+      Token::OpenCurl { .. } => "[ { ]",
+      Token::CloseCurl { .. } => "[ } ]",
+      Token::Class { .. } => "[ Class ]",
+      Token::Inherits { .. } => "[ Inherits ]",
+      Token::If { .. } => "[ if ]",
+      Token::Then { .. } => "[ then ]",
+      Token::Else { .. } => "[ else ]",
+      Token::EndIf { .. } => "[ fi ]",
+      Token::While { .. } => "[ while ]",
+      Token::Loop { .. } => "[ loop ]",
+      Token::EndLoop { .. } => "[ pool ]",
+      Token::Let { .. } => "[ let ]",
+      Token::In { .. } => "[ in ]",
+      Token::Case { .. } => "[ case ]",
+      Token::Of { .. } => "[ of ]",
+      Token::EndCase { .. } => "[ esac ]",
+      Token::New { .. } => "[ new ]",
+      Token::IsVoid { .. } => "[ IsVoid ]",
+      Token::Not { .. } => "[ not ]",
+      Token::Int { .. } => "[ Int ]",
+      Token::String { .. } => "[ String ]",
+      Token::True { .. } => "[ True ]",
+      Token::False { .. } => "[ False ]",
+      Token::SelfType { .. } => "[ SELF_TYPE ]",
+    }
+  }
 }
 
 #[cfg(test)]

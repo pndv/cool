@@ -8,10 +8,7 @@ use lexer::model::token::Token;
 
 pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
   let mut errors = String::new();
-  match iter.consume_required(&CLASS_TYPE) {
-    Ok(_) => (),
-    Err(e) => errors.push_str(&*e),
-  };
+  iter.consume_required(&CLASS_TYPE)?;
 
   let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
   let class_type: Type = Type::from(value);
@@ -30,10 +27,7 @@ pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
     false => None,
   };
 
-  match iter.consume_required(&OPEN_CURL_TYPE) {
-    Ok(_) => (),
-    Err(e) => errors.push_str(&*e),
-  };
+  iter.consume_required(&OPEN_CURL_TYPE)?;
 
   let features: Option<Vec<Feature>> = match iter.peek_eq(&CLOSE_CURL_TYPE) {
     true => None,

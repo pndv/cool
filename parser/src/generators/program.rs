@@ -23,6 +23,11 @@ pub(crate) fn gen_program(iter: &mut TokenIter) -> Result<Program, String> {
 
   while iter.has_next() {
     let program_tokens = iter.collect_till(&SEMI_COLON_TYPE);
+    
+    if program_tokens.is_empty() {
+      continue;  
+    }
+    
     let mut buffered_iter = BufferedTokenIter::from(program_tokens);
 
     match gen_class(&mut buffered_iter) {
@@ -77,6 +82,16 @@ mod program_test {
   }
 
   #[test]
+  fn test_primes() {
+    let file = File::open("../test_resources/programs/primes.cl").expect("Cannot open file");
+    let program_result = gen_program_from_file(file);
+    assert!(program_result.is_ok());
+    let program = program_result.unwrap();
+    assert_eq!(program.classes().len(), 1);
+    println!("{:#?}", program.classes().len());
+  }
+
+  #[test]
   #[should_panic]
   fn test_single_program_fail() {
     let file = File::open("../../../test_resources/cool_bad.cl").expect("Cannot open file");
@@ -94,10 +109,11 @@ mod program_test {
       if entry.is_err() { continue; }
       let path = entry.unwrap().path();
       if path.extension() != Some(filter_extn) { continue; }
-      println!("==== Processing: {:#?}", path);
+      print!("==== Processing: {:#?}", path);
       let file = File::open(path).expect("Cannot open file");
       let mut token_iter = TokenIter::from(file);
       let result = gen_program(&mut token_iter);
+      println!(" = {:#?}", result.is_ok());
       assert!(result.is_ok());
     }
 

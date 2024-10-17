@@ -34,7 +34,7 @@ pub trait BaseTokenIter: Iterator {
 
   /// Returns if there are more tokens to be consumed
   fn has_next(&mut self) -> bool {
-    self.peek().is_some()
+    self.peek().is_some() 
   }
 
   fn get_required(&mut self, expected: &Token) -> Result<Token, String> {
@@ -42,8 +42,8 @@ pub trait BaseTokenIter: Iterator {
       Some(token) if token == *expected => Ok(token),
       None if *expected == Token::EOF => Ok(Token::EOF),
 
-      Some(token) => Err(format!("expected {expected}, found {token}")),
-      None => Err(format!("expected {expected} but reached end of stream")),
+      Some(token) => Err(format!("expected {} around {:#?}, found {token}", expected.get_key(), self.get_last_pos())),
+      None => Err(format!("expected {} around {:?} but reached end of stream", expected.get_key(), self.get_last_pos())),
     }
   }
 
@@ -245,7 +245,7 @@ mod tests {
 
   #[test]
   fn test_token_printer() {
-    let file = File::open("../test_resources/programs/lam.cl").expect("Cannot open file");
+    let file = File::open("../test_resources/programs/primes.cl").expect("Cannot open file");
 
     let iter = TokenIter::from(file);
 
