@@ -55,12 +55,6 @@ pub(crate) fn gen_class(token_iter: &mut FilteredTokensIterator) -> Class {
   if peek_not_eq_or_eof(token_iter, &CLOSE_CURL_TYPE) {
     let mut feature_token_iter: FilteredTokensIterator = gen_iter_till_token_or_end(token_iter, &CLOSE_CURL_TYPE);
 
-    /*    if cfg!(test) {
-          for t in feature_token_iter.clone() {
-            println!("gen_class | feature_token_iter: {:?}", t);
-          }
-        }
-    */
     features = gen_features(&mut feature_token_iter, &Token::EOF);
   }
 
