@@ -9,9 +9,8 @@ path = "src/main.rs"
 
 
 [dependencies]
-lex = { path = "./lex" }
-lexer = { path = "./lexer" }
-parser = { path = "./parser" }
+lexer = { path = "lexer" }
+parser = { path = "parser" }
 
 [features]
 debug = []

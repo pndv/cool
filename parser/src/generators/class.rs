@@ -2,9 +2,9 @@
 use crate::model::class::Class;
 use crate::model::feature::Feature;
 use crate::model::Type;
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE};
-use lex::model::token::Token;
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE};
+use lexer::model::token::Token;
 
 pub(crate) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
   let mut errors = String::new();

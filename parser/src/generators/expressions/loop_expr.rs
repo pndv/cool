@@ -1,7 +1,7 @@
 ﻿use crate::generators::expressions::gen_expression;
 use crate::model::expressions::Expression;
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{END_LOOP_TYPE, LOOP_TYPE, WHILE_TYPE};
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{END_LOOP_TYPE, LOOP_TYPE, WHILE_TYPE};
 
 pub(super) fn gen_loop_expression(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
   iter.consume_required(&WHILE_TYPE)?;

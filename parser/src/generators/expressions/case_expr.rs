@@ -1,9 +1,9 @@
 ﻿use crate::generators::expressions::gen_expression;
 use crate::model::expressions::{CaseBranch, Expression};
 use crate::model::{Ident, Type};
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{CASE_BRANCH_TYPE, CASE_TYPE, COLON_TYPE, END_CASE_TYPE, IDENT_TYPE, OF_TYPE, SEMI_COLON_TYPE};
-use lex::model::token::Token;
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{CASE_BRANCH_TYPE, CASE_TYPE, COLON_TYPE, END_CASE_TYPE, IDENT_TYPE, OF_TYPE, SEMI_COLON_TYPE};
+use lexer::model::token::Token;
 
 pub(crate) fn gen_case_expression(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
   iter.consume_required(&CASE_TYPE)?;

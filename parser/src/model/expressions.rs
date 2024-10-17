@@ -1,5 +1,5 @@
 ﻿use crate::model::{Ident, Type};
-use lex::model::token::Token;
+use lexer::model::token::Token;
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) enum Expression {

@@ -1,9 +1,9 @@
 ﻿use crate::generators::expressions::gen_expression;
 use crate::model::expressions::{Expression, LetInit};
 use crate::model::{Ident, Type};
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
-use lex::model::token::Token;
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{ASSIGN_TYPE, COLON_TYPE, COMMA_TYPE, IDENT_TYPE, IN_TYPE, LET_TYPE};
+use lexer::model::token::Token;
 
 pub(crate) fn gen_let_expression(iter: &mut BufferedTokenIter, read_till_token: &Token) -> Result<Expression, String> {
   iter.consume_required(&LET_TYPE)?;
@@ -66,7 +66,7 @@ fn gen_let_init(iter: &mut BufferedTokenIter) -> Result<LetInit, String> {
 mod test {
   use crate::generators::expressions::let_expr::gen_let_expression;
   use crate::test::get_buffered_iter;
-  use lex::model::token::Token;
+  use lexer::model::token::Token;
   use std::fs::File;
 
   #[test]

@@ -1,8 +1,8 @@
 ﻿use crate::model::formal::Formal;
 use crate::model::{Ident, Type};
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{COLON_TYPE, COMMA_TYPE, IDENT_TYPE};
-use lex::model::token::Token;
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{COLON_TYPE, COMMA_TYPE, IDENT_TYPE};
+use lexer::model::token::Token;
 
 /// Formals |-> formal {{, formals}}
 pub fn gen_formals(iter: &mut BufferedTokenIter) -> Result<Vec<Formal>, String> {

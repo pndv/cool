@@ -225,7 +225,7 @@ impl Token {
 
 
 #[cfg(test)]
-mod token_test {
+mod test {
   use crate::model::constants::IDENT_TYPE;
   use crate::model::token::Token;
 

@@ -1,7 +1,7 @@
 ﻿use crate::generators::class::gen_class;
 use crate::model::program::Program;
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter, TokenIter};
-use lex::model::constants::SEMI_COLON_TYPE;
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter, TokenIter};
+use lexer::model::constants::SEMI_COLON_TYPE;
 use std::fs::File;
 
 #[must_use]
