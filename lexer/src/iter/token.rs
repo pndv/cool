@@ -173,6 +173,7 @@ impl BaseTokenIter for BufferedTokenIter {
 }
 
 impl BufferedTokenIter {
+  #[must_use]
   pub fn gen_iter_till(&mut self, read_till_token: &Token) -> Self {
     let tokens = self.collect_till(read_till_token);
     Self::from(tokens)
@@ -236,7 +237,7 @@ mod tests {
       let iter = TokenIter::from(file);
 
       for t in iter {
-        println!("{:?}", t);
+        println!("{t}");
         let is_error_token = matches!(t, Token::Error { .. });
         assert!(!is_error_token);
       }

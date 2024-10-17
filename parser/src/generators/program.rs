@@ -6,7 +6,8 @@ use std::fs::File;
 
 #[must_use]
 pub(crate) fn gen_programs(file_path: &str) -> Result<Program, String> {
-  let file = File::open(file_path).expect(format!("Cannot open file {file_path}").as_str());
+  let err_message = format!("Cannot open file {}", &file_path);
+  let file = File::open(file_path).expect(err_message.as_str());
   gen_program_from_file(file)
 }
 

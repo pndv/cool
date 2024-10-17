@@ -4,16 +4,16 @@ use crate::model::{Ident, Type};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Feature {
-  pub feature_name: Ident,
+  pub name: Ident,
   pub formals: Option<Vec<Formal>>,
   pub return_type: Type,
   pub expr: Option<Box<Expression>>,
 }
 
 impl From<(Ident, Option<Vec<Formal>>, Type, Box<Expression>)> for Feature {
-  fn from((feature_name, formals, return_type, expr): (Ident, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
+  fn from((name, formals, return_type, expr): (Ident, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
     Feature {
-      feature_name,
+      name,
       formals,
       return_type,
       expr: Some(expr),
@@ -22,9 +22,9 @@ impl From<(Ident, Option<Vec<Formal>>, Type, Box<Expression>)> for Feature {
 }
 
 impl From<(Ident, Type, Box<Expression>)> for Feature {
-  fn from((feature_name, return_type, expr): (Ident, Type, Box<Expression>)) -> Self {
+  fn from((name, return_type, expr): (Ident, Type, Box<Expression>)) -> Self {
     Feature {
-      feature_name,
+      name,
       formals: None,
       return_type,
       expr: Some(expr),
@@ -33,9 +33,9 @@ impl From<(Ident, Type, Box<Expression>)> for Feature {
 }
 
 impl From<(Ident, Type)> for Feature {
-  fn from((feature_name, return_type): (Ident, Type)) -> Self {
+  fn from((name, return_type): (Ident, Type)) -> Self {
     Feature {
-      feature_name,
+      name,
       formals: None,
       return_type,
       expr: None,

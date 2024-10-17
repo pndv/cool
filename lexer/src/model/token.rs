@@ -1,8 +1,8 @@
-﻿use crate::model::constants::*;
+﻿use crate::model::constants::{KEYWORD_CASE_END, KEYWORD_CASE_START, KEYWORD_CLASS, KEYWORD_COND_ELSE, KEYWORD_COND_IF_END, KEYWORD_COND_IF_START, KEYWORD_COND_THEN, KEYWORD_FALSE, KEYWORD_IN, KEYWORD_INHERITS, KEYWORD_IS_VOID, KEYWORD_LET, KEYWORD_LOOP, KEYWORD_LOOP_END, KEYWORD_NEW, KEYWORD_NOT, KEYWORD_OF, KEYWORD_SELF_TYPE, KEYWORD_TRUE, KEYWORD_WHILE};
 use std::fmt::{Display, Formatter};
 use std::mem::discriminant;
 
-#[derive(Eq, Debug, Clone, Hash)]
+#[derive(Eq, Debug, Clone)]
 pub enum Token {
   Empty,
   EOF, //end of file
@@ -80,103 +80,104 @@ impl Display for Token {
       Token::Empty => write!(f, "Empty"),
       Token::EOF => write!(f, "EOF"),
 
-      Token::Error { value, line_num, line_pos } => write!(f, "{}:{} Error [ {} ]", line_num, line_pos, value),
-      Token::Comment { value, line_num, line_pos } => write!(f, "{}:{} Comment [ {} ]", line_num, line_pos, value),
-      Token::Ident { value, line_num, line_pos } => write!(f, "{}:{} Ident [ {} ]", line_num, line_pos, value),
-      Token::String { value, line_num, line_pos } => write!(f, "{}:{} String [ {} ]", line_num, line_pos, value),
+      Token::Error { value, line_num, line_pos } => write!(f, "{line_num}:{line_pos} Error [ {value} ]"),
+      Token::Comment { value, line_num, line_pos } => write!(f, "{line_num}:{line_pos} Comment [ {value} ]"),
+      Token::Ident { value, line_num, line_pos } => write!(f, "{line_num}:{line_pos} Ident [ {value} ]"),
+      Token::String { value, line_num, line_pos } => write!(f, "{line_num}:{line_pos} String [ {value} ]"),
 
-      Token::Int { value, line_num, line_pos } => write!(f, "{}:{} Int [ {} ]", line_num, line_pos, value),
+      Token::Int { value, line_num, line_pos } => write!(f, "{line_num}:{line_pos} Int [ {value} ]"),
 
-      Token::Dot { line_num, line_pos } => write!(f, "{}:{} Dot", line_num, line_pos),
-      Token::Comma { line_num, line_pos } => write!(f, "{}:{} Comma", line_num, line_pos),
-      Token::Assign { line_num, line_pos } => write!(f, "{}:{} Assign", line_num, line_pos),
-      Token::CaseBranch { line_num, line_pos } => write!(f, "{}:{} Lambda", line_num, line_pos),
-      Token::At { line_num, line_pos } => write!(f, "{}:{} At", line_num, line_pos),
-      Token::Tilde { line_num, line_pos } => write!(f, "{}:{} Tilde", line_num, line_pos),
-      Token::Plus { line_num, line_pos } => write!(f, "{}:{} Plus", line_num, line_pos),
-      Token::Minus { line_num, line_pos } => write!(f, "{}:{} Minus", line_num, line_pos),
-      Token::Star { line_num, line_pos } => write!(f, "{}:{} Star", line_num, line_pos),
-      Token::ForwardSlash { line_num, line_pos } => write!(f, "{}:{} ForwardSlash", line_num, line_pos),
-      Token::LessOrEqual { line_num, line_pos } => write!(f, "{}:{} LessOrEqual", line_num, line_pos),
-      Token::Less { line_num, line_pos } => write!(f, "{}:{} Less", line_num, line_pos),
-      Token::Equal { line_num, line_pos } => write!(f, "{}:{} Equal", line_num, line_pos),
-      Token::Colon { line_num, line_pos } => write!(f, "{}:{} Colon", line_num, line_pos),
-      Token::SemiColon { line_num, line_pos } => write!(f, "{}:{} SemiColon", line_num, line_pos),
-      Token::OpenParen { line_num, line_pos } => write!(f, "{}:{} OpenParen", line_num, line_pos),
-      Token::CloseParen { line_num, line_pos } => write!(f, "{}:{} CloseParen", line_num, line_pos),
-      Token::OpenCurl { line_num, line_pos } => write!(f, "{}:{} OpenCurl", line_num, line_pos),
-      Token::CloseCurl { line_num, line_pos } => write!(f, "{}:{} CloseCurl", line_num, line_pos),
-      Token::Class { line_num, line_pos } => write!(f, "{}:{} Class", line_num, line_pos),
-      Token::Inherits { line_num, line_pos } => write!(f, "{}:{} Inherits", line_num, line_pos),
-      Token::If { line_num, line_pos } => write!(f, "{}:{} If", line_num, line_pos),
-      Token::Then { line_num, line_pos } => write!(f, "{}:{} Then", line_num, line_pos),
-      Token::Else { line_num, line_pos } => write!(f, "{}:{} Else", line_num, line_pos),
-      Token::EndIf { line_num, line_pos } => write!(f, "{}:{} EndIf", line_num, line_pos),
-      Token::While { line_num, line_pos } => write!(f, "{}:{} While", line_num, line_pos),
-      Token::Loop { line_num, line_pos } => write!(f, "{}:{} Loop", line_num, line_pos),
-      Token::EndLoop { line_num, line_pos } => write!(f, "{}:{} EndLoop", line_num, line_pos),
-      Token::Let { line_num, line_pos } => write!(f, "{}:{} Let", line_num, line_pos),
-      Token::In { line_num, line_pos } => write!(f, "{}:{} In", line_num, line_pos),
-      Token::Case { line_num, line_pos } => write!(f, "{}:{} Case", line_num, line_pos),
-      Token::Of { line_num, line_pos } => write!(f, "{}:{} Of", line_num, line_pos),
-      Token::EndCase { line_num, line_pos } => write!(f, "{}:{} EndCase", line_num, line_pos),
-      Token::New { line_num, line_pos } => write!(f, "{}:{} New", line_num, line_pos),
-      Token::IsVoid { line_num, line_pos } => write!(f, "{}:{} IsVoid", line_num, line_pos),
-      Token::Not { line_num, line_pos } => write!(f, "{}:{} Not", line_num, line_pos),
-      Token::True { line_num, line_pos } => write!(f, "{}:{} True", line_num, line_pos),
-      Token::False { line_num, line_pos } => write!(f, "{}:{} False", line_num, line_pos),
-      Token::SelfType { line_num, line_pos } => write!(f, "{}:{} SelfType", line_num, line_pos),
+      Token::Dot { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Dot"),
+      Token::Comma { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Comma"),
+      Token::Assign { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Assign"),
+      Token::CaseBranch { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Lambda"),
+      Token::At { line_num, line_pos } => write!(f, "{line_num}:{line_pos} At"),
+      Token::Tilde { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Tilde"),
+      Token::Plus { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Plus"),
+      Token::Minus { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Minus"),
+      Token::Star { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Star"),
+      Token::ForwardSlash { line_num, line_pos } => write!(f, "{line_num}:{line_pos} ForwardSlash"),
+      Token::LessOrEqual { line_num, line_pos } => write!(f, "{line_num}:{line_pos} LessOrEqual"),
+      Token::Less { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Less"),
+      Token::Equal { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Equal"),
+      Token::Colon { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Colon"),
+      Token::SemiColon { line_num, line_pos } => write!(f, "{line_num}:{line_pos} SemiColon"),
+      Token::OpenParen { line_num, line_pos } => write!(f, "{line_num}:{line_pos} OpenParen"),
+      Token::CloseParen { line_num, line_pos } => write!(f, "{line_num}:{line_pos} CloseParen"),
+      Token::OpenCurl { line_num, line_pos } => write!(f, "{line_num}:{line_pos} OpenCurl"),
+      Token::CloseCurl { line_num, line_pos } => write!(f, "{line_num}:{line_pos} CloseCurl"),
+      Token::Class { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Class"),
+      Token::Inherits { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Inherits"),
+      Token::If { line_num, line_pos } => write!(f, "{line_num}:{line_pos} If"),
+      Token::Then { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Then"),
+      Token::Else { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Else"),
+      Token::EndIf { line_num, line_pos } => write!(f, "{line_num}:{line_pos} EndIf"),
+      Token::While { line_num, line_pos } => write!(f, "{line_num}:{line_pos} While"),
+      Token::Loop { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Loop"),
+      Token::EndLoop { line_num, line_pos } => write!(f, "{line_num}:{line_pos} EndLoop"),
+      Token::Let { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Let"),
+      Token::In { line_num, line_pos } => write!(f, "{line_num}:{line_pos} In"),
+      Token::Case { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Case"),
+      Token::Of { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Of"),
+      Token::EndCase { line_num, line_pos } => write!(f, "{line_num}:{line_pos} EndCase"),
+      Token::New { line_num, line_pos } => write!(f, "{line_num}:{line_pos} New"),
+      Token::IsVoid { line_num, line_pos } => write!(f, "{line_num}:{line_pos} IsVoid"),
+      Token::Not { line_num, line_pos } => write!(f, "{line_num}:{line_pos} Not"),
+      Token::True { line_num, line_pos } => write!(f, "{line_num}:{line_pos} True"),
+      Token::False { line_num, line_pos } => write!(f, "{line_num}:{line_pos} False"),
+      Token::SelfType { line_num, line_pos } => write!(f, "{line_num}:{line_pos} SelfType"),
     }
   }
 }
 
 impl Token {
+  #[must_use] 
   pub fn get_pos(&self) -> (u32, u32) {
     match self {
       Token::Empty | Token::EOF => (0, 0),
-      Token::Error { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Comment { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Ident { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Dot { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Comma { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Assign { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::CaseBranch { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::At { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Tilde { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Plus { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Minus { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Star { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::ForwardSlash { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::LessOrEqual { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Less { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Equal { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Colon { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::SemiColon { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::OpenParen { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::CloseParen { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::OpenCurl { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::CloseCurl { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Class { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Inherits { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::If { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Then { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Else { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::EndIf { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::While { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Loop { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::EndLoop { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Let { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::In { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Case { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Of { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::EndCase { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::New { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::IsVoid { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Not { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::Int { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::String { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::True { line_num, line_pos, .. } => (*line_num, *line_pos),
-      Token::False { line_num, line_pos, .. } => (*line_num, *line_pos),
+      Token::Error { line_num, line_pos, .. } |
+      Token::Comment { line_num, line_pos, .. } |
+      Token::Ident { line_num, line_pos, .. } |
+      Token::Dot { line_num, line_pos, .. } |
+      Token::Comma { line_num, line_pos, .. } |
+      Token::Assign { line_num, line_pos, .. } |
+      Token::CaseBranch { line_num, line_pos, .. } |
+      Token::At { line_num, line_pos, .. } |
+      Token::Tilde { line_num, line_pos, .. } |
+      Token::Plus { line_num, line_pos, .. } |
+      Token::Minus { line_num, line_pos, .. } |
+      Token::Star { line_num, line_pos, .. } |
+      Token::ForwardSlash { line_num, line_pos, .. } |
+      Token::LessOrEqual { line_num, line_pos, .. } |
+      Token::Less { line_num, line_pos, .. } |
+      Token::Equal { line_num, line_pos, .. } |
+      Token::Colon { line_num, line_pos, .. } |
+      Token::SemiColon { line_num, line_pos, .. } |
+      Token::OpenParen { line_num, line_pos, .. } |
+      Token::CloseParen { line_num, line_pos, .. } |
+      Token::OpenCurl { line_num, line_pos, .. } |
+      Token::CloseCurl { line_num, line_pos, .. } |
+      Token::Class { line_num, line_pos, .. } |
+      Token::Inherits { line_num, line_pos, .. } |
+      Token::If { line_num, line_pos, .. } |
+      Token::Then { line_num, line_pos, .. } |
+      Token::Else { line_num, line_pos, .. } |
+      Token::EndIf { line_num, line_pos, .. } |
+      Token::While { line_num, line_pos, .. } |
+      Token::Loop { line_num, line_pos, .. } |
+      Token::EndLoop { line_num, line_pos, .. } |
+      Token::Let { line_num, line_pos, .. } |
+      Token::In { line_num, line_pos, .. } |
+      Token::Case { line_num, line_pos, .. } |
+      Token::Of { line_num, line_pos, .. } |
+      Token::EndCase { line_num, line_pos, .. } |
+      Token::New { line_num, line_pos, .. } |
+      Token::IsVoid { line_num, line_pos, .. } |
+      Token::Not { line_num, line_pos, .. } |
+      Token::Int { line_num, line_pos, .. } |
+      Token::String { line_num, line_pos, .. } |
+      Token::True { line_num, line_pos, .. } |
+      Token::False { line_num, line_pos, .. } |
       Token::SelfType { line_num, line_pos, .. } => (*line_num, *line_pos),
     }
   }
@@ -221,6 +222,7 @@ impl Token {
     }
   }
   
+  #[must_use] 
   pub fn get_key(&self) -> &str {
     match self {
       Token::Empty => "Empty", 

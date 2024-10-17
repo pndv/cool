@@ -50,5 +50,5 @@ fn gen_case_branch(iter: &mut BufferedTokenIter) -> Result<CaseBranch, String> {
   let expr = gen_expression(iter, &SEMI_COLON_TYPE)?;
   iter.consume_required(&SEMI_COLON_TYPE)?;
 
-  Ok(CaseBranch { id_type, id, expr })
+  Ok(CaseBranch { id, id_type, expr })
 }

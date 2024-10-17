@@ -11,7 +11,7 @@ pub(crate) mod program;
 pub struct Ident(pub Cow<'static, str>);
 impl Display for Ident {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "Ident {}", self.0)
+    write!(f, "Ident [ {} ]", self.0)
   }
 }
 
@@ -26,7 +26,7 @@ pub struct Type(pub Cow<'static, str>);
 
 impl Display for Type {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "Type {}", self.0)
+    write!(f, "Type [ {} ]", self.0)
   }
 }
 

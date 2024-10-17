@@ -60,7 +60,7 @@ fn gen_let_init(iter: &mut BufferedTokenIter) -> Result<LetInit, String> {
     expr = Some(init_expr);
   }
 
-  Ok(LetInit { expr, id, id_type })
+  Ok(LetInit { id, id_type, expr })
 }
 
 #[cfg(test)]
