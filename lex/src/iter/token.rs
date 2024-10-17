@@ -1,88 +1,66 @@
-﻿use crate::model::char::ProgramChar;
-use crate::iter::char::CharIter;
-use crate::model::constants::{ AT, CLOSE_CURL, CLOSE_PAREN, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LESS_THAN, MINUS, OPEN_CURL, OPEN_PAREN, PLUS, SEMI_COLON, STAR, TILDE};
-use crate::model::token::{Token, TokenType};
-use std::fmt::Display;
+﻿use crate::iter::char::CharIter;
+use crate::model::token::Token;
+use std::fmt::{Debug};
 use std::fs::File;
 use std::iter::Peekable;
 use std::mem::discriminant;
 use std::vec::IntoIter;
 
+pub trait BaseTokenIter: Iterator {
+  fn next_token(&mut self) -> Option<Token>;
+  fn peek(&mut self) -> Option<&Token>;
+  fn get_last_pos(&self) -> (u32, u32);
 
-trait TokenIterator : Iterator {
-  
-}
-
-
-#[derive(Debug)]
-pub struct FileTokenIter<'a> {
-  char_iter: CharIter,
-  peeked: Option<Token<'a>>,
-}
-
-impl From<String> for FileTokenIter {
-  fn from(value: String) -> Self {
-    FileTokenIter { char_iter: CharIter::from(value), peeked: None }
-  }
-}
-
-impl From<File> for FileTokenIter {
-  fn from(value: File) -> Self {
-    FileTokenIter { char_iter: CharIter::from(value), peeked: None }
-  }
-}
-
-impl<'a> Iterator for FileTokenIter<'a> {
-  type Item = Token<'a>;
-  fn next(&mut self) -> Option<Self::Item> {
-    if self.peeked.is_some() {
-      let output = self.peeked.clone();
-      self.peeked = self.next_token();
-      output
-    } else {
-      let output = self.next_token();
-      self.peeked = self.next_token();
-      output
-    }
-  }
-}
-
-impl FileTokenIter {
-  /// Returns if there are more tokens to be consumed
-  pub fn has_next(&mut self) -> bool {
-    self.peeked.is_some()
-  }
-
-  /// Returns the result of consuming the next token with [expected]
-  pub fn consume_required(&mut self, expected: &Token) -> bool {
-    matches!(self.next(), Some(token) if token == *expected)
-  }
-
-  /// Consumes next token without returning it, does not throw any error 
-  pub fn consume_next(&mut self) {
-    let _ = self.next();
-  }
-
-  /// Peek next token
-  pub fn peek(&mut self) -> Option<&Token> {
-    self.peeked.as_ref()
-  }
-
-  /// Peek and match the next token with [expected]
-  pub fn peek_eq(&mut self, expected: &Token) -> bool {
+  fn peek_eq(&mut self, expected: &Token) -> bool {
     match self.peek() {
       Some(t) => discriminant(expected) == discriminant(t),
       _ => false,
     }
   }
 
-  /// Collects tokens till iterator reached [expected] token
-  /// Keeps in account nested braces, parenthesis, and other expressions
-  ///
-  /// # Panics   
-  ///
-  /// When it reaches the end of stream and the next token is not EOF
-  pub fn collect_till(&mut self, read_till_token: &Token) -> Peekable<IntoIter<Token>> {
+  fn next_if_eq(&mut self, expected: &Token) -> Option<Token> {
+    if self.peek_eq(expected) {
+      self.next_token()
+    } else {
+      None
+    }
+  }
+
+  fn consume_next_if_eq(&mut self, expected: &Token) {
+    if self.peek_eq(expected) {
+      let _ = self.next_token();
+    } 
+  }
+
+  /// Returns if there are more tokens to be consumed
+  fn has_next(&mut self) -> bool {
+    self.peek().is_some()
+  }
+
+  fn get_required(&mut self, expected: &Token) -> Result<Token, String> {
+    match self.next_token() {
+      Some(token) if token == *expected => Ok(token),
+      None if *expected == Token::EOF => Ok(Token::EOF),
+
+      Some(token) => Err(format!("expected {expected}, found {token}")),
+      None => Err(format!("expected {expected} but reached end of stream")),
+    }
+  }
+
+  /// Returns the result of consuming the next token with [expected]
+  fn consume_required(&mut self, expected: &Token) -> Result<(), String> {
+    match self.get_required(expected) {
+      Ok(_) => Ok(()),
+      Err(e) => Err(e),
+    }
+  }
+
+  /// Consumes next token without returning it, does not throw any error 
+  fn consume_next(&mut self) {
+    let _ = self.next_token();
+  }
+
+  fn collect_till(&mut self, read_till_token: &Token) -> Vec<Token> {
     let mut tokens: Vec<Token> = vec![];
 
     let mut seen_open_curl = 0;
@@ -94,17 +72,11 @@ impl FileTokenIter {
 
     // read tokens, accounting for matching brackets and matching expressions
     loop {
-      if self.peek_eq(read_till_token) &&
-          seen_open_curl == 0 &&
-          seen_open_paren == 0 &&
-          seen_start_if == 0 &&
-          seen_start_case == 0 &&
-          seen_start_loop == 0 &&
-          seen_start_let == 0 {
+      if self.peek_eq(read_till_token) && seen_open_curl == 0 && seen_open_paren == 0 && seen_start_if == 0 && seen_start_case == 0 && seen_start_loop == 0 && seen_start_let == 0 {
         break; // reached the real end, accounted for all matching brackets
       }
 
-      let token = match self.next() {
+      let token = match self.next_token() {
         None => {
           assert_eq!(seen_open_curl, 0);
           assert_eq!(seen_open_paren, 0);
@@ -113,26 +85,32 @@ impl FileTokenIter {
         Some(t) => t,
       };
 
-      let Token{kind,..} = token;
-      
-      match kind {
-        TokenType::OpenParen  => seen_open_paren += 1,
-        TokenType::CloseParen => seen_open_paren -= 1,
+      match token {
+        Token::OpenParen { .. } => seen_open_paren += 1,
 
-        TokenType::OpenCurl => seen_open_curl += 1,
-        TokenType::CloseCurl => seen_open_curl -= 1,
+        Token::CloseParen { .. } => seen_open_paren -= 1,
 
-        TokenType::If => seen_start_if += 1,
-        TokenType::EndIf => seen_start_if -= 1,
+        Token::OpenCurl { .. } => seen_open_curl += 1,
 
-        TokenType::Case => seen_start_case += 1,
-        TokenType::EndCase => seen_start_case -= 1,
+        Token::CloseCurl { .. } => seen_open_curl -= 1,
 
-        TokenType::Loop => seen_start_loop += 1,
-        TokenType::EndLoop => seen_start_loop -= 1,
+        Token::If { .. } => seen_start_if += 1,
 
-        TokenType::Let => seen_start_let += 1,
-        TokenType::In => seen_start_let -= 1,
+        Token::EndIf { .. } => seen_start_if -= 1,
+
+        Token::Case { .. } => seen_start_case += 1,
+
+        Token::EndCase { .. } => seen_start_case -= 1,
+
+        Token::Loop { .. } => seen_start_loop += 1,
+
+        Token::EndLoop { .. } => seen_start_loop -= 1,
+
+        Token::Let { .. } => seen_start_let += 1,
+
+        Token::In { .. } => seen_start_let -= 1,
+        
+        Token::Comment {..} => continue,
 
         _ => ()
       }
@@ -140,225 +118,110 @@ impl FileTokenIter {
       tokens.push(token);
     }
 
-    if self.peek().is_some() {
+    if self.has_next() {
       // If there are more tokens, then the next token in iterator must match the `read_till_token`;
       // Otherwise we have reached the end of list, no need to assert
       assert!(self.peek_eq(read_till_token));
     }
 
-    tokens.into_iter().peekable()
+    tokens
   }
+}
 
+pub struct BufferedTokenIter {
+  buffer: Peekable<IntoIter<Token>>,
+  last_line_num: u32,
+  last_line_pos: u32,
+}
+
+impl From<Vec<Token>> for BufferedTokenIter {
+  fn from(value: Vec<Token>) -> Self {
+    BufferedTokenIter { buffer: value.into_iter().peekable(), last_line_num: 0, last_line_pos: 0 }
+  }
+}
+
+impl From<TokenIter> for BufferedTokenIter {
+  fn from(iter: TokenIter) -> Self {
+    let tokens: Vec<Token> = iter.collect();
+    tokens.into()
+  }
+}
+
+impl Iterator for BufferedTokenIter {
+  type Item = Token;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let t = self.buffer.next();
+    if let Some(ref token) = t {
+      (self.last_line_num, self.last_line_pos) = token.get_pos();
+    }
+
+    t
+  }
+}
+
+impl BaseTokenIter for BufferedTokenIter {
   fn next_token(&mut self) -> Option<Token> {
-    let mut output: Option<Token> = None;
-    let mut token: Token = Token::empty();
-
-    while let Some(fc) = self.char_iter.next() {
-      if fc.is_whitespace() {
-        continue;
-      }
-
-      let ProgramChar { char_at, line_num, line_pos } = fc;
-
-      match char_at {
-        DOT | COMMA | AT | TILDE | STAR | FORWARD_SLASH | PLUS | COLON | SEMI_COLON | CLOSE_PAREN | OPEN_CURL | CLOSE_CURL =>
-          {
-            token = Token::from(ProgramChar { char_at, line_num, line_pos });
-            break;
-          }
-
-        LESS_THAN if self.char_iter.peek_eq(EQUAL) => {
-          self.char_iter.consume_next();
-          token = Token::LessOrEqual { line_num, line_pos };
-          break;
-        }
-        LESS_THAN if self.char_iter.peek_eq(MINUS) => {
-          self.char_iter.consume_next();
-          token = Token::Assign { line_num, line_pos };
-          break;
-        }
-        LESS_THAN => {
-          token = Token::Less { line_num, line_pos };
-          break;
-        }
-
-        MINUS if self.char_iter.peek_eq(MINUS) => {
-          self.char_iter.consume_next();
-          token = self.get_single_line_comment();
-          break;
-        }
-        MINUS => {
-          token = Token::Minus { line_num, line_pos };
-          break;
-        }
-
-        EQUAL if self.char_iter.peek_eq(GREATER_THAN) => {
-          self.char_iter.consume_next();
-          token = Token::CaseBranch { line_num, line_pos };
-          break;
-        }
-        EQUAL => {
-          token = Token::Equal { line_num, line_pos };
-          break;
-        }
-
-        OPEN_PAREN if self.char_iter.peek_eq(STAR) => {
-          self.char_iter.consume_next();
-          token = self.get_multi_line_comment();
-          break;
-        }
-        OPEN_PAREN => {
-          token = Token::OpenParen { line_num, line_pos };
-          break;
-        }
-
-        DOUBLE_QUOTE => {
-          token = self.get_string();
-          break;
-        }
-
-        '0'..='9' => {
-          token = self.get_int();
-          break;
-        }
-
-        'a'..='z' | 'A'..='Z' | '_' => {
-          token = self.get_ident();
-          break;
-        }
-
-        c => {
-          token = Token::Error { value: format!("Unexpected char: {c}"), line_num, line_pos };
-          break;
-        }
-      }
-    }
-
-    if token != Token::Empty {
-      output = Some(token);
-    }
-
-    output
+    self.next()
   }
 
-  fn get_string(&mut self) -> Token {
-    let (_, line_num, line_pos) = self.char_iter.get_cur_pos();
-
-    let mut token: Token = Token::String { value: String::new(), line_num, line_pos };
-    let Token::String { ref mut value, .. } = token else { unreachable!() };
-
-    loop {
-      let Some(ProgramChar { char_at, .. }) = self.char_iter.next() else {
-        return Token::Error { value: String::from("Improperly terminated string literal"), line_num, line_pos };
-      };
-
-      match char_at {
-        '\0' => {
-          return Token::Error { value: String::from("Null Character"), line_num, line_pos };
-        }
-
-        '\\' if self.char_iter.peek_eq('t') => {
-          value.push('\t');
-          self.char_iter.consume_next();
-        }
-        '\\' if self.char_iter.peek_eq('n') => {
-          value.push('\n');
-          self.char_iter.consume_next();
-        }
-        '\\' if self.char_iter.peek_eq('r') => {
-          value.push('\r');
-          self.char_iter.consume_next();
-        }
-        '\\' if self.char_iter.peek_eq('v') => {
-          value.push('\u{c}');
-          self.char_iter.consume_next();
-        }
-        '\\' if self.char_iter.peek_eq('f') => {
-          value.push('\u{b}');
-          self.char_iter.consume_next();
-        }
-
-        DOUBLE_QUOTE => return token,
-
-        other => value.push(other),
-      }
-    }
+  fn peek(&mut self) -> Option<&Token> {
+    self.buffer.peek()
   }
 
-  fn get_int(&mut self) -> Token {
-    let (initial_digit, line_num, line_pos) = self.char_iter.get_cur_pos();
+  fn get_last_pos(&self) -> (u32, u32) { (self.last_line_num, self.last_line_pos) }
+}
 
-    let mut int_val = initial_digit as i32 - '0' as i32;
+impl BufferedTokenIter {
+  pub fn gen_iter_till(&mut self, read_till_token: &Token) -> Self {
+    let tokens = self.collect_till(read_till_token);
+    Self::from(tokens)
+  }
+}
 
-    while let Some(peeked_char) = self.char_iter.peek() {
-      match peeked_char {
-        '0'..='9' => {
-          let Some(ProgramChar { char_at, .. }) = self.char_iter.next() else { unreachable!() };
-          let t = char_at as i32 - '0' as i32;
-          int_val *= 10;
-          int_val += t;
-        }
-        _ => break,
-      }
+#[derive(Debug)]
+pub struct TokenIter {
+  char_iter: Peekable<CharIter>,
+  last_line_num: u32,
+  last_line_pos: u32,
+}
+
+impl From<String> for TokenIter {
+  fn from(value: String) -> Self {
+    TokenIter { char_iter: CharIter::from(value).peekable(), last_line_num: 0, last_line_pos: 0 }
+  }
+}
+
+impl From<File> for TokenIter {
+  fn from(value: File) -> Self {
+    TokenIter { char_iter: CharIter::from(value).peekable(), last_line_num: 0, last_line_pos: 0 }
+  }
+}
+
+
+
+impl Iterator for TokenIter {
+  type Item = Token;
+  fn next(&mut self) -> Option<Self::Item> {
+    let t = self.char_iter.next();
+    if let Some(ref token) = t {
+      (self.last_line_num, self.last_line_pos) = token.get_pos();
     }
 
-    Token::Int { value: int_val, line_num, line_pos }
+    t
+  }
+}
+
+impl BaseTokenIter for TokenIter {
+  fn next_token(&mut self) -> Option<Token> {
+    self.next()
   }
 
-  fn get_single_line_comment(&mut self) -> Token {
-    let (_, line_num, line_pos) = self.char_iter.get_cur_pos();
-    let mut token = Token::Comment { value: String::new(), line_num, line_pos };
-    let Token::Comment { ref mut value, .. } = token else { unreachable!() };
-
-    // Comments are from `--` and either till end of line or end of file
-    for ProgramChar { char_at, .. } in self.char_iter.by_ref() {
-      match char_at {
-        CARRIAGE_RETURN | LINE_FEED => break,
-        _ => value.push(char_at),
-      }
-    }
-
-    token
+  fn peek(&mut self) -> Option<&Token> {
+    self.char_iter.peek()
   }
 
-  fn get_multi_line_comment(&mut self) -> Token {
-    let (_, line_num, line_pos) = self.char_iter.get_cur_pos();
-    let mut token = Token::Comment { value: String::new(), line_num, line_pos };
-    let Token::Comment { ref mut value, .. } = token else { unreachable!() };
-
-    // Comments are between `(*` and `*)`
-    while let Some(ProgramChar { char_at, .. }) = self.char_iter.next() {
-      match char_at {
-        STAR if self.char_iter.peek_eq(CLOSE_PAREN) => break,
-        _ => value.push(char_at),
-      }
-    }
-
-    token
-  }
-
-  fn get_ident(&mut self) -> Token {
-    let (initial_ident, line_num, line_pos) = self.char_iter.get_cur_pos();
-    let mut ident_val = String::from(initial_ident);
-    let mut token = Token::Ident { value: ident_val, line_num, line_pos };
-    let Token::Ident { ref mut value, .. } = token else { unreachable!() };
-
-    while let Some(peek) = self.char_iter.peek() {
-      match peek {
-        'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => {
-          let Some(ProgramChar { char_at, .. }) = self.char_iter.next() else { unreachable!() };
-          value.push(char_at);
-        }
-        _ => break,
-      }
-    }
-
-    if let Some(keyword_token) = token.get_keyword() {
-      token = keyword_token;
-    }
-
-    token
-  }
+  fn get_last_pos(&self) -> (u32, u32) { (self.last_line_num, self.last_line_pos) }
 }
 
 #[cfg(test)]
@@ -367,12 +230,12 @@ mod tests {
 
   #[test]
   fn test_token_iterator() {
-    let file1 = File::open("test_resources/programs/cool.cl").unwrap();
-    let file2 = File::open("test_resources/programs/arith.cl").unwrap();
+    let file1 = File::open("../test_resources/programs/cool.cl").unwrap();
+    let file2 = File::open("../test_resources/programs/arith.cl").unwrap();
     let files = vec![file1, file2];
 
     for file in files {
-      let mut iter = FileTokenIter::from(file);
+      let iter = TokenIter::from(file);
 
       for t in iter {
         println!("{:?}", t);

@@ -1,5 +1,6 @@
 ﻿use crate::model::char::ProgramChar;
-use crate::model::constants::{CARRIAGE_RETURN, LINE_FEED, NULL_CHAR};
+use crate::model::constants::{AT, CARRIAGE_RETURN, CLOSE_CURL, CLOSE_PAREN, COLON, COMMA, DOT, DOUBLE_QUOTE, EQUAL, FORWARD_SLASH, GREATER_THAN, LESS_THAN, LINE_FEED, MINUS, NULL_CHAR, OPEN_CURL, OPEN_PAREN, PLUS, SEMI_COLON, STAR, TILDE};
+use crate::model::token::Token;
 use std::fs::File;
 use std::io::{BufReader, Bytes, Read, Seek, SeekFrom};
 use std::iter::Peekable;
@@ -49,9 +50,138 @@ impl From<String> for CharIter {
 }
 
 impl Iterator for CharIter {
-  type Item = ProgramChar;
+  type Item = Token;
 
   fn next(&mut self) -> Option<Self::Item> {
+    let mut output: Option<Token> = None;
+    let mut token: Token = Token::Empty;
+
+    while let Some(c) = self.next_char() {
+      if c.is_whitespace() {
+        continue;
+      }
+
+      let ProgramChar { char_at, line_num, line_pos } = c;
+
+      match char_at {
+        LESS_THAN if self.next_if_eq(EQUAL).is_some() => {
+          token = Token::LessOrEqual { line_num, line_pos };
+          break;
+        }
+        LESS_THAN if self.next_if_eq(MINUS).is_some() => {
+          token = Token::Assign { line_num, line_pos };
+          break;
+        }
+        LESS_THAN => {
+          token = Token::Less { line_num, line_pos };
+          break;
+        }
+
+        DOT => {
+          token = Token::Dot { line_num, line_pos };
+          break;
+        }
+        COMMA => {
+          token = Token::Comma { line_num, line_pos };
+          break;
+        }
+        AT => {
+          token = Token::At { line_num, line_pos };
+          break;
+        }
+        TILDE => {
+          token = Token::Tilde { line_num, line_pos };
+          break;
+        }
+        STAR => {
+          token = Token::Star { line_num, line_pos };
+          break;
+        }
+        FORWARD_SLASH => {
+          token = Token::ForwardSlash { line_num, line_pos };
+          break;
+        }
+        PLUS => {
+          token = Token::Plus { line_num, line_pos };
+          break;
+        }
+
+        MINUS if self.next_if_eq(MINUS).is_some() => {
+          token = self.get_single_line_comment();
+          break;
+        }
+        MINUS => {
+          token = Token::Minus { line_num, line_pos };
+          break;
+        }
+
+        EQUAL if self.next_if_eq(GREATER_THAN).is_some() => {
+          token = Token::CaseBranch { line_num, line_pos };
+          break;
+        }
+        EQUAL => {
+          token = Token::Equal { line_num, line_pos };
+          break;
+        }
+
+        COLON => {
+          token = Token::Colon { line_num, line_pos };
+          break;
+        }
+        SEMI_COLON => {
+          token = Token::SemiColon { line_num, line_pos };
+          break;
+        }
+        CLOSE_PAREN => {
+          token = Token::CloseParen { line_num, line_pos };
+          break;
+        }
+        OPEN_PAREN if self.next_if_eq(STAR).is_some() => {
+          token = self.get_multi_line_comment();
+          break;
+        }
+        OPEN_PAREN => {
+          token = Token::OpenParen { line_num, line_pos };
+          break;
+        }
+
+        OPEN_CURL => {
+          token = Token::OpenCurl { line_num, line_pos };
+          break;
+        }
+        CLOSE_CURL => {
+          token = Token::CloseCurl { line_num, line_pos };
+          break;
+        }
+        DOUBLE_QUOTE => {
+          token = self.get_string();
+          break;
+        }
+
+        '0'..='9' => {
+          token = self.get_int();
+          break;
+        }
+
+        'a'..='z' | 'A'..='Z' | '_' => {
+          token = self.get_ident();
+          break;
+        }
+
+        _ => { panic!("Unexpected char {c} at line {line_num} position {line_pos}") }
+      }
+    }
+
+    if token != Token::Empty {
+      output = Some(token);
+    }
+
+    output
+  }
+}
+
+impl CharIter {
+  fn next_char(&mut self) -> Option<ProgramChar> {
     match self.bytes_iter.next() {
       None => None,
 
@@ -102,9 +232,7 @@ impl Iterator for CharIter {
       }
     }
   }
-}
 
-impl CharIter {
   // Returns the current position of iterator in the file, along with the last read character
   pub(crate) fn get_cur_pos(&self) -> (char, u32, u32) {
     (self.curr_char, self.line_num, self.line_pos)
@@ -128,27 +256,139 @@ impl CharIter {
     }
   }
 
-  /// Consumes the next character without returning it, does not throw error if the stream is empty 
-  pub(crate) fn consume_next(&mut self) {
-    let _ = self.next();
+  /// Check if peeked character in stream is a digit
+  pub(crate) fn peek_is_digit(&mut self) -> bool {
+    match self.peek() {
+      None => false,
+      Some(c) => c >= '0' && c <= '9',
+    }
+  }
+
+  pub(crate) fn next_if_eq(&mut self, other: char) -> Option<ProgramChar> {
+    if self.peek_eq(other) {
+      self.next_char()
+    } else {
+      None
+    }
+  }
+  
+  fn get_single_line_comment(&mut self) -> Token {
+    let (_, line_num, line_pos) = self.get_cur_pos();
+    let mut token = Token::Comment { value: String::new(), line_num, line_pos };
+    let Token::Comment { ref mut value, .. } = token else {unreachable!()}; // mutable reference of `value` in `token`
+
+    // Comments are from `--` and either till end of line or end of file
+    while let Some(ProgramChar { char_at, .. }) = self.next_char() {
+      match char_at {
+        CARRIAGE_RETURN  if self.next_if_eq(LINE_FEED).is_some() => break,
+        CARRIAGE_RETURN | LINE_FEED => break,
+        _ => value.push(char_at),
+      }
+    }
+
+    token
+  }
+
+  fn get_multi_line_comment(&mut self) -> Token {
+    let (_, line_num, line_pos) = self.get_cur_pos();
+    let mut token = Token::Comment { value: String::new(), line_num, line_pos };
+    let Token::Comment { ref mut value, .. } = token else { unreachable!() }; // mutable reference of `value` in `token`
+
+    // Comments are between `(*` and `*)`
+    while let Some(ProgramChar { char_at, .. }) = self.next_char() {
+      match char_at {
+        STAR if self.next_if_eq(CLOSE_PAREN).is_some() => break,
+        _ => value.push(char_at),
+      }
+    }
+
+    token
+  }
+
+  fn get_ident(&mut self) -> Token {
+    let (initial_ident, line_num, line_pos) = self.get_cur_pos();
+    let mut ident_val = String::from(initial_ident);
+
+    while let Some(peek) = self.peek() {
+      match peek {
+        'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => {
+          let c = self.next_char().unwrap().char_at;
+          ident_val.push(c);
+        }
+        _ => break,
+      }
+    }
+
+    let mut token = Token::Ident { value: ident_val, line_num, line_pos };
+
+    if let Some(keyword_token) = token.get_keyword() {
+      token = keyword_token;
+    }
+
+    token
+  }
+
+  fn get_int(&mut self) -> Token {
+    let (initial_digit, line_num, line_pos) = self.get_cur_pos();
+    let mut int_val = initial_digit as i32 - '0' as i32;
+
+    while self.peek_is_digit() {
+      let Some(ProgramChar { char_at, .. }) = self.next_char() else { unreachable!() };
+      let t = char_at as i32 - '0' as i32;
+      int_val *= 10;
+      int_val += t;
+    }
+
+    Token::Int { value: int_val, line_num, line_pos }
+  }
+
+  fn get_string(&mut self) -> Token {
+    let mut token_str = String::new();
+    let (_, line_num, line_pos) = self.get_cur_pos();
+    let mut cur_line_num = line_num;
+    let mut cur_line_pos = line_pos;
+    while let Some(c) = self.next_char() {
+      let ProgramChar { char_at, line_num: char_line, line_pos: char_pos } = c;
+      cur_line_num = char_line;
+      cur_line_pos = char_pos;
+
+      match char_at {
+        NULL_CHAR => return Token::Error { value: String::from("Null Character"), line_num: cur_line_num, line_pos: cur_line_pos },
+        DOUBLE_QUOTE => return Token::String { value: token_str, line_num, line_pos },
+
+        '\\' if self.next_if_eq('t').is_some() => token_str.push('\t'),
+        '\\' if self.next_if_eq('n').is_some() => token_str.push('\n'),
+        '\\' if self.next_if_eq('r').is_some() => token_str.push('\r'),
+        '\\' if self.next_if_eq('f').is_some() => token_str.push('\x0C'),
+        '\\' if self.next_if_eq('v').is_some() => token_str.push('\x0B'),
+        '\\' => token_str.push('\\'),
+        x => token_str.push(x),
+      }
+    }
+
+    Token::Error {
+      value: format!("String terminated incorrectly at line {line_num} position {line_pos}"),
+      line_num: cur_line_num,
+      line_pos: cur_line_pos,
+    }
   }
 }
 
 #[cfg(test)]
 mod test {
+  use crate::iter::char::CharIter;
   use crate::model::char::ProgramChar;
   use std::fs::File;
   use std::path::Path;
-  use crate::iter::char::CharIter;
 
   #[test]
   fn test_single_line_file_iter() {
-    let file = File::open(Path::new("test_resources/file_iter_read_single_line")).unwrap();
+    let file = File::open(Path::new("../test_resources/file_iter_read_single_line")).unwrap();
     let mut output = String::new();
     let expected = "this is a test";
-    let iter = CharIter::from(file);
-    for char in iter {
-      output.push(char.char_at);
+    let mut iter = CharIter::from(file);
+    while let Some(ProgramChar { char_at, .. }) = iter.next_char() {
+      output.push(char_at);
     }
 
     assert_eq!(expected, output.trim());
@@ -156,7 +396,7 @@ mod test {
 
   #[test]
   fn test_multi_line_file_iter() {
-    let file = File::open(Path::new("test_resources/file_iter_read_multiline")).unwrap();
+    let file = File::open(Path::new("../test_resources/file_iter_read_multiline")).unwrap();
     let expected = vec![
       ProgramChar { char_at: 't', line_num: 1, line_pos: 1 },
       ProgramChar { char_at: '\n', line_num: 1, line_pos: 2 },
@@ -170,10 +410,10 @@ mod test {
       ProgramChar { char_at: '\n', line_num: 4, line_pos: 2 },
     ];
     let mut output: Vec<ProgramChar> = Vec::new();
-    let iter = CharIter::from(file);
-    for char in iter {
-      println!("{char}");
-      output.push(char);
+    let mut iter = CharIter::from(file);
+    while let Some(ch) = iter.next_char() {
+      println!("{ch}");
+      output.push(ch);
     }
 
     assert_eq!(expected, output);
