@@ -22,7 +22,7 @@ impl From<File> for CharIter {
     let r = buf_reader.read(&mut read_byte);
 
     if let Err(e) = r {
-      panic!("Failed to read file with error {}", e);
+      panic!("Failed to read file with error {e}");
     }
 
     if read_byte != [0xEF, 0xBB, 0xBF] {
@@ -260,7 +260,7 @@ impl CharIter {
   pub(crate) fn peek_is_digit(&mut self) -> bool {
     match self.peek() {
       None => false,
-      Some(c) => c >= '0' && c <= '9',
+      Some(c) => c.is_ascii_digit(),
     }
   }
 

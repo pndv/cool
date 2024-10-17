@@ -1,5 +1,6 @@
 ﻿use crate::model::{Ident, Type};
 use lexer::model::token::Token;
+use std::fmt::{Display, Formatter};
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) enum Expression {
@@ -129,7 +130,106 @@ impl From<Token> for Expression {
 
       Token::SelfType { line_num, line_pos } => Expression::SelfTypeExpr { line_num, line_pos },
 
-      _ => panic!("Non-constant token {:?}", token)
+      _ => panic!("Non-constant token {token}")
+    }
+  }
+}
+
+impl Display for Expression {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Expression::PartialAssign { expr } => write!(f, "Partial '<-' [\n \t{} \n]", expr),
+      Expression::PartialDispatch { fn_name, param_list } => {
+        let mut str = format!("Partial Dispatch {fn_name} (");
+        for param in param_list {
+          str.push_str(&format!(" {} ", param));
+        }
+        str.push_str(")");
+        write!(f, "{fn_name} ({str})")
+      }
+      Expression::PartialCastDispatch { fn_name, cast_type, param_list } => {
+        match cast_type {
+          None => write!(f, "Partial Dispatch {fn_name} ({param_list:?})"),
+          Some(cast) => {
+            let mut param_str = String::new();
+            for param in param_list {
+              param_str.push_str(&format!(" {param} "));
+            }
+
+            write!(f, "Partial Dispatch {fn_name} AS {cast} ({param_str})")
+          }
+        }
+      }
+      Expression::Assign { name, expr } => write!(f, "{} '<-' [\n \t{} \n]", name, expr),
+
+      Expression::Dispatch { calling_expr, fn_name, cast_type, param_list, } => {
+        let mut param_str = String::new();
+        for param in param_list {
+          param_str.push_str(&format!(" {} ", param));
+        }
+
+        match cast_type {
+          None => write!(f, "DISPATCH\n\tFROM: {} \n\t\tCALL: {fn_name} \n\t\t\tPARAMS: {param_str}", calling_expr),
+          Some(cast) => write!(f, "DISPATCH\n\tFROM: {} \n\t\tCALL: {fn_name} AS {cast} \n\t\t\tPARAMS: {param_str}", calling_expr),
+        }
+      }
+      
+      Expression::Conditional { predicate, then_expr, else_expr } => { 
+        write!(f, "If \t {} \n\tThen: [ {} ] \n\tElse: [ {} ]", predicate, then_expr, else_expr) 
+      },
+
+      Expression::Loop { predicate, body } => write!(f, "While {} \n\t [ {} \n\t ]", predicate, body),
+
+      Expression::Case { switch_expression, branches } => {
+        let mut str_branch = String::new();
+        for branch in branches {
+          str_branch.push_str(&format!("\t=> {}\n ", branch));
+        }
+        
+        write!(f, "CASE {}\n\tBranches:\n{str_branch}", switch_expression)
+      }
+
+      Expression::Block { expr_list } => {
+        let mut str_expr = String::new();
+        for expr in expr_list {
+          str_expr.push_str(&format!("\t{} \n", expr));
+        }
+        
+        write!(f, "BLOCK:[ \t{str_expr} \n]") 
+      },
+
+      Expression::Let { let_init, in_expr } => { 
+        let mut str_let_init = String::new();
+        for expr in let_init {
+          str_let_init.push_str(&format!("{} ", expr));
+        }
+        
+        write!(f, "LET\n\tInitialisations:\n\t{str_let_init}\n\tIn:\n\t{}", in_expr) 
+      }
+
+      Expression::PartialBinary { binary_token, right_expr } => write!(f, "Partial {binary_token} [ {} ]", right_expr),
+
+      Expression::Plus { left, right } => write!(f, "[ {} ] + [ {} ]", left, right),
+      Expression::Minus { left, right } => write!(f, "[ {} ] - [ {} ]", left, right),
+      Expression::Multiply { left, right } => write!(f, "[ {} ] * [ {} ]", left, right),
+      Expression::Divide { left, right } => write!(f, "[ {} ] / [ {} ]", left, right),
+      Expression::LessThan { left, right } => write!(f, "[ {} ] < [ {} ]", left, right),
+      Expression::Equal { left, right } => write!(f, "[ {} ] = [ {} ]", left, right),
+      Expression::LessThanOrEqual { left, right } => write!(f, "[ {} ] <= [ {} ]", left, right),
+
+      Expression::Negate { expr } => write!(f, "~ [ {} ]", expr),
+      Expression::Not { expr } => write!(f, "not [ {} ]", expr),
+      Expression::IsVoid { expr } => write!(f, "is-void [ {} ]", expr),
+
+      Expression::New { type_name } => write!(f, "new [ {type_name} ]"),
+      Expression::Ident { name } => write!(f, "Identifier [ {name} ]"),
+
+      Expression::Int { value, .. } => write!(f, "Int [ {value} ]"),
+      Expression::Bool { value, .. } => write!(f, "Bool [ {value} ]"),
+      Expression::String { value, .. } => write!(f, "String [ \"{value}\" ]"),
+
+      Expression::SelfTypeExpr { .. } => write!(f, "SelfType"),
+      Expression::SelfExpr => write!(f, "Self"),
     }
   }
 }
@@ -142,9 +242,24 @@ pub struct CaseBranch {
   pub expr: Expression,
 }
 
+impl Display for CaseBranch {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "Case: {} : ({}) => {}", self.id, self.id_type, self.expr)
+  }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct LetInit {
   pub id: Ident,
   pub id_type: Type,
   pub expr: Option<Expression>,
+}
+
+impl Display for LetInit {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match &self.expr {
+      None => write!(f, "LET: {}: {} ", self.id, self.id_type),
+      Some(e) => write!(f, "LET: {}: {} = {}", self.id, self.id_type, e)
+    }
+  }
 }

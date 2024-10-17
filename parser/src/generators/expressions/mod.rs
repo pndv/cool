@@ -36,7 +36,7 @@ fn gen_partial_expressions(iter: &mut BufferedTokenIter, read_till_token: &Token
     match peek {
       Token::Empty | Token::Error { .. } | Token::Comment { .. } => {
         dbg!("get_expression_helper: Unexpected token {:?}", &peek);
-        panic!("Unexpected token {:?}", peek);
+        panic!("Unexpected token {peek}");
       }
 
       Token::Ident { .. } => {
@@ -120,12 +120,12 @@ fn gen_partial_expressions(iter: &mut BufferedTokenIter, read_till_token: &Token
       }
 
       // Should never encounter these expressions, since no expression starts with these tokens
-      Token::Then { .. } | Token::Else { .. } | Token::EndIf { .. } => panic!("Unexpected conditional branch {:?}", peek),
-      Token::Loop { .. } | Token::EndLoop { .. } => panic!("Unexpected loop branch {:?}", peek),
-      Token::CaseBranch { .. } | Token::Of { .. } | Token::EndCase { .. } => panic!("Unexpected case branch {:?}", peek),
-      Token::In { .. } => panic!("Unexpected let branch {:?}", peek),
+      Token::Then { .. } | Token::Else { .. } | Token::EndIf { .. } => panic!("Unexpected conditional branch {peek}"),
+      Token::Loop { .. } | Token::EndLoop { .. } => panic!("Unexpected loop branch {peek}"),
+      Token::CaseBranch { .. } | Token::Of { .. } | Token::EndCase { .. } => panic!("Unexpected case branch {peek}"),
+      Token::In { .. } => panic!("Unexpected let branch {peek}"),
 
-      _ => panic!("Unexpected token {:?}", peek),
+      _ => panic!("Unexpected token {peek}"),
     }
   }
 
@@ -154,7 +154,7 @@ fn reduce_expression_list(mut expressions: VecDeque<Expression>) -> Result<Expre
   if !second.is_partial() {
     let exps = expressions.clone().into_iter().collect::<Vec<_>>();
     for e in exps {
-      println!("reduce_expression_list: {:?}", e)
+      println!("reduce_expression_list: {e}");
     }
   }
 
@@ -172,7 +172,7 @@ fn reduce_expression_list(mut expressions: VecDeque<Expression>) -> Result<Expre
         Token::LessOrEqual { .. } => reduce = Expression::LessThanOrEqual { left: Box::from(first), right: right_expr },
         Token::Equal { .. } => reduce = Expression::Equal { left: Box::from(first), right: right_expr },
 
-        _ => panic!("Unexpected token {:?}", binary_token),
+        _ => panic!("Unexpected token {binary_token}"),
       }
     }
     Expression::PartialAssign { expr } => {

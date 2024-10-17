@@ -74,16 +74,14 @@ fn gen_attribute_feature(ident_name: Ident, iter: &mut BufferedTokenIter, read_t
   let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else { unreachable!() };
   let method_return_type = Type::from(value);
 
-  let feature = match iter.peek_eq(&ASSIGN_TYPE) {
-    true => {
-      iter.consume_required(&ASSIGN_TYPE)?;
+  let feature = if iter.peek_eq(&ASSIGN_TYPE) {
+    iter.consume_required(&ASSIGN_TYPE)?;
 
-      let method_expr = gen_expression(iter, read_till_tokens)?;
+    let method_expr = gen_expression(iter, read_till_tokens)?;
 
-      Feature::from((ident_name, method_return_type, Box::from(method_expr)))
-    }
-
-    false => Feature::from((ident_name, method_return_type)),
+    Feature::from((ident_name, method_return_type, Box::from(method_expr)))
+  } else {
+    Feature::from((ident_name, method_return_type))
   };
 
   Ok(feature)
@@ -100,7 +98,7 @@ mod test {
     let file = File::open("../test_resources/features/feature.method_form.cl_partial").expect("file not found");
     let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
     let feature: Feature = gen_feature(&mut token_iter, &Token::EOF).expect("feature not generated");
-    let Feature { feature_name, formals, return_type, expr } = feature;
+    let Feature { name: feature_name, formals, return_type, expr } = feature;
 
     let Ident(name, ..) = feature_name;
     assert_eq!(name, "method2");
@@ -134,7 +132,7 @@ mod test {
     let file = File::open("../test_resources/features/feature.method_form_self_type.cl_partial").expect("file not found");
     let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
     let feature: Feature = gen_feature(&mut token_iter, &Token::EOF).expect("feature not generated");
-    let Feature { feature_name, formals, return_type, expr } = feature;
+    let Feature { name: feature_name, formals, return_type, expr } = feature;
 
     let Ident(name, ..) = feature_name;
     assert_eq!(name, "main");
@@ -148,7 +146,7 @@ mod test {
     let Some(feature_expr) = expr else { panic!("feature expr should not be empty") };
     assert_eq!(feature_expr.get_type(), "Block");
 
-    println!("{:?}", feature_expr);
+    println!("{feature_expr}", );
   }
 
   #[test]
@@ -156,7 +154,7 @@ mod test {
     let file = File::open("../test_resources/features/feature.attribute_no_expr.cl_partial").expect("file not found");
     let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
     let feature: Feature = gen_feature(&mut token_iter, &Token::EOF).expect("Error parsing feature");
-    let Feature { feature_name, formals, return_type, expr } = feature;
+    let Feature { name: feature_name, formals, return_type, expr } = feature;
 
     let Ident(name, ..) = feature_name;
     assert_eq!(name, "population_map");
@@ -186,7 +184,7 @@ mod test {
     let file = File::open("../test_resources/features/feature.attribute_with_expr.cl_partial").expect("file not found");
     let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
     let feature: Feature = gen_feature(&mut token_iter, &Token::EOF).expect("Error parsing feature");
-    let Feature { feature_name, formals, return_type, expr } = feature;
+    let Feature { name: feature_name, formals, return_type, expr } = feature;
 
     let Ident(name, ..) = feature_name;
     assert_eq!(name, "vertices");
