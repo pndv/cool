@@ -1,6 +1,6 @@
-﻿use std::borrow::Cow;
-use crate::model::feature::Feature;
+﻿use crate::model::feature::Feature;
 use crate::model::Type;
+use std::borrow::Cow;
 
 #[derive(PartialEq, Debug, Clone)]
 pub(crate) struct Class {

@@ -5,7 +5,7 @@ use lexer::model::constants::{COLON_TYPE, COMMA_TYPE, IDENT_TYPE};
 use lexer::model::token::Token;
 
 /// Formals |-> formal {{, formals}}
-pub fn gen_formals(iter: &mut BufferedTokenIter) -> Result<Vec<Formal>, String> {
+pub(super) fn gen_formals(iter: &mut BufferedTokenIter) -> Result<Vec<Formal>, String> {
   let mut formals: Vec<Formal> = Vec::new();
   let mut formal = gen_formal(iter)?;
   formals.push(formal);

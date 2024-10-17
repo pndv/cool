@@ -271,11 +271,11 @@ impl CharIter {
       None
     }
   }
-  
+
   fn get_single_line_comment(&mut self) -> Token {
     let (_, line_num, line_pos) = self.get_cur_pos();
     let mut token = Token::Comment { value: String::new(), line_num, line_pos };
-    let Token::Comment { ref mut value, .. } = token else {unreachable!()}; // mutable reference of `value` in `token`
+    let Token::Comment { ref mut value, .. } = token else { unreachable!() }; // mutable reference of `value` in `token`
 
     // Comments are from `--` and either till end of line or end of file
     while let Some(ProgramChar { char_at, .. }) = self.next_char() {

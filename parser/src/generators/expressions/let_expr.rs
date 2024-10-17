@@ -51,7 +51,7 @@ fn gen_let_init(iter: &mut BufferedTokenIter) -> Result<LetInit, String> {
 
   let mut expr: Option<Expression> = None;
 
-  if  iter.peek_eq(&ASSIGN_TYPE) {
+  if iter.peek_eq(&ASSIGN_TYPE) {
     iter.consume_required(&ASSIGN_TYPE)?;
 
     // read till either encounter ',' or end of iter
@@ -63,6 +63,7 @@ fn gen_let_init(iter: &mut BufferedTokenIter) -> Result<LetInit, String> {
   Ok(LetInit { expr, id, id_type })
 }
 
+#[cfg(test)]
 mod test {
   use crate::generators::expressions::let_expr::gen_let_expression;
   use crate::test::get_buffered_iter;
