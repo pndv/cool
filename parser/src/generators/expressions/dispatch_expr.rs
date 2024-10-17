@@ -1,9 +1,9 @@
 ﻿use crate::generators::expressions::gen_expression;
 use crate::model::expressions::Expression;
 use crate::model::{Ident, Type};
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{AT_TYPE, CLOSE_PAREN_TYPE, COMMA_TYPE, DOT_TYPE, IDENT_TYPE, OPEN_PAREN_TYPE};
-use lex::model::token::Token;
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{AT_TYPE, CLOSE_PAREN_TYPE, COMMA_TYPE, DOT_TYPE, IDENT_TYPE, OPEN_PAREN_TYPE};
+use lexer::model::token::Token;
 
 pub(super) fn gen_partial_dispatch_expr(ident_token: Token, iter: &mut BufferedTokenIter) -> Result<Expression, String> {
   let Token::Ident { value, .. } = ident_token else { unreachable!() };

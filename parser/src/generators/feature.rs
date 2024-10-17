@@ -3,9 +3,9 @@ use crate::generators::formal::gen_formals;
 use crate::model::feature::Feature;
 use crate::model::formal::Formal;
 use crate::model::{Ident, Type};
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, IDENT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE};
-use lex::model::token::Token;
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, COLON_TYPE, IDENT_TYPE, OPEN_CURL_TYPE, OPEN_PAREN_TYPE, SEMI_COLON_TYPE};
+use lexer::model::token::Token;
 
 /// Features :-> {{ features; }}*
 pub fn gen_features(iter: &mut BufferedTokenIter) -> Result<Option<Vec<Feature>>, String> {

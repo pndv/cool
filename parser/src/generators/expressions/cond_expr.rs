@@ -1,7 +1,7 @@
 ﻿use crate::generators::expressions::gen_expression;
 use crate::model::expressions::Expression;
-use lex::iter::token::{BaseTokenIter, BufferedTokenIter};
-use lex::model::constants::{ELSE_TYPE, END_IF_TYPE, IF_TYPE, THEN_TYPE};
+use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
+use lexer::model::constants::{ELSE_TYPE, END_IF_TYPE, IF_TYPE, THEN_TYPE};
 
 pub(super) fn gen_conditional_expression(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
   iter.consume_required(&IF_TYPE)?;
