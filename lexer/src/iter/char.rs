@@ -361,7 +361,9 @@ impl CharIter {
         '\\' if self.next_if_eq('r').is_some() => token_str.push('\r'),
         '\\' if self.next_if_eq('f').is_some() => token_str.push('\x0C'),
         '\\' if self.next_if_eq('v').is_some() => token_str.push('\x0B'),
-        '\\' => token_str.push('\\'),
+        '\\' if self.next_if_eq('\\').is_some() => token_str.push('\\'), // process '\\' 
+        '\\' if self.next_if_eq(DOUBLE_QUOTE).is_some() => token_str.push(DOUBLE_QUOTE),
+        // '\\' => token_str.push('\\'),
         x => token_str.push(x),
       }
     }
