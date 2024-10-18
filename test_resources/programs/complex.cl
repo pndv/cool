@@ -21,7 +21,7 @@ class Complex inherits IO {
 	}
     };
 
-    print() : Object {
+    print() : OBJECT {
 	if y = 0
 	then out_int(x)
 	else out_int(x).out_string("+").out_int(y).out_string("I")

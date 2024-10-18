@@ -3,10 +3,10 @@ use crate::model::Type;
 use std::borrow::Cow;
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) struct Class {
-    name: Type,
-    parent_type: Option<Type>, // if no parent is given, then 'Object' is the parent of all classes
-    features: Option<Vec<Feature>>,
+pub struct Class {
+   pub name: Type,
+   pub parent_type: Option<Type>, // if no parent is given, then 'Object' is the parent of all classes
+   pub features: Option<Vec<Feature>>,
 }
 
 const OBJECT: Class = Class {

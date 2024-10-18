@@ -1,9 +1,9 @@
 use crate::model::{Ident, Type};
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) struct Formal {
-    pub(crate) formal_name: Ident,
-    pub(crate) formal_type: Type,
+pub struct Formal {
+    pub formal_name: Ident,
+    pub formal_type: Type,
 }
 
 impl From<(Ident, Type)> for Formal {

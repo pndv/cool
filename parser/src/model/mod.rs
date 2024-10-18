@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 
-pub(crate) mod class;
-pub(crate) mod expressions;
-pub(crate) mod feature;
-pub(crate) mod formal;
-pub(crate) mod program;
+pub mod class;
+pub mod expressions;
+pub mod feature;
+pub mod formal;
+pub mod program;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Ident(pub Cow<'static, str>);
@@ -21,6 +21,7 @@ impl From<String> for Ident {
     }
 }
 
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Type(pub Cow<'static, str>);
 
@@ -33,5 +34,17 @@ impl Display for Type {
 impl From<String> for Type {
     fn from(value: String) -> Self {
         Type(Cow::Owned(value))
+    }
+}
+
+impl Type {
+    pub fn get_name(&self) -> String {
+        String::from(self.0.as_ref())
+    }
+}
+
+impl Ident {
+    pub fn get_name(&self) -> String {
+        String::from(self.0.as_ref())
     }
 }

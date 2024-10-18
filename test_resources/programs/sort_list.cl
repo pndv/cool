@@ -22,7 +22,7 @@ moderately large lists will cause spim to run out of memory.
 *)
 
 Class List inherits IO { 
-        (* Since abort() returns Object, we need something of
+        (* Since abort() returns OBJECT, we need something of
 	   type Bool at the end of the block to satisfy the typechecker. 
            This code is unreachable, since abort() halts the program. *)
 	isNil() : Bool { { abort(); true; } };
@@ -34,7 +34,7 @@ Class List inherits IO {
 	};
 
 	(* 
-	   Since abort "returns" type Object, we have to add
+	   Since abort "returns" type OBJECT, we have to add
 	   an expression of type Int here to satisfy the typechecker.
 	   This code is, of course, unreachable.
         *)
@@ -50,7 +50,7 @@ Class List inherits IO {
 
 	rcons(i : Int) : List { cdr() };
 	
-	print_list() : Object { abort() };
+	print_list() : OBJECT { abort() };
 };
 
 Class Cons inherits List {
@@ -88,7 +88,7 @@ Class Cons inherits List {
 
 	rcons(i : Int) : List { (new Cons).init(xcar, xcdr.rcons(i)) };
 
-	print_list() : Object {
+	print_list() : OBJECT {
 		{
 		     out_int(xcar);
 		     out_string("\n");
@@ -108,7 +108,7 @@ Class Nil inherits List {
 
 	rcons(i : Int) : List { (new Cons).init(i,self) };
 
-	print_list() : Object { true };
+	print_list() : OBJECT { true };
 
 };
 
@@ -134,15 +134,10 @@ Class Main inherits IO {
 	    }
 	};		
 
-	main() : Object {
+	main() : OBJECT {
 	   {
 	     out_string("How many numbers to sort?");
 	     iota(in_int()).rev().sort().print_list();
 	   }
 	};
 };			    
-
-
-
-
-

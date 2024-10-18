@@ -1,8 +1,8 @@
 use crate::model::class::Class;
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) struct Program {
-    classes: Vec<Class>,
+pub struct Program {
+    pub classes: Vec<Class>,
 }
 
 impl Default for Program {
@@ -13,7 +13,7 @@ impl Default for Program {
 
 impl Program {
     #[must_use]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let classes: Vec<Class> = Vec::new();
         Program { classes }
     }
