@@ -323,7 +323,7 @@ class Main inherits IO {
 	 c : C => out_string("Class type is now C\n");
 	 d : D => out_string("Class type is now D\n");
 	 e : E => out_string("Class type is now E\n");
-	 o : Object => out_string("Oooops\n");
+	 o : OBJECT => out_string("Oooops\n");
       esac
    };
  
@@ -336,7 +336,7 @@ class Main inherits IO {
      )
    };
 
-   main() : Object {
+   main() : OBJECT {
       {
          avar <- (new A);
          while flag loop
@@ -361,7 +361,7 @@ class Main inherits IO {
                      case avar of
 	                   c : C => avar <- c.method6(c.value());
 	                   a : A => avar <- a.method3(a.value());
-	                   o : Object => {
+	                   o : OBJECT => {
 		                  out_string("Oooops\n");
 		                  abort(); 0;
 		               };
@@ -427,4 +427,3 @@ class Main inherits IO {
    };
 
 };
-

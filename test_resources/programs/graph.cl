@@ -40,13 +40,13 @@ class Graph {
    vertices : VList <- new VList;
    edges    : EList <- new EList;
 
-   add_vertice(v : Vertice) : Object { {
+   add_vertice(v : Vertice) : OBJECT { {
       edges <- v.outgoing().append(edges);
       vertices <- vertices.cons(v);
    } };
 
-   print_E() : Object { edges.print() };
-   print_V() : Object { vertices.print() };
+   print_E() : OBJECT { edges.print() };
+   print_V() : OBJECT { vertices.print() };
 
 };
 
@@ -74,7 +74,7 @@ class Vertice inherits IO {
       }
    };
 
-   print() : Object {
+   print() : OBJECT {
       {
          out_int(num);
 	 out.print();
@@ -98,7 +98,7 @@ class Edge inherits IO {
       }
    };
 
-   print() : Object {
+   print() : OBJECT {
       {
          out_string(" (");
 	 out_int(from);
@@ -141,7 +141,7 @@ class EList inherits IO {
      fi
    };
 
-   print() : Object {
+   print() : OBJECT {
      out_string("\n")
    };
 
@@ -179,7 +179,7 @@ class ECons inherits EList {
       }
    };
 
-   print() : Object {
+   print() : OBJECT {
      {
        car.print();
        cdr.print();
@@ -213,7 +213,7 @@ class VList inherits IO {
       (new VCons).init(v, self)
    };
 
-   print() : Object { out_string("\n") };
+   print() : OBJECT { out_string("\n") };
 
 };
 
@@ -236,7 +236,7 @@ class VCons inherits VList {
       }
    };
 
-   print() : Object {
+   print() : OBJECT {
      {
        car.print();
        cdr.print();
@@ -358,7 +358,7 @@ class Main inherits Parse {
 
    g : Graph <- read_input();
 
-   main() : Object {
+   main() : OBJECT {
       {
 	 g.print_V();
          g.print_E();

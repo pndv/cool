@@ -28,7 +28,7 @@ class List {
 
    isNil() : Bool { true };
 
-   -- Since abort() has return type Object and head() has return type
+   -- Since abort() has return type OBJECT and head() has return type
    -- Int, we need to have an Int as the result of the method body,
    -- even though abort() never returns.
 
@@ -104,7 +104,7 @@ class Main inherits IO {
    -- Print all elements of the list. Calls itself recursively with
    -- the tail of the list, until the end of the list is reached.
 
-   print_list(l : List) : Object {
+   print_list(l : List) : OBJECT {
       if l.isNil() then out_string("\n")
                    else {
 			   out_int(l.head());
@@ -123,7 +123,7 @@ class Main inherits IO {
    -- List, and thus the method isNil in the List class is called and
    -- returns true.
 
-   main() : Object {
+   main() : OBJECT {
       {
 	 mylist <- new List.cons(1).cons(2).cons(3).cons(4).cons(5);
 	 while (not mylist.isNil()) loop
@@ -136,6 +136,3 @@ class Main inherits IO {
    };
 
 };
-
-
-

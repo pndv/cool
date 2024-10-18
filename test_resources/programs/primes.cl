@@ -42,7 +42,7 @@ class Main inherits IO {
 
   stop : Int <- 500;	-- stop is an arbitrary value limiting testee. 	
 
-  m : Object <-		-- m supplants the main method.
+  m : OBJECT <-		-- m supplants the main method.
     while true loop 
       {
 
@@ -81,4 +81,3 @@ class Main inherits IO {
     pool;
 
 }; (* end of Main *)
-

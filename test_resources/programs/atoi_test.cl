@@ -7,7 +7,7 @@ on the screen.  Typing "stop" at the prompt exits the program.
 *)
 
 class Main inherits IO {
-   newline() : Object {
+   newline() : OBJECT {
 	out_string("\n")
    };
 
@@ -18,7 +18,7 @@ class Main inherits IO {
 	}
    };
 
-   main() : Object {
+   main() : OBJECT {
    (* Since we didn't bother to inherit from the A2I class, we have
 	to have an object of type A2I in order to access the
 	methods of that class. *)

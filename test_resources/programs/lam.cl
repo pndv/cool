@@ -321,7 +321,7 @@ class App inherits Expr {
       out_string(" in\n");
       out_string("  case x of\n");
       out_string("    c : Closure => c.apply(y);\n");
-      out_string("    o : Object => { abort(); new EvalObject; };\n");
+      out_string("    o : OBJECT => { abort(); new EvalObject; };\n");
       out_string("  esac)");
     }
   };

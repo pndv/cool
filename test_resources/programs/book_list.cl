@@ -43,7 +43,7 @@ Class Article inherits Book {
 };
 
 Class BookList inherits IO { 
-    (* Since abort "returns" type Object, we have to add
+    (* Since abort "returns" type OBJECT, we have to add
        an expression of type Bool here to satisfy the typechecker.
        This code is unreachable, since abort() halts the program.
     *)
@@ -55,19 +55,19 @@ Class BookList inherits IO {
         )
     };
 
-    (* Since abort "returns" type Object, we have to add
+    (* Since abort "returns" type OBJECT, we have to add
        an expression of type Book here to satisfy the typechecker.
        This code is unreachable, since abort() halts the program.
     *)
     car() : Book { { abort(); new Book; } };
     
-    (* Since abort "returns" type Object, we have to add
+    (* Since abort "returns" type OBJECT, we have to add
        an expression of type BookList here to satisfy the typechecker.
        This code is unreachable, since abort() halts the program.
     *)
     cdr() : BookList { { abort(); new BookList; } };
     
-    print_list() : Object { abort() };
+    print_list() : OBJECT { abort() };
 };
 
 Class Cons inherits BookList {
@@ -90,7 +90,7 @@ Class Cons inherits BookList {
 
     cdr() : BookList { xcdr };
     
-    print_list() : Object {
+    print_list() : OBJECT {
         {
             case xcar.print() of
                 dummy : Book => out_string("- dynamic type was Book -\n");
@@ -104,7 +104,7 @@ Class Cons inherits BookList {
 Class Nil inherits BookList {
     isNil() : Bool { true };
 
-    print_list() : Object { true };
+    print_list() : OBJECT { true };
 };
 
 
@@ -112,7 +112,7 @@ Class Main {
 
     books : BookList;
 
-    main() : Object {
+    main() : OBJECT {
         (let a_book : Book <-
             (new Book).initBook("Compilers, Principles, Techniques, and Tools",
                                 "Aho, Sethi, and Ullman")

@@ -3,7 +3,7 @@ use lexer::model::token::Token;
 use std::fmt::{Display, Formatter};
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) enum Expression {
+pub enum Expression {
     PartialAssign {
         expr: Box<Expression>,
     },
@@ -157,7 +157,7 @@ impl Expression {
         )
     }
 
-    pub(crate) fn get_type(&self) -> String {
+    pub fn get_type(&self) -> String {
         match self {
             // Expression::NoExpr => String::from("NoExpr"),
             Expression::SelfExpr { .. } => String::from("Self"),

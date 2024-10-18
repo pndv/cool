@@ -17,7 +17,7 @@ class Bar inherits Razz {
 
      c : Int <- doh();
 
-     d : Object <- printh();
+     d : OBJECT <- printh();
 };
 
 
@@ -43,7 +43,7 @@ class Bazz inherits IO {
 			n : Bar => n;
 		  esac;
 
-     i : Object <- printh();
+     i : OBJECT <- printh();
 
      printh() : Int { { out_int(h); 0; } };
 
@@ -60,8 +60,3 @@ class Main {
   main(): String { "do nothing" };
 
 };
-
-
-
-
-
