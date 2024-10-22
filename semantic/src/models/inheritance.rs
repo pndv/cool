@@ -69,7 +69,7 @@ const BASE_NODE_IO: Node = Node {
 };
 
 fn check_if_dag(node_map: &mut HashMap<String, Node>, seen_nodes: &mut Vec<String>, start_class_name: &str) -> Result<Option<String>, String> {
-  let gen_err = |nodes: Vec<String>| -> String {
+  let gen_cycle_err = |nodes: Vec<String>| -> String {
     let chain = nodes.clone().join(" -> ");
     return format!("There is a cycle in the inheritance graph via {chain}");
   };
@@ -79,12 +79,16 @@ fn check_if_dag(node_map: &mut HashMap<String, Node>, seen_nodes: &mut Vec<Strin
   }
 
   if seen_nodes.contains(&start_class_name.to_string()) {
-    return Ok(Some(gen_err(seen_nodes.clone()))); // node is seen before; cycle in the graph
+    return Ok(Some(gen_cycle_err(seen_nodes.clone()))); // node is seen before; cycle in the graph
   }
 
   let node = match node_map.remove(start_class_name) {
-    None => return Err(format!("Could not remove {start_class_name} from the node_map")),
     Some(n) => n,
+    None if !node_map.contains_key(start_class_name) => { 
+      let chain = seen_nodes.clone().join(" -> ");
+      return Ok(Some(format!("Class {start_class_name} is not declared in the chain {chain}"))); 
+    }
+    None => return Err(format!("Could not remove {start_class_name} from the node_map")),
   };
 
   let node_name = node.name;
