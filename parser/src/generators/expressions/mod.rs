@@ -15,8 +15,8 @@ use dispatch_expr::gen_partial_cast_dispatch;
 use let_expr::gen_let_expression;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
 use lexer::model::constants::{
-    ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE,
-    IDENT_TYPE, NEW_TYPE, OPEN_PAREN_TYPE,
+  ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE,
+  IDENT_TYPE, NEW_TYPE, OPEN_PAREN_TYPE,
 };
 use lexer::model::token::Token;
 use loop_expr::gen_loop_expression;
@@ -60,7 +60,11 @@ fn gen_partial_expressions(
 
                 expr_list.push_back(expr);
             }
-            Token::String { ref value, line_num, line_pos } => {
+            Token::String {
+                ref value,
+                line_num,
+                line_pos,
+            } => {
                 if value.len() > 1024 {
                     return Err(format!("{line_num}:{line_pos} String too long. Max allowed 1024 chars, had {} chars", value.len()));
                 }
@@ -68,10 +72,10 @@ fn gen_partial_expressions(
                 let token = iter
                     .next()
                     .unwrap_or_else(|| panic!("get_expression_helper: Error reading token"));
-                
+
                 expr_list.push_back(Expression::from(token));
             }
-            
+
             Token::SelfType { .. }
             | Token::Int { .. }
             | Token::True { .. }

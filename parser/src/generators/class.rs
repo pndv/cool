@@ -4,7 +4,7 @@ use crate::model::feature::Feature;
 use crate::model::Type;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
 use lexer::model::constants::{
-    CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE,
+  CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE,
 };
 use lexer::model::token::Token;
 
@@ -12,7 +12,12 @@ pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
     let mut errors = String::new();
     iter.consume_required(&CLASS_TYPE)?;
 
-    let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else {
+    let Token::Ident {
+        value,
+        line_num,
+        line_pos,
+    } = iter.get_required(&IDENT_TYPE)?
+    else {
         unreachable!()
     };
     let class_type: Type = Type::from(value);
@@ -26,6 +31,7 @@ pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
         let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else {
             unreachable!()
         };
+
         let inherits_from: Type = Type::from(value);
         Some(inherits_from)
     } else {
@@ -48,7 +54,13 @@ pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
     };
 
     if errors.is_empty() {
-        Ok(Class::new(class_type, parent_type, features))
+        Ok(Class::new(
+            class_type,
+            parent_type,
+            features,
+            line_num,
+            line_pos,
+        ))
     } else {
         Err(errors)
     }

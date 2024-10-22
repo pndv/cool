@@ -6,11 +6,11 @@ pub(crate) mod generators;
 pub mod model;
 
 pub fn get_ast_from_file_path(file_path: &str) -> Result<Program, String> {
-  let f = File::open(file_path).expect("Unable to open file");
-  get_ast(f)
+    let f = File::open(file_path).expect("Unable to open file");
+    get_ast(f)
 }
 pub fn get_ast(file: File) -> Result<Program, String> {
-  gen_program_from_file(file)
+    gen_program_from_file(file)
 }
 
 #[cfg(test)]
@@ -19,7 +19,7 @@ pub(crate) mod test {
   use std::fs::File;
 
   pub(crate) fn get_buffered_iter(file: File) -> BufferedTokenIter {
-    let token_iter = TokenIter::from(file);
-    BufferedTokenIter::from(token_iter)
-  }
+        let token_iter = TokenIter::from(file);
+        BufferedTokenIter::from(token_iter)
+    }
 }
