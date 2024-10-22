@@ -21,7 +21,6 @@ impl From<String> for Ident {
     }
 }
 
-
 #[derive(PartialEq, Debug, Clone)]
 pub struct Type(pub Cow<'static, str>);
 

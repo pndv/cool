@@ -3,7 +3,9 @@ use crate::model::expressions::Expression;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
 use lexer::model::constants::{ELSE_TYPE, END_IF_TYPE, IF_TYPE, THEN_TYPE};
 
-pub(super) fn gen_conditional_expression(iter: &mut BufferedTokenIter) -> Result<Expression, String> {
+pub(super) fn gen_conditional_expression(
+    iter: &mut BufferedTokenIter,
+) -> Result<Expression, String> {
     iter.consume_required(&IF_TYPE)?;
     let predicate_expr = gen_expression(iter, &THEN_TYPE)?;
 

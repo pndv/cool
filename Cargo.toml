@@ -11,6 +11,13 @@ path = "src/main.rs"
 [dependencies]
 lexer = { path = "lexer" }
 parser = { path = "parser" }
+semantic = {path = "semantic"}
 
-[features]
-debug = []
+
+[profile.dev]
+opt-level = 0
+lto = "off"
+panic = "unwind"
+rpath = false
+debug-assertions = true
+overflow-checks = true
