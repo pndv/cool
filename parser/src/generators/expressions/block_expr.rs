@@ -3,7 +3,7 @@ use crate::model::expressions::Expression;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
 use lexer::model::constants::{CLOSE_CURL_TYPE, OPEN_CURL_TYPE, SEMI_COLON_TYPE};
 
-/// `{` expr `;` {{ expr `;` ... }} `}`
+/// `{` expr `;` {{ expr `;` }}+ `}`
 pub(in crate::generators) fn gen_block_expr(
     iter: &mut BufferedTokenIter,
 ) -> Result<Expression, String> {
@@ -12,9 +12,9 @@ pub(in crate::generators) fn gen_block_expr(
     let mut block_expr_list = Vec::new();
 
     while iter.has_next() && !iter.peek_eq(&CLOSE_CURL_TYPE) {
-        //Loop till end of block
+        //Loop till the end of the block
 
-        // each expression in block terminates with a semicolon
+        // each expression in the block terminates with a semicolon
         let expr = expressions::gen_expression(iter, &SEMI_COLON_TYPE)?;
         iter.consume_required(&SEMI_COLON_TYPE)?;
 
