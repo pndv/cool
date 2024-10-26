@@ -254,7 +254,7 @@ fn reduce_expression_list(mut expressions: VecDeque<Expression>) -> Result<Expre
             _ => return Err(format!("Unexpected token {binary_token}")),
         },
         Expression::PartialAssign { expr } => {
-            let Expression::Ident { name, .. } = first else {
+            let Expression::IdentExpr { name, .. } = first else {
                 return Err(format!("PartialAssign: join expression is not ident"));
             };
             reduce = Expression::Assign { name, expr };
