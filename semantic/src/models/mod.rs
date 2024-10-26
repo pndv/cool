@@ -1,11 +1,10 @@
 ﻿use std::fmt::{Debug, Display};
 
-mod inheritance;
-mod class;
-mod symbols;
-mod features;
-mod expression;
-mod formals;
-// static mut TYPES: Vec<&str> = vec!["Int", "Bool" , "String","Object"];
+pub mod class;
+pub mod symbols;
+pub mod features;
+pub mod expression;
+pub mod formals;
+pub mod program;
 
-trait Node: Display + PartialEq + Clone + Debug {}
+pub trait Node: Display + PartialEq + Clone + Debug {}

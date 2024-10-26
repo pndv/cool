@@ -94,21 +94,21 @@ pub enum Expression {
         expr: Box<Expression>,
     },
 
-    Ident {
+    IdentExpr {
         name: Ident,
     },
 
-    Int {
+    IntExpr {
         value: i32,
         line_num: u32,
         line_pos: u32,
     },
-    Bool {
+    BoolExpr {
         value: bool,
         line_num: u32,
         line_pos: u32,
     },
-    String {
+    StringExpr {
         value: String,
         line_num: u32,
         line_pos: u32,
@@ -182,10 +182,10 @@ impl Expression {
             Expression::LessThanOrEqual { .. } => String::from("LessThanOrEqual"),
             Expression::Negate { .. } => String::from("Negate"),
             Expression::Not { .. } => String::from("Not"),
-            Expression::Ident { .. } => String::from("Ident"),
-            Expression::Int { .. } => String::from("Int"),
-            Expression::Bool { .. } => String::from("Bool"),
-            Expression::String { .. } => String::from("String"),
+            Expression::IdentExpr { .. } => String::from("Ident"),
+            Expression::IntExpr { .. } => String::from("Int"),
+            Expression::BoolExpr { .. } => String::from("Bool"),
+            Expression::StringExpr { .. } => String::from("String"),
             Expression::New { .. } => String::from("New"),
             Expression::IsVoid { .. } => String::from("IsVoid"),
         }
@@ -202,7 +202,7 @@ impl From<Token> for Expression {
     /// - [`Token::SelfType`]
     fn from(token: Token) -> Self {
         match token {
-            Token::Ident { value, .. } => Expression::Ident {
+            Token::Ident { value, .. } => Expression::IdentExpr {
                 name: Ident::from(value),
             },
 
@@ -210,7 +210,7 @@ impl From<Token> for Expression {
                 value,
                 line_num,
                 line_pos,
-            } => Expression::Int {
+            } => Expression::IntExpr {
                 value,
                 line_num,
                 line_pos,
@@ -219,18 +219,18 @@ impl From<Token> for Expression {
                 value,
                 line_num,
                 line_pos,
-            } => Expression::String {
+            } => Expression::StringExpr {
                 value,
                 line_num,
                 line_pos,
             },
 
-            Token::True { line_num, line_pos } => Expression::Bool {
+            Token::True { line_num, line_pos } => Expression::BoolExpr {
                 value: true,
                 line_num,
                 line_pos,
             },
-            Token::False { line_num, line_pos } => Expression::Bool {
+            Token::False { line_num, line_pos } => Expression::BoolExpr {
                 value: false,
                 line_num,
                 line_pos,
@@ -364,11 +364,11 @@ impl Display for Expression {
             Expression::IsVoid { expr } => write!(f, "is-void [ {} ]", expr),
 
             Expression::New { type_name } => write!(f, "new [ {type_name} ]"),
-            Expression::Ident { name } => write!(f, "Identifier [ {name} ]"),
+            Expression::IdentExpr { name } => write!(f, "Identifier [ {name} ]"),
 
-            Expression::Int { value, .. } => write!(f, "Int [ {value} ]"),
-            Expression::Bool { value, .. } => write!(f, "Bool [ {value} ]"),
-            Expression::String { value, .. } => write!(f, "String [ \"{value}\" ]"),
+            Expression::IntExpr { value, .. } => write!(f, "Int [ {value} ]"),
+            Expression::BoolExpr { value, .. } => write!(f, "Bool [ {value} ]"),
+            Expression::StringExpr { value, .. } => write!(f, "String [ \"{value}\" ]"),
 
             Expression::SelfTypeExpr { .. } => write!(f, "SelfType"),
             Expression::SelfExpr => write!(f, "Self"),
