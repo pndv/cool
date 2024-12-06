@@ -1,14 +1,14 @@
 use crate::generators::feature::gen_features;
-use crate::model::class::Class;
-use crate::model::feature::Feature;
+use crate::model::class::ParseClass;
+use crate::model::feature::ParseFeature;
 use crate::model::Type;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
 use lexer::model::constants::{
-  CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE,
+    CLASS_TYPE, CLOSE_CURL_TYPE, IDENT_TYPE, INHERITS_TYPE, OPEN_CURL_TYPE,
 };
 use lexer::model::token::Token;
 
-pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
+pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<ParseClass, String> {
     let mut errors = String::new();
     iter.consume_required(&CLASS_TYPE)?;
 
@@ -40,7 +40,7 @@ pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
 
     iter.consume_required(&OPEN_CURL_TYPE)?;
 
-    let features: Option<Vec<Feature>> = if iter.peek_eq(&CLOSE_CURL_TYPE) {
+    let features: Option<Vec<ParseFeature>> = if iter.peek_eq(&CLOSE_CURL_TYPE) {
         None
     } else {
         let mut feature_iter = iter.gen_iter_till(&CLOSE_CURL_TYPE);
@@ -54,7 +54,7 @@ pub(super) fn gen_class(iter: &mut BufferedTokenIter) -> Result<Class, String> {
     };
 
     if errors.is_empty() {
-        Ok(Class::new(
+        Ok(ParseClass::new(
             class_type,
             parent_type,
             features,

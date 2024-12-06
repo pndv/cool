@@ -1,12 +1,12 @@
-use crate::model::feature::Feature;
+use crate::model::feature::ParseFeature;
 use crate::model::Type;
 use std::borrow::Cow;
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Class {
+pub struct ParseClass {
     pub name: Type,
     pub parent_type: Type, // if no parent is given, then 'Object' is the parent of all classes
-    pub features: Option<Vec<Feature>>,
+    pub features: Option<Vec<ParseFeature>>,
     pub line_num: u32,
     pub line_pos: u32,
 }
@@ -17,7 +17,7 @@ pub const INT_CLASS_NAME: &str = "Int";
 pub const STR_CLASS_NAME: &str = "String";
 pub const BOOL_CLASS_NAME: &str = "Bool";
 
-pub const OBJECT: Class = Class {
+pub const OBJECT: ParseClass = ParseClass {
     name: Type(Cow::Borrowed(OBJECT_CLASS_NAME)),
     parent_type: Type(Cow::Borrowed("BASE_OBJECT")),
     features: None,
@@ -25,11 +25,11 @@ pub const OBJECT: Class = Class {
     line_pos: 0,
 };
 
-impl Class {
+impl ParseClass {
     pub(crate) fn new(
         class_type: Type,
         parent_type: Option<Type>,
-        features: Option<Vec<Feature>>,
+        features: Option<Vec<ParseFeature>>,
         line_num: u32,
         line_pos: u32,
     ) -> Self {
@@ -39,7 +39,7 @@ impl Class {
             OBJECT.name.clone()
         };
 
-        Class {
+        ParseClass {
             name: class_type,
             parent_type: parent,
             features,

@@ -7,4 +7,4 @@ pub mod expression;
 pub mod formals;
 pub mod program;
 
-pub trait Node: Display + PartialEq + Clone + Debug {}
+pub trait Node: Display + Debug {}
