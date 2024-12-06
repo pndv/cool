@@ -1,29 +1,29 @@
-use crate::model::class::Class;
+use crate::model::class::ParseClass;
 
 #[derive(PartialEq, Debug, Clone)]
-pub struct Program {
-    pub classes: Vec<Class>,
+pub struct ParseProgram {
+    pub classes: Vec<ParseClass>,
 }
 
-impl Default for Program {
+impl Default for ParseProgram {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Program {
+impl ParseProgram {
     #[must_use]
     pub(crate) fn new() -> Self {
-        let classes: Vec<Class> = Vec::new();
-        Program { classes }
+        let classes: Vec<ParseClass> = Vec::new();
+        ParseProgram { classes }
     }
 
-    pub(crate) fn add_class(&mut self, class: Class) {
+    pub(crate) fn add_class(&mut self, class: ParseClass) {
         self.classes.push(class);
     }
 
     #[must_use]
-    pub fn classes(&self) -> &Vec<Class> {
+    pub fn classes(&self) -> &Vec<ParseClass> {
         &self.classes
     }
 }

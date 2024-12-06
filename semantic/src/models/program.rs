@@ -2,7 +2,7 @@
 use crate::models::Node;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct ProgramNode {
   pub(crate) classes: Vec<ClassNode>,
 }

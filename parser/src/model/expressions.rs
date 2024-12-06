@@ -22,10 +22,10 @@ pub enum Expression {
         param_list: Vec<Expression>,
     },
     Dispatch {
-        calling_expr: Box<Expression>, // If empty, then it's
+        calling_expr: Box<Expression>, // If empty, then it is function call from same class scope
         cast_type: Option<Type>,
         fn_name: Ident,
-        param_list: Vec<Expression>, // if no parameters, then it's a single list of [NoExpr]
+        param_list: Vec<Expression>, // if no parameters, then it is a single list of [NoExpr]
     },
 
     Conditional {

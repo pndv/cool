@@ -1,6 +1,6 @@
 use crate::generators::expressions::gen_expression;
 use crate::generators::formal::gen_formals;
-use crate::model::feature::Feature;
+use crate::model::feature::ParseFeature;
 use crate::model::formal::Formal;
 use crate::model::{Ident, Type};
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
@@ -11,12 +11,12 @@ use lexer::model::constants::{
 use lexer::model::token::Token;
 
 /// Features :-> {{ features; }}*
-pub(super) fn gen_features(iter: &mut BufferedTokenIter) -> Result<Option<Vec<Feature>>, String> {
-    let mut features: Vec<Feature> = Vec::new();
+pub(super) fn gen_features(iter: &mut BufferedTokenIter) -> Result<Option<Vec<ParseFeature>>, String> {
+    let mut features: Vec<ParseFeature> = Vec::new();
 
     // `{` seen in calling method => read till closing `}` encountered for `class`
     while iter.has_next() {
-        let feature: Feature = gen_feature(iter, &SEMI_COLON_TYPE)?;
+        let feature: ParseFeature = gen_feature(iter, &SEMI_COLON_TYPE)?;
 
         // Feature must terminate with a semicolon
         iter.consume_required(&SEMI_COLON_TYPE)?;
@@ -31,14 +31,14 @@ pub(super) fn gen_features(iter: &mut BufferedTokenIter) -> Result<Option<Vec<Fe
     }
 }
 
-fn gen_feature(iter: &mut BufferedTokenIter, read_till_token: &Token) -> Result<Feature, String> {
+fn gen_feature(iter: &mut BufferedTokenIter, read_till_token: &Token) -> Result<ParseFeature, String> {
     //Feature starts with ID
     let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else {
         unreachable!()
     };
     let ident_name = Ident::from(value);
 
-    let feature: Feature = match iter.peek() {
+    let feature: ParseFeature = match iter.peek() {
         Some(peeked_token) if *peeked_token == COLON_TYPE => {
             gen_attribute_feature(ident_name, iter, read_till_token)?
         }
@@ -55,7 +55,7 @@ fn gen_feature(iter: &mut BufferedTokenIter, read_till_token: &Token) -> Result<
     Ok(feature)
 }
 
-fn gen_method_feature(ident_name: Ident, iter: &mut BufferedTokenIter) -> Result<Feature, String> {
+fn gen_method_feature(ident_name: Ident, iter: &mut BufferedTokenIter) -> Result<ParseFeature, String> {
     iter.consume_required(&OPEN_PAREN_TYPE)?;
 
     let mut formals: Option<Vec<Formal>> = None;
@@ -93,7 +93,7 @@ fn gen_attribute_feature(
     ident_name: Ident,
     iter: &mut BufferedTokenIter,
     read_till_tokens: &Token,
-) -> Result<Feature, String> {
+) -> Result<ParseFeature, String> {
     iter.consume_required(&COLON_TYPE)?;
 
     let Token::Ident { value, .. } = iter.get_required(&IDENT_TYPE)? else {
@@ -106,9 +106,9 @@ fn gen_attribute_feature(
 
         let method_expr = gen_expression(iter, read_till_tokens)?;
 
-        Feature::from((ident_name, method_return_type, Box::from(method_expr)))
+        ParseFeature::from((ident_name, method_return_type, Box::from(method_expr)))
     } else {
-        Feature::from((ident_name, method_return_type))
+        ParseFeature::from((ident_name, method_return_type))
     };
 
     Ok(feature)
@@ -125,9 +125,9 @@ mod test {
         let file = File::open("../test_resources/features/feature.method_form.cl_partial")
             .expect("file not found");
         let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
-        let feature: Feature =
+        let feature: ParseFeature =
             gen_feature(&mut token_iter, &Token::EOF).expect("feature not generated");
-        let Feature {
+        let ParseFeature {
             name: feature_name,
             formals,
             return_type,
@@ -177,9 +177,9 @@ mod test {
             File::open("../test_resources/features/feature.method_form_self_type.cl_partial")
                 .expect("file not found");
         let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
-        let feature: Feature =
+        let feature: ParseFeature =
             gen_feature(&mut token_iter, &Token::EOF).expect("feature not generated");
-        let Feature {
+        let ParseFeature {
             name: feature_name,
             formals,
             return_type,
@@ -208,9 +208,9 @@ mod test {
         let file = File::open("../test_resources/features/feature.attribute_no_expr.cl_partial")
             .expect("file not found");
         let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
-        let feature: Feature =
+        let feature: ParseFeature =
             gen_feature(&mut token_iter, &Token::EOF).expect("Error parsing feature");
-        let Feature {
+        let ParseFeature {
             name: feature_name,
             formals,
             return_type,
@@ -248,9 +248,9 @@ mod test {
         let file = File::open("../test_resources/features/feature.attribute_with_expr.cl_partial")
             .expect("file not found");
         let mut token_iter: BufferedTokenIter = get_buffered_iter(file);
-        let feature: Feature =
+        let feature: ParseFeature =
             gen_feature(&mut token_iter, &Token::EOF).expect("Error parsing feature");
-        let Feature {
+        let ParseFeature {
             name: feature_name,
             formals,
             return_type,

@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
-use crate::models::Node;
 use crate::models::symbols::Symbol;
+use crate::models::Node;
+use std::fmt::{Display, Formatter};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct FormalNode {
@@ -10,7 +10,7 @@ pub struct FormalNode {
 
 impl Display for FormalNode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        write!(f, "FORMAL | Name: {}, Type: {}", self.name.name, self.f_type.name)
     }
 }
 

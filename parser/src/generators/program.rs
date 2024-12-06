@@ -1,18 +1,18 @@
 use crate::generators::class::gen_class;
-use crate::model::program::Program;
+use crate::model::program::ParseProgram;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter, TokenIter};
 use lexer::model::constants::SEMI_COLON_TYPE;
 use std::fs::File;
 
-pub(crate) fn gen_program_from_file(file: File) -> Result<Program, String> {
+pub(crate) fn gen_program_from_file(file: File) -> Result<ParseProgram, String> {
     let mut token_iter: TokenIter = TokenIter::from(file);
     gen_program(&mut token_iter)
 }
 
 /// Program is a list of semicolon separated classes
 
-fn gen_program(iter: &mut TokenIter) -> Result<Program, String> {
-    let mut program: Program = Program::new();
+fn gen_program(iter: &mut TokenIter) -> Result<ParseProgram, String> {
+    let mut program: ParseProgram = ParseProgram::new();
     let mut errors = String::new();
 
     while iter.has_next() {

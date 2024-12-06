@@ -1,15 +1,16 @@
 ﻿mod symbol_table;
+mod class;
 
-use crate::models::class::{ClassNode, BASE_NODE_IO, BASE_NODE_OBJECT};
+use crate::models::class::{ClassNode, BASE_NODE_IO};
 use crate::models::program::ProgramNode;
 use parser::get_ast;
 use parser::model::class::OBJECT_CLASS_NAME;
-use parser::model::program::Program;
+use parser::model::program::ParseProgram;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 
-pub fn check_program(program: Program) -> Result<ProgramNode, String> {
+pub fn check_program(program: ParseProgram) -> Result<ProgramNode, String> {
   let mut class_map = gen_class_map(program);
 
   let classes: Vec<ClassNode> = class_map.values().cloned().collect();
@@ -62,10 +63,11 @@ fn check_if_dag(node_map: &mut HashMap<String, ClassNode>, seen_nodes: &mut Vec<
   Ok(None) // no cycle seen
 }
 
-fn gen_class_map<'a>(program: Program) -> HashMap<String, ClassNode> {
+fn gen_class_map<'a>(program: ParseProgram) -> HashMap<String, ClassNode> {
   let mut class_map: HashMap<String, ClassNode> = HashMap::new();
   let mut parent_set: HashSet<Cow<'a, str>> = HashSet::new();
-  class_map.insert(BASE_NODE_OBJECT.name.to_string(), BASE_NODE_OBJECT.clone());
+  let base_object = ClassNode::get_base_object();
+  class_map.insert(base_object.name.to_string(), base_object);
   class_map.insert(BASE_NODE_IO.name.to_string(), BASE_NODE_IO.clone());
 
   // First pass extracts all class names and parents and put it in the HashMap
@@ -127,14 +129,14 @@ fn gen_graph<'a>(file: File) -> Result<HashMap<String, ClassNode>, String> {
 
 #[cfg(test)]
 mod test {
-  use crate::checker::{check_if_dag, gen_graph};
-  use crate::models::class::{ClassNode, BASE_NODE_OBJECT};
-  use parser::model::class::OBJECT_CLASS_NAME;
-  use std::borrow::Cow;
-  use std::collections::HashMap;
-  use std::fs::File;
+    use crate::gen::{check_if_dag, gen_graph};
+    use crate::models::class::ClassNode;
+    use parser::model::class::OBJECT_CLASS_NAME;
+    use std::borrow::Cow;
+    use std::collections::HashMap;
+    use std::fs::File;
 
-  #[test]
+    #[test]
   fn test_gen_inheritance_graph() {
     let file = File::open("../test_resources/programs/arith.cl").expect("Couldn't open file");
     let graph_result = gen_graph(file);
@@ -185,7 +187,8 @@ mod test {
     // `C` -> `D`
 
     let mut graph = HashMap::new();
-    graph.insert(OBJECT_CLASS_NAME.to_string(), BASE_NODE_OBJECT.clone());
+    let base_object = ClassNode::get_base_object();
+    graph.insert(OBJECT_CLASS_NAME.to_string(), base_object);
     graph.insert(String::from("A"), ClassNode { name: Cow::Borrowed("A"), parent: Cow::Borrowed(OBJECT_CLASS_NAME), children: vec![Cow::Borrowed("B"), Cow::Borrowed("C")], features: Vec::new() });
     graph.insert(String::from("B"), ClassNode { name: Cow::Borrowed("B"), parent: Cow::Borrowed("A"), children: vec![Cow::Borrowed("C")], features: Vec::new() });
     graph.insert(String::from("C"), ClassNode { name: Cow::Borrowed("C"), parent: Cow::Borrowed("B"), children: vec![Cow::Borrowed("A")], features: Vec::new() });
