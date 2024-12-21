@@ -12,12 +12,18 @@ pub enum ParseFeature {
 pub struct Attribute {
   pub name: Ident,
   pub return_type: Type,
-  pub expr: Option<Box<Expression>>,
+  pub expr: Option<Expression>,
 }
 
-impl From<(Ident, Type, Option<Box<Expression>>)> for Attribute {
-  fn from((name, return_type, expr): (Ident, Type, Option<Box<Expression>>)) -> Self {
+impl From<(Ident, Type, Option<Expression>)> for Attribute {
+  fn from((name, return_type, expr): (Ident, Type, Option<Expression>)) -> Self {
     Self { name, return_type, expr }
+  }
+}
+
+impl Attribute {
+  pub fn get_name(&self) -> String {
+    self.name.get_name()
   }
 }
 
@@ -26,24 +32,30 @@ pub struct Method {
   pub name: Ident,
   pub formals: Option<Vec<Formal>>,
   pub return_type: Type,
-  pub expr: Box<Expression>,
+  pub expr: Expression,
 }
 
-impl From<(Ident, Option<Vec<Formal>>, Type, Box<Expression>)> for Method {
-  fn from((name, formals, return_type, expr): (Ident, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
+impl From<(Ident, Option<Vec<Formal>>, Type, Expression)> for Method {
+  fn from((name, formals, return_type, expr): (Ident, Option<Vec<Formal>>, Type, Expression)) -> Self {
     Self { name, formals, return_type, expr }
   }
 }
 
-impl From<(Ident, Option<Vec<Formal>>, Type, Box<Expression>)> for ParseFeature {
-  fn from((name, formals, return_type, expr): (Ident, Option<Vec<Formal>>, Type, Box<Expression>)) -> Self {
+impl Method {
+  pub fn get_name(&self) -> String {
+    self.name.get_name()
+  }
+}
+
+impl From<(Ident, Option<Vec<Formal>>, Type, Expression)> for ParseFeature {
+  fn from((name, formals, return_type, expr): (Ident, Option<Vec<Formal>>, Type, Expression)) -> Self {
     let method = Method { name, formals, return_type, expr };
     ParseFeature::Method { method }
   }
 }
 
-impl From<(Ident, Type, Box<Expression>)> for ParseFeature {
-  fn from((name, return_type, expr): (Ident, Type, Box<Expression>)) -> Self {
+impl From<(Ident, Type, Expression)> for ParseFeature {
+  fn from((name, return_type, expr): (Ident, Type, Expression)) -> Self {
     let method = Method { name, formals: None, return_type, expr };
     ParseFeature::Method { method }
   }

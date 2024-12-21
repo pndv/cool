@@ -6,7 +6,7 @@ fn gen_sym_tab(class: ClassNode) -> Result<SymbolTable, String> {
 
     let class_symbol = Symbol {
         name: class.name.to_string(),
-        env: EnvType::Class,
+        env_type: EnvType::Class,
         sym_type: SymbolType::Type,
     };
 

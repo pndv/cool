@@ -26,6 +26,10 @@ pub const OBJECT: ParseClass = ParseClass {
 };
 
 impl ParseClass {
+    pub fn get_name(&self) -> String {
+        self.name.get_name()
+    }
+
     pub(crate) fn new(
         class_type: Type,
         parent_type: Option<Type>,
