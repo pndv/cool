@@ -16,6 +16,7 @@ pub const IO_CLASS_NAME: &str = "IO";
 pub const INT_CLASS_NAME: &str = "Int";
 pub const STR_CLASS_NAME: &str = "String";
 pub const BOOL_CLASS_NAME: &str = "Bool";
+pub const VOID_CLASS_NAME: &str = "Void";
 
 pub const OBJECT: ParseClass = ParseClass {
     name: Type(Cow::Borrowed(OBJECT_CLASS_NAME)),

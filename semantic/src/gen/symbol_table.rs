@@ -14,7 +14,7 @@ fn gen_symbol_table(program: ParseProgram) -> Result<SymbolTable, String> {
 
   // fill the symbol table with all the class names
   for class in program.classes() {
-    let class_symbol: Symbol = Symbol { name: class.name.get_name(), env_type: EnvType::Program, sym_type: SymbolType::Type };
+    let class_symbol: Symbol = Symbol { name: class.name.get_name(), env_type: EnvType::Program, sym_type: "Class" };
     symbol_table.put(class_symbol)
   }
 
@@ -26,11 +26,11 @@ fn gen_symbol_table(program: ParseProgram) -> Result<SymbolTable, String> {
 }
 
 fn fill_built_in_classes(symbol_table: &mut SymbolTable) {
-  symbol_table.put(Symbol { name: OBJECT_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: SymbolType::Type });
-  symbol_table.put(Symbol { name: IO_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: SymbolType::Type });
-  symbol_table.put(Symbol { name: INT_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: SymbolType::Type });
-  symbol_table.put(Symbol { name: STR_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: SymbolType::Type });
-  symbol_table.put(Symbol { name: BOOL_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: SymbolType::Type });
+  symbol_table.put(Symbol { name: OBJECT_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: String:: from("Class"), ret_type: String::from("Void") });
+  symbol_table.put(Symbol { name: IO_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: String:: from("Class"), ret_type: String::from("Void") });
+  symbol_table.put(Symbol { name: INT_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: String:: from("Class"), ret_type: String::from("Void") });
+  symbol_table.put(Symbol { name: STR_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: String:: from("Class"), ret_type: String::from("Void") });
+  symbol_table.put(Symbol { name: BOOL_CLASS_NAME.to_string(), env_type: EnvType::Program, sym_type: String:: from("Class"), ret_type: String::from("Void") });
 }
 
 fn fill_symbol_table_class(class: &ParseClass, symbol_table: &mut SymbolTable) -> Result<(), String> {
@@ -51,7 +51,7 @@ fn fill_symbol_table_class(class: &ParseClass, symbol_table: &mut SymbolTable) -
     };
   }
 
-  let self_type = Symbol { name: class.get_name(), env_type: EnvType::Class, sym_type: SymbolType::Type };
+  let self_type = Symbol { name: class.get_name(), env_type: EnvType::Class, sym_type: String::from("Self"), ret_type: String::from("Void") };
   let features = class.features.as_ref().unwrap();
 
   // First, populate all class-level features
@@ -143,7 +143,7 @@ fn fill_symbol_table_method(method: &Method, symbol_table: &mut SymbolTable) -> 
   Ok(())
 }
 
-fn fill_symbol_table_expr(expr: &Expression, symbol_table: &mut SymbolTable, env_type: EnvType) -> Result<(), String> {
+fn fill_symbol_table_expr(expr: &Expression, symbol_table: &mut SymbolTable, env_type: EnvType) -> Result<SymbolType, String> {
   symbol_table.enter_scope();
   let mut error_message = String::new();
   match expr {
@@ -160,6 +160,7 @@ fn fill_symbol_table_expr(expr: &Expression, symbol_table: &mut SymbolTable, env
     Expression::BoolExpr { .. } => {}
 
     Expression::Assign { name, expr } => {
+      fill_symbol_table_expr(expr, symbol_table, env_type)?;
       symbol_table.put(Symbol{name: name.get_name(), env_type, sym_type: SymbolType::Ident {}});
     }
 
