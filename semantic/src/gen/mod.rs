@@ -10,18 +10,22 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 
-pub fn check_program(program: ParseProgram) -> Result<ProgramNode, String> {
-  let mut class_map = gen_class_map(program);
+pub fn check_program(ast: ParseProgram) -> Result<(ParseProgram, ProgramNode), String> {
+  let mut class_map = gen_class_map(ast.clone());
 
   let classes: Vec<ClassNode> = class_map.values().cloned().collect();
-  let program = ProgramNode { classes };
+  let program = ProgramNode { classes, class_map: class_map.clone() };
   
   let mut seen_nodes: Vec<String> = Vec::new();
   match check_if_dag(&mut class_map, &mut seen_nodes, OBJECT_CLASS_NAME) {
-    Ok(None) => Ok(program),
+    Ok(None) => Ok((ast, program)),
     Ok(Some(err)) => Err(err),
     Err(e) => panic!("Cannot proceed. Fatal error: {}", e),
   }
+}
+
+pub fn decorate_ast(ast: ParseProgram, program: ProgramNode) -> Result<(ParseProgram, ProgramNode), String> {
+  
 }
 
 
@@ -129,14 +133,14 @@ fn gen_graph<'a>(file: File) -> Result<HashMap<String, ClassNode>, String> {
 
 #[cfg(test)]
 mod test {
-    use crate::gen::{check_if_dag, gen_graph};
-    use crate::models::class::ClassNode;
-    use parser::model::class::OBJECT_CLASS_NAME;
-    use std::borrow::Cow;
-    use std::collections::HashMap;
-    use std::fs::File;
+  use crate::gen::{check_if_dag, gen_graph};
+  use crate::models::class::ClassNode;
+  use parser::model::class::OBJECT_CLASS_NAME;
+  use std::borrow::Cow;
+  use std::collections::HashMap;
+  use std::fs::File;
 
-    #[test]
+  #[test]
   fn test_gen_inheritance_graph() {
     let file = File::open("../test_resources/programs/arith.cl").expect("Couldn't open file");
     let graph_result = gen_graph(file);

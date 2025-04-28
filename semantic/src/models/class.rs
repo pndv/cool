@@ -1,6 +1,7 @@
-use crate::models::features::FeatureNode;
+use crate::models::features::{AttributeNode, FeatureNode, MethodNode};
 use crate::models::Node;
 use parser::model::class::{ParseClass, BOOL_CLASS_NAME, INT_CLASS_NAME, IO_CLASS_NAME, OBJECT_CLASS_NAME, STR_CLASS_NAME};
+use parser::model::feature::{Attribute, Method, ParseFeature};
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 
@@ -13,6 +14,8 @@ pub struct ClassNode {
     pub parent: Cow<'static, str>,
     pub(crate) children: Vec<Cow<'static, str>>,
     pub(crate) features: Vec<FeatureNode>,
+    pub(crate) attributes: Vec<AttributeNode>,
+    pub(crate) methods: Vec<MethodNode>,
 }
 
 impl Node for ClassNode {}
@@ -31,6 +34,33 @@ impl ClassNode {
 
         base_object
     }
+    
+    pub fn add_feature(&self, feature: ParseFeature) -> Result<FeatureNode, String> {
+        match feature {
+            ParseFeature::Attribute { attribute } => {
+                match  self.add_attribute(attribute) {
+                    Ok(attribute_node) => Ok(FeatureNode::Attribute(attribute_node)),
+                    Err(error) => Err(error)
+                }
+                
+            }
+            ParseFeature::Method { method } => {
+                match self.add_method(method) {
+                    Ok(method_node) => Ok(FeatureNode::Method(method_node)),
+                    Err(error) => Err(error)
+                }
+            }
+        }
+        
+    }
+    
+    pub fn add_attribute(&self, attribute: Attribute) -> Result<AttributeNode, String> {
+        todo!()
+    }
+
+    pub fn add_method(&self, method: Method) -> Result<MethodNode, String> {
+        todo!()
+    }
 
 }
 
@@ -41,7 +71,7 @@ impl From<ParseClass> for ClassNode {
         let parent = parent_type.get_name();
         let children = Vec::new();
 
-        ClassNode { name: Cow::from(class_name), parent: Cow::from(parent), children, features: Vec::new() }
+        ClassNode { name: Cow::from(class_name), parent: Cow::from(parent), children, features: Vec::new(), attributes: Vec::new(), methods: Vec::new() }
     }
 }
 
@@ -52,7 +82,7 @@ impl From<&ParseClass> for ClassNode {
         let parent = parent_type.get_name();
         let children = Vec::new();
 
-        ClassNode { name: Cow::from(class_name), parent: Cow::from(parent), children, features: Vec::new() }
+        ClassNode { name: Cow::from(class_name), parent: Cow::from(parent), children, features: Vec::new(), attributes: Vec::new(), methods: Vec::new() }
     }
 }
 

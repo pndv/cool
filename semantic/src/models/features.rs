@@ -38,6 +38,7 @@ pub struct AttributeNode {
   pub f_type: Cow<'static, str>,
   pub exp: Option<ExpressionNode>,
 }
+impl Node for AttributeNode {}
 
 impl From<Attribute> for AttributeNode {
   fn from(value: Attribute) -> Self {
@@ -54,7 +55,7 @@ impl Display for AttributeNode {
   }
 }
 
-impl Node for AttributeNode {}
+
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct MethodNode {

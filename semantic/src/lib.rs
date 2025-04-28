@@ -1,3 +1,9 @@
+use parser::model::program::ParseProgram;
+
 pub mod models;
-mod environments;
 pub mod gen;
+
+fn semantic_analysis(parsed_program:ParseProgram) {
+  
+  
+}

@@ -1,10 +1,12 @@
 ﻿use crate::models::class::ClassNode;
 use crate::models::Node;
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, PartialEq)]
 pub struct ProgramNode {
   pub(crate) classes: Vec<ClassNode>,
+  pub(crate) class_map: HashMap<String, ClassNode>,
 }
 
 impl Display for ProgramNode {
