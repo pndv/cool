@@ -21,4 +21,36 @@ impl Display for ProgramNode {
   }
 }
 
-impl Node for ProgramNode {}
+impl Node for ProgramNode {
+  fn get_file_name(&self) -> String {
+    todo!()
+  }
+
+  fn get_line_number(&self) -> u32 {
+    todo!()
+  }
+
+  fn get_column_number(&self) -> u32 {
+    todo!()
+  }
+
+  fn get_symbol(&self, name: &str) -> Option<ClassNode> {
+    self.class_map.get(name).cloned()
+  }
+
+  fn put_symbol(&mut self, name: &str, symbol: &ClassNode) {
+    self.class_map.insert(name.to_string(), symbol.clone()); 
+  }
+
+  fn get_symbol_type(&self, name: &str) -> Option<String> {
+    todo!()
+  }
+
+  fn get_parent(&self) -> Option<Box<dyn Node>> {
+    None
+  }
+
+  fn decorate_ast(&mut self) {
+    todo!()
+  }
+}

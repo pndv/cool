@@ -58,7 +58,7 @@ fn fill_symbol_table_class(class: &ParseClass, symbol_table: &mut SymbolTable) -
   for feature in features {
     match feature {
       ParseFeature::Attribute { attribute } => {
-        let attribute_name = attribute.get_name();
+        let attribute_name = attribute.name;
         let ret_type = attribute.return_type.get_name();
 
         if !symbol_table.lookup_symbol_by_env_type(&ret_type, EnvType::Class) {

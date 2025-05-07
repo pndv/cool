@@ -34,11 +34,11 @@ impl From<ParseFeature> for FeatureNode {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AttributeNode {
-  pub ident: Cow<'static, str>,
-  pub f_type: Cow<'static, str>,
+  pub name: Cow<'static, str>,
+  pub attribute_type: Cow<'static, str>,
   pub exp: Option<ExpressionNode>,
 }
-impl Node for AttributeNode {}
+impl Node<> for AttributeNode {}
 
 impl From<Attribute> for AttributeNode {
   fn from(value: Attribute) -> Self {
@@ -46,7 +46,7 @@ impl From<Attribute> for AttributeNode {
       None => None,
       Some(e) => Some(ExpressionNode::from(e)),
     };
-    AttributeNode { ident: value.name.0, f_type: value.return_type.0, exp: expr }
+    AttributeNode { name: value.name.0, attribute_type: value.return_type.0, exp: expr }
   }
 }
 impl Display for AttributeNode {
@@ -59,9 +59,9 @@ impl Display for AttributeNode {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct MethodNode {
-  pub ident: Cow<'static, str>,
+  pub name: Cow<'static, str>,
   pub formals: Vec<FormalNode>,
-  pub f_type: Cow<'static, str>,
+  pub return_type: Cow<'static, str>,
   pub exp: ExpressionNode,
 }
 
