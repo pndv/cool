@@ -20,7 +20,7 @@ pub struct ClassNode {
   pub(crate) features: Vec<FeatureNode>,
   pub(crate) attributes: Vec<AttributeNode>,
   pub(crate) methods: Vec<MethodNode>,
-  parent: 
+  // parent: 
 }
 
 impl Node for ClassNode {}

@@ -1,28 +1,45 @@
-﻿use std::collections::HashMap;
-use std::fmt::{Debug, Display};
+﻿use crate::models::class_node::ClassNode;
+use crate::models::feature_node::FormalNode;
+use feature_node::FeatureNode;
+use program_node::ProgramNode;
+use std::fmt::{Debug, Display, Formatter};
 
 pub mod program_node;
 pub mod class_node;
+mod feature_node;
+mod expr;
+// 
+// pub(crate) trait Node: Debug {
+//   fn name(&self) -> &str;
+// }
 
 
-
-pub(crate) trait Node: Display + Debug {
-  fn add_symbol(&mut self, name: String, symbol: impl Node);
-  fn get_symbol(&self, name: &str) -> Option<&impl Node>;
+#[derive(Debug)]
+pub(crate) enum Node {
+  Program{node: ProgramNode},
+  Class{node: ClassNode},
+  Feature{node: FeatureNode},
+  Formal{node: FormalNode}
 }
 
-pub struct ProgramNode {
-  class_map: HashMap<String, ClassNode>,
+impl Node {
+  pub fn name(&self) -> &str {
+    match self {
+      Node::Program { .. } => "",
+      Node::Class { node } => node.name.as_str(),
+      Node::Feature { node } => node.name.as_str(),
+      Node::Formal {node} => node.name.as_str(),
+    }
+  }
 }
 
-pub struct ClassNode {
-  name: String,
-  parent: Option<String>,
-  feature_map: HashMap<String, FeatureNode>,
-}
-
-pub struct FeatureNode {
-  name: String,
-  param_type_map: Option<HashMap<String, String>>,
-  return_type_name: String,
+impl Display for Node {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Node::Program { node } => write!(f, "{}", node.to_string()),
+      Node::Class { node } => write!(f, "{}", node.to_string()),
+      Node::Feature { node } => write!(f, "{}", node.to_string()),
+      Node::Formal { node } => write!(f, "{}", node.to_string()),
+    }
+  }
 }
