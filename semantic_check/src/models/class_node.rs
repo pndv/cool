@@ -19,7 +19,7 @@ pub const NO_INHERIT: [&str; 3] = [INT_CLASS_NAME, STR_CLASS_NAME, BOOL_CLASS_NA
 pub const PRIMITIVE_TYPES: [&str; 5] = [INT_CLASS_NAME, STR_CLASS_NAME, BOOL_CLASS_NAME, IO_CLASS_NAME, OBJECT_CLASS_NAME];
 
 use crate::symbol_table::SymbolTable;
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, Clone, Default)]
@@ -162,7 +162,7 @@ impl ClassNode {
     
     for (feature_name, feature_node) in &self.feature_map {
       // type check features
-      let FeatureNode { name, param_type_map, feature_type, .. } = feature_node.clone();
+      let FeatureNode { name, param_type_map, feature_type, feature_expr } = feature_node.clone();
       if symbol_table.lookup_symbol(feature_type.as_str()).is_none() {
         errors.push(format!("Feature {} has unknown type {}", feature_name, feature_type));
         continue;
@@ -182,7 +182,8 @@ impl ClassNode {
       }
       
       // type check complete, insert this feature into the symbol table
-      match symbol_table.insert_symbol(feature_name.clone().as_str(), Arc::new(RwLock::new(Node::Feature { node: feature_node.clone() }))) {
+      match symbol_table.insert_symbol(feature_name.clone().as_str(), 
+                                       Arc::new(RwLock::new(Node::Feature { node: feature_node.clone() }))) {
         Ok(_) => (),
         Err(e) => errors.push(e)
       }
@@ -214,14 +215,3 @@ impl From<&ParseClass> for ClassNode {
   }
 }
 
-impl Display for ClassNode {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    let parent_name = if self.get_parent_name().is_some() {
-      format!(":{}", self.get_parent_name().unwrap())
-    } else {
-      String::from("")
-    };
-    let features_str = self.feature_map.iter().map(|(_, feature)| format!("\t{}", feature.to_string())).collect::<Vec<String>>().join("\n");
-    write!(f, "[CLASS] {}{}\n{}", self.name, parent_name, features_str)
-  }
-}

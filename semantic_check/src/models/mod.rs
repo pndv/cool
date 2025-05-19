@@ -1,13 +1,14 @@
 ﻿use crate::models::class_node::ClassNode;
+use crate::models::expr::ExprNode;
 use crate::models::feature_node::FormalNode;
 use feature_node::FeatureNode;
 use program_node::ProgramNode;
 use std::fmt::{Debug, Display, Formatter};
 
-pub mod program_node;
-pub mod class_node;
-mod feature_node;
-mod expr;
+pub(crate) mod program_node;
+pub(crate)  mod class_node;
+pub(crate) mod feature_node;
+pub(crate) mod expr;
 // 
 // pub(crate) trait Node: Debug {
 //   fn name(&self) -> &str;
@@ -19,13 +20,14 @@ pub(crate) enum Node {
   Program{node: ProgramNode},
   Class{node: ClassNode},
   Feature{node: FeatureNode},
-  Formal{node: FormalNode}
+  Formal{node: FormalNode},
+  Expr{node: ExprNode},
 }
 
 impl Node {
   pub fn name(&self) -> &str {
     match self {
-      Node::Program { .. } => "",
+      Node::Program { .. } | Node::Expr {..} => "",
       Node::Class { node } => node.name.as_str(),
       Node::Feature { node } => node.name.as_str(),
       Node::Formal {node} => node.name.as_str(),
@@ -40,6 +42,7 @@ impl Display for Node {
       Node::Class { node } => write!(f, "{}", node.to_string()),
       Node::Feature { node } => write!(f, "{}", node.to_string()),
       Node::Formal { node } => write!(f, "{}", node.to_string()),
+      Node::Expr { node } => write!(f, "{}", node.to_string()),
     }
   }
 }

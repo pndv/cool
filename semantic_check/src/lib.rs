@@ -9,6 +9,7 @@ use std::sync::{Arc, RwLock};
 
 pub(crate) mod models;
 pub(crate) mod symbol_table;
+mod display;
 
 fn start_semantic_check(program: ParseProgram) {
   let mut symbol_table: SymbolTable = Default::default();

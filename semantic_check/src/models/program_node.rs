@@ -11,14 +11,7 @@ use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub struct ProgramNode {
-  class_map: HashMap<String, ClassNode>,
-}
-
-impl Display for ProgramNode {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let classes_str = self.class_map.values().map(|class| format!("\t{}", class.to_string())).collect::<Vec<String>>().join("\n");
-    write!(f, "[PROGRAM]\n{}", classes_str)
-  }
+  pub(crate) class_map: HashMap<String, ClassNode>,
 }
 
 pub fn init_global_scope(program: ParseProgram, symbol_table: &mut SymbolTable) -> Result<(), String> {
