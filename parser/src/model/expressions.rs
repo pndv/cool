@@ -147,7 +147,7 @@ impl Expression {
         }
     }
 
-    pub fn is_partial(&self) -> bool {
+    pub(crate) fn is_partial(&self) -> bool {
         matches!(
             self,
             Expression::PartialDispatch { .. }

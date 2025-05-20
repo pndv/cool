@@ -7,7 +7,7 @@ use lexer::model::constants::{
 };
 use lexer::model::token::Token;
 
-pub(super) fn gen_partial_dispatch_expr(
+pub(super) fn gen_dispatch_expr(
     ident_token: Token,
     iter: &mut BufferedTokenIter,
 ) -> Result<Expression, String> {

@@ -6,7 +6,7 @@ mod let_expr;
 mod loop_expr;
 mod unary_expr;
 
-use crate::generators::expressions::dispatch_expr::gen_partial_dispatch_expr;
+use crate::generators::expressions::dispatch_expr::gen_dispatch_expr;
 use crate::model::expressions::Expression;
 use crate::model::Type;
 use case_expr::gen_case_expression;
@@ -15,8 +15,8 @@ use dispatch_expr::gen_partial_cast_dispatch;
 use let_expr::gen_let_expression;
 use lexer::iter::token::{BaseTokenIter, BufferedTokenIter};
 use lexer::model::constants::{
-  ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE,
-  IDENT_TYPE, NEW_TYPE, OPEN_PAREN_TYPE,
+    ASSIGN_TYPE, CLOSE_CURL_TYPE, CLOSE_PAREN_TYPE, END_CASE_TYPE, END_IF_TYPE, END_LOOP_TYPE,
+    IDENT_TYPE, NEW_TYPE, OPEN_PAREN_TYPE,
 };
 use lexer::model::token::Token;
 use loop_expr::gen_loop_expression;
@@ -53,7 +53,7 @@ fn gen_partial_expressions(
                 let ident_token = iter.get_required(&IDENT_TYPE)?;
 
                 let expr = if iter.peek_eq(&OPEN_PAREN_TYPE) {
-                    gen_partial_dispatch_expr(ident_token, iter)?
+                    gen_dispatch_expr(ident_token, iter)?
                 } else {
                     Expression::from(ident_token)
                 };
@@ -197,9 +197,16 @@ fn reduce_expression_list(mut expressions: VecDeque<Expression>) -> Result<Expre
 
     let reduce: Expression;
 
-    let first = expressions.pop_front().unwrap();
+    let first_expr = expressions.pop_front().unwrap();
+    let first: Expression;
+    if let Expression::PartialDispatch { .. } = first_expr {
+        first = first_expr.convert_to_dispatch()
+    } else {
+        first  = first_expr
+    }
+    assert!(!first.is_partial(), "First expression must not be partial");
+    
     let second = expressions.get(0).unwrap().clone();
-
     assert!(second.is_partial(), "Last expression must be partial");
 
     match second {
@@ -255,7 +262,7 @@ fn reduce_expression_list(mut expressions: VecDeque<Expression>) -> Result<Expre
         },
         Expression::PartialAssign { expr } => {
             let Expression::IdentExpr { name, .. } = first else {
-                return Err(format!("PartialAssign: join expression is not ident"));
+                return Err("PartialAssign: join expression is not ident".to_string());
             };
             reduce = Expression::Assign { name, expr };
         }

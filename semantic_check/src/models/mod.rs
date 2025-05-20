@@ -3,7 +3,7 @@ use crate::models::expr::ExprNode;
 use crate::models::feature_node::FormalNode;
 use feature_node::FeatureNode;
 use program_node::ProgramNode;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Display};
 
 pub(crate) mod program_node;
 pub(crate)  mod class_node;
@@ -35,14 +35,3 @@ impl Node {
   }
 }
 
-impl Display for Node {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Node::Program { node } => write!(f, "{}", node.to_string()),
-      Node::Class { node } => write!(f, "{}", node.to_string()),
-      Node::Feature { node } => write!(f, "{}", node.to_string()),
-      Node::Formal { node } => write!(f, "{}", node.to_string()),
-      Node::Expr { node } => write!(f, "{}", node.to_string()),
-    }
-  }
-}

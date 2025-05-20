@@ -1,6 +1,6 @@
 ﻿use crate::models::feature_node::{FeatureNode, FormalNode};
 use crate::models::Node;
-use parser::model::class::{ParseClass, BOOL_CLASS_NAME, INT_CLASS_NAME, IO_CLASS_NAME, OBJECT_CLASS_NAME, STR_CLASS_NAME};
+use parser::model::class::{BOOL_CLASS_NAME, INT_CLASS_NAME, IO_CLASS_NAME, OBJECT_CLASS_NAME, STR_CLASS_NAME};
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock, RwLock};
 
@@ -193,25 +193,6 @@ impl ClassNode {
     
     
     Ok(())
-  }
-}
-
-impl From<&ParseClass> for ClassNode {
-  fn from(value: &ParseClass) -> Self {
-    match value {
-      ParseClass { name, parent_type, features, .. } => {
-        let mut nodes_map: HashMap<String, FeatureNode> = Default::default();
-        let feature_nodes = match features {
-          None => nodes_map,
-          Some(parse_features) => parse_features.iter().map(|parse_feature| {
-            let feature_node = FeatureNode::from(parse_feature);
-            (feature_node.name.clone(), feature_node)
-          }).collect()
-        };
-
-        Self { name: name.get_name().clone(), parent: None, children: Some(vec![]), feature_map: feature_nodes }
-      }
-    }
   }
 }
 

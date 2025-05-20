@@ -10,6 +10,7 @@ use std::sync::{Arc, RwLock};
 pub(crate) mod models;
 pub(crate) mod symbol_table;
 mod display;
+mod from;
 
 fn start_semantic_check(program: ParseProgram) {
   let mut symbol_table: SymbolTable = Default::default();
@@ -50,6 +51,7 @@ mod test {
   fn test_semantic_check() {
     let file = File::open("../test_resources/programs/graph.cl").expect("Couldn't open file");
     let parse_program: ParseProgram = get_ast(file).expect("Couldn't parse file");
+    // dbg!(&parse_program);
     start_semantic_check(parse_program);
   }
 
