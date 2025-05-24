@@ -5,13 +5,13 @@ edition = "2021"
 
 [[bin]]
 name = "cool"
-path = "src/main.rs"
+path = "main.rs"
 
 
 [dependencies]
 lexer = { path = "lexer" }
 parser = { path = "parser" }
-semantic = {path = "semantic"}
+semantic_check = {path = "semantic_check"}
 
 
 [profile.dev]

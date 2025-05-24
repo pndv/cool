@@ -1,4 +1,6 @@
-﻿use std::fmt::Display;
+﻿use crate::symbol_table::SymbolTable;
+use std::fmt::Display;
+
 #[derive(Debug, Clone)]
 pub(crate) enum ExprNode {
   Assign { node: AssignNode },
@@ -29,10 +31,59 @@ pub(crate) enum ExprNode {
   SelfNode { node: SelfNode },
 }
 
+impl ExprNode {
+  pub(crate) fn check_expression(&self, symbol_table: &mut SymbolTable) -> Result<(), String> {
+    match self {
+      ExprNode::Assign { node: AssignNode{ id, expr } } => {
+        let Some(symbol) = symbol_table.lookup_symbol(id.as_str()) else {
+          return Err(format!("{} is not defined.", id))
+        };
+
+      }
+      ExprNode::MethodCall { node: MethodCallNode{method_name, expr_cast_type, args, expr} } => {}
+
+      ExprNode::Conditional { node: ConditionalNode {condition, true_expr, false_expr} } => {}
+      ExprNode::While { node: WhileNode {condition, body}  } => {}
+      ExprNode::ExprBlock { node:  ExprBlockNode{expressions}} => {}
+      ExprNode::Let { node:  LetNode{let_init, in_expr}} => {}
+      ExprNode::Case { node:  CaseNode {expr, branches}} => {}
+      ExprNode::New { node:  NewNode {class}} => {}
+      ExprNode::IsVoid { node:  } => {}
+      ExprNode::Plus { node:  } => {}
+      ExprNode::Minus { node:  } => {}
+      ExprNode::Multiply { node:  } => {}
+      ExprNode::Div { node:  } => {}
+      ExprNode::Negate { node:  } => {}
+      ExprNode::Lt { node:  } => {}
+      ExprNode::LtEq { node:  } => {}
+      ExprNode::Eq { node:  } => {}
+      ExprNode::Not { node:  } => {}
+      ExprNode::Id { node:  } => {}
+      ExprNode::Int { node:  } => {}
+      ExprNode::String { node:  } => {}
+      ExprNode::Bool { node:  } => {}
+      ExprNode::True { node:  } => {}
+      ExprNode::False { node:  } => {}
+      ExprNode::SelfTypeNode { node:  } => {}
+      ExprNode::SelfNode { node:  } => {}
+    }
+  }
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct AssignNode {
   pub(crate) id: String,
   pub(crate) expr: Box<ExprNode>,
+}
+
+impl AssignNode {
+  pub(crate) fn check_node(&self, symbol_table: &mut SymbolTable) -> Result<(), String> {
+    let Some(symbol) = symbol_table.lookup_symbol(self.id.as_str()) else {
+      return Err(format!("{} is not defined.", self.id))
+    };
+
+
+  }
 }
 
 #[derive(Debug, Clone)]
