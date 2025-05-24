@@ -21,7 +21,8 @@ impl From<File> for CharIter {
     fn from(value: File) -> Self {
         let mut buf_reader: BufReader<File> = BufReader::new(value);
 
-        // Ignore byte order marker, if present. UTF-8 byte-order marker is first 3 bytes of file = [0xEF 0xBB 0xBF]
+        // Ignore the byte order marker, if present.
+        // UTF-8 byte-order marker is the first 3 bytes of the file = [0xEF 0xBB 0xBF]
         let mut read_byte = [0; 3]; // Buffer to hold 3 bytes
         let r = buf_reader.read(&mut read_byte);
 

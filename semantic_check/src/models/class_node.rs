@@ -158,11 +158,11 @@ impl ClassNode {
     let mut errors: Vec<String> = Vec::new();
     
     // Populate class symbols
-    symbol_table.enter_scope();
+    symbol_table.enter_scope(self.name.clone());
     
     for (feature_name, feature_node) in &self.feature_map {
       // type check features
-      let FeatureNode { name, param_type_map, feature_type, feature_expr } = feature_node.clone();
+      let FeatureNode { name, param_type_map, feature_type, feature_expr } = &feature_node;
       if symbol_table.lookup_symbol(feature_type.as_str()).is_none() {
         errors.push(format!("Feature {} has unknown type {}", feature_name, feature_type));
         continue;
@@ -189,10 +189,18 @@ impl ClassNode {
       }
     }
     
-    // Now iterate over expressions in features
+    // validate each feature
+    for (feature_name, feature_node) in &self.feature_map {
+      match feature_node.check_expression(symbol_table) {
+        Ok(_) => (),
+        Err(e) => errors.push(format!("Feature {}: {}", feature_name, e))
+      }
+    }
     
+    if errors.len() > 0 {
+      return Err(errors.join("\n"));   
+    }
     
     Ok(())
   }
 }
-

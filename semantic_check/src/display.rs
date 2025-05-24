@@ -102,7 +102,7 @@ impl Display for NewNode {
 }
 impl Display for IsVoidNode {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "[EXPR:ISVOID]")
+    write!(f, "[EXPR:IS_VOID]")
   }
 }
 impl Display for PlusNode {
@@ -137,7 +137,7 @@ impl Display for LtNode {
 }
 impl Display for LtEqNode {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "[EXPR:LTEQ]")
+    write!(f, "[EXPR:LT_EQ]")
   }
 }
 impl Display for EqNode {
@@ -194,6 +194,7 @@ impl Display for SelfNode {
 impl Display for Node {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
+      Node::SelfType => write!(f, "SELF_TYPE"),
       Node::Program { node } => write!(f, "{}", node.to_string()),
       Node::Class { node } => write!(f, "{}", node.to_string()),
       Node::Feature { node } => write!(f, "{}", node.to_string()),

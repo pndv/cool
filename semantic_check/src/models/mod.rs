@@ -17,6 +17,7 @@ pub(crate) mod expr;
 
 #[derive(Debug)]
 pub(crate) enum Node {
+  SelfType,
   Program{node: ProgramNode},
   Class{node: ClassNode},
   Feature{node: FeatureNode},
@@ -28,6 +29,7 @@ impl Node {
   pub fn name(&self) -> &str {
     match self {
       Node::Program { .. } | Node::Expr {..} => "",
+      Node::SelfType => "SELF_TYPE",
       Node::Class { node } => node.name.as_str(),
       Node::Feature { node } => node.name.as_str(),
       Node::Formal {node} => node.name.as_str(),

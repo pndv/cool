@@ -10,13 +10,14 @@ use std::collections::HashMap;
 
 impl From<&ParseClass> for ClassNode {
   fn from(value: &ParseClass) -> Self {
+    // dbg!("Call ClassNode::from with: {}", value);
     match value {
       ParseClass { name, parent_type, features, .. } => {
         let mut nodes_map: HashMap<String, FeatureNode> = Default::default();
         let feature_nodes = match features {
           None => nodes_map,
           Some(parse_features) => parse_features.iter().map(|parse_feature| {
-            let feature_node = FeatureNode::from(parse_feature);
+            let mut feature_node = FeatureNode::from(parse_feature);
             (feature_node.name.clone(), feature_node)
           }).collect()
         };

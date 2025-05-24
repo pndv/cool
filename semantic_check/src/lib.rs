@@ -11,10 +11,11 @@ pub(crate) mod models;
 pub(crate) mod symbol_table;
 mod display;
 mod from;
+const GLOBAL_SCOPE_NAME: &str = "Global";
 
-fn start_semantic_check(program: ParseProgram) {
+fn start_semantic_check(program: ParseProgram) -> Result<(), String> {
   let mut symbol_table: SymbolTable = Default::default();
-  symbol_table.enter_scope();
+  symbol_table.enter_scope(GLOBAL_SCOPE_NAME.to_string());
   
   // populate classes and their respective methods and attributes
   match program_node::init_global_scope(program, &mut symbol_table) {
@@ -34,7 +35,11 @@ fn start_semantic_check(program: ParseProgram) {
     }
   }
   
-
+  if errors.len() > 0 {
+    Err(errors.join("\n"))
+  } else {
+    Ok(()) 
+  }
 }
 
 #[cfg(test)]
@@ -52,7 +57,14 @@ mod test {
     let file = File::open("../test_resources/programs/graph.cl").expect("Couldn't open file");
     let parse_program: ParseProgram = get_ast(file).expect("Couldn't parse file");
     // dbg!(&parse_program);
-    start_semantic_check(parse_program);
+    let result = start_semantic_check(parse_program);
+    if result.is_err() {
+      println!("{}", result.err().unwrap());
+      assert!(false);
+      return;
+    }
+    
+    assert!(result.is_ok());
   }
 
   #[test]
@@ -60,7 +72,7 @@ mod test {
     let file = File::open("../test_resources/programs/graph.cl").expect("Couldn't open file");
     let parse_program: ParseProgram = get_ast(file).expect("Couldn't parse file");
     let mut symbol_table: SymbolTable = Default::default();
-    symbol_table.enter_scope();
+    symbol_table.enter_scope(GLOBAL_SCOPE_NAME.to_string());
     
     let init_result = init_global_scope(parse_program, &mut symbol_table);
     assert!(init_result.is_ok());
@@ -146,7 +158,7 @@ mod test {
   #[test]
   fn test_cycle_negative() {
     let mut symbol_table: SymbolTable = Default::default();
-    symbol_table.enter_scope();
+    symbol_table.enter_scope(GLOBAL_SCOPE_NAME.to_string());
     gen_cyclic_graph(&mut symbol_table);
     // Hierarchy:
     // `Object` -> `A`

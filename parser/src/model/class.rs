@@ -11,7 +11,7 @@ pub struct ParseClass {
     pub line_pos: u32,
 }
 
-pub const OBJECT_CLASS_NAME: &str = "Object";
+pub const OBJECT_CLASS_NAME: &str = "OBJECT";
 pub const IO_CLASS_NAME: &str = "IO";
 pub const INT_CLASS_NAME: &str = "Int";
 pub const STR_CLASS_NAME: &str = "String";
